@@ -24,7 +24,7 @@ export function robustParseJson(text: string) {
   const sanitized = text.replace(/[\u0000-\u0009\u000B-\u000C\u000E-\u001F]/g, "");
 
   // 2. Basic cleanup (Markdown blocks)
-  let processed = sanitized
+  const processed = sanitized
     .replace(/```json/g, "")
     .replace(/```/g, "")
     .trim();
@@ -93,7 +93,13 @@ export function robustParseJson(text: string) {
 
 export const STREAM_DELIMITER = "\n<--WRITERDOST_EVENT-->\n";
 
-export function sendStreamEvent(controller: ReadableStreamDefaultController, data: any) {
+/** A progress event pushed to the client over the generation stream. */
+export type StreamEvent = {
+  type: string;
+  [key: string]: unknown;
+};
+
+export function sendStreamEvent(controller: ReadableStreamDefaultController, data: StreamEvent) {
   const encoder = new TextEncoder();
   controller.enqueue(encoder.encode(JSON.stringify(data) + STREAM_DELIMITER));
 }

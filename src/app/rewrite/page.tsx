@@ -3,9 +3,8 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { generateAiText } from "@/lib/ai-client";
-import { useAppStore } from "@/lib/app-store";
+import { useAppStore, type RewriteFlow } from "@/lib/app-store";
 import { STREAM_DELIMITER, robustParseJson } from "@/lib/app-utils";
-import { GenerationOverlay } from "@/components/ui/GenerationOverlay";
 import { TONES } from "@/lib/tone-standards";
 
 const recentManuscripts = [
@@ -119,6 +118,9 @@ export default function RewritePage() {
   };
 
   const handleDeepRewrite = async () => {
+    // Declared here (not inside `try`) so the `finally` block can clear it.
+    let interval: ReturnType<typeof setInterval> | undefined;
+
     if (!rewrite.manuscript.trim()) {
       setMessage("Please provide a manuscript first.");
       return;
@@ -146,7 +148,7 @@ export default function RewritePage() {
         chunks.push(words.slice(i, i + CHUNK_SIZE).join(" "));
       }
 
-      const interval = setInterval(() => {
+      interval = setInterval(() => {
         const elapsed = Math.floor((Date.now() - startTime) / 1000);
         setMetrics(prev => ({ ...prev, draftingTime: elapsed }));
       }, 1000);
@@ -234,12 +236,14 @@ export default function RewritePage() {
       addGenerationLog({ agent: "System", message: error instanceof Error ? error.message : "Deep rewrite failed.", status: "error" });
     } finally {
       abortControllerRef.current = null;
-      // @ts-ignore
-      if (typeof interval !== 'undefined') clearInterval(interval);
+      if (interval) clearInterval(interval);
     }
   };
 
   const handleGenerateFromOutline = async () => {
+    // Declared here (not inside `try`) so the `finally` block can clear it.
+    let interval: ReturnType<typeof setInterval> | undefined;
+
     if (!outlineGenerator.title.trim()) {
       setMessage("Please provide a project title.");
       return;
@@ -276,7 +280,7 @@ export default function RewritePage() {
         signal: controller.signal,
       });
 
-      const interval = setInterval(() => {
+      interval = setInterval(() => {
         const elapsed = Math.floor((Date.now() - startTime) / 1000);
         setMetrics(prev => ({ ...prev, draftingTime: elapsed }));
       }, 1000);
@@ -331,12 +335,14 @@ export default function RewritePage() {
       addGenerationLog({ agent: "System", message: error instanceof Error ? error.message : "Outline generation failed.", status: "error" });
     } finally {
       abortControllerRef.current = null;
-      // @ts-ignore
-      if (typeof interval !== 'undefined') clearInterval(interval);
+      if (interval) clearInterval(interval);
     }
   };
 
   const handleTranslateProject = async () => {
+    // Declared here (not inside `try`) so the `finally` block can clear it.
+    let interval: ReturnType<typeof setInterval> | undefined;
+
     if (!rewrite.translateProjectId) {
       setMessage("Please select a project to translate.");
       return;
@@ -375,7 +381,7 @@ export default function RewritePage() {
         signal: controller.signal,
       });
 
-      const interval = setInterval(() => {
+      interval = setInterval(() => {
         const elapsed = Math.floor((Date.now() - startTime) / 1000);
         setMetrics(prev => ({ ...prev, draftingTime: elapsed }));
       }, 1000);
@@ -430,8 +436,7 @@ export default function RewritePage() {
       addGenerationLog({ agent: "System", message: error instanceof Error ? error.message : "Translation failed.", status: "error" });
     } finally {
       abortControllerRef.current = null;
-      // @ts-ignore
-      if (typeof interval !== 'undefined') clearInterval(interval);
+      if (interval) clearInterval(interval);
     }
   };
 
@@ -464,7 +469,7 @@ export default function RewritePage() {
                     ? "bg-white dark:bg-white/[0.08] shadow-xl shadow-primary/5 dark:shadow-none text-primary dark:text-indigo-300 scale-[1.02]"
                     : "text-on-surface-variant hover:text-on-surface hover:bg-white/40 dark:hover:bg-white/[0.04]"
                 }`}
-                onClick={() => updateRewrite({ flow: flow.id as any })}
+                onClick={() => updateRewrite({ flow: flow.id as RewriteFlow })}
                 type="button"
               >
                 <span className="material-symbols-outlined text-[18px]">{flow.icon}</span>

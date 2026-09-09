@@ -1,10 +1,30 @@
-import { NextResponse } from "next/server";
 import { callModel } from "@/lib/ai-server-utils";
-import { sendStreamEvent, slugify } from "@/lib/app-utils";
-import type { ApiSettings, GeneratedProjectPayload } from "@/lib/store-types";
+import { sendStreamEvent, slugify, type StreamEvent } from "@/lib/app-utils";
+import type { ApiSettings, GeneratedProjectPayload, GeneratedChapter } from "@/lib/store-types";
+import { guardRequest } from "@/lib/api-guard";
 
 export const maxDuration = 300; // 5 minutes max duration for serverless functions
 export const dynamic = "force-dynamic";
+
+/** The subset of a project this route reads. */
+type TranslatableChapter = {
+  id: string;
+  title: string;
+  content: string;
+};
+
+type TranslatableProject = {
+  title: string;
+  description: string;
+  audience: string;
+  targetLength: number;
+  chapterCount: number;
+  seoKeywords: string[];
+  metaDescription: string;
+  blogTitle: string;
+  blogDraft: string;
+  chapters: TranslatableChapter[];
+};
 
 type RequestPayload = {
   api: ApiSettings;
@@ -12,15 +32,18 @@ type RequestPayload = {
     temperature: number;
     topP: number;
   };
-  project: any;
+  project: TranslatableProject;
   targetLanguage: string;
   tone: string;
 };
 
 export async function POST(request: Request) {
+  const blocked = guardRequest(request, { limit: 6 });
+  if (blocked) return blocked;
+
   const stream = new ReadableStream({
     async start(controller) {
-      const sendEvent = (data: any) => sendStreamEvent(controller, data);
+      const sendEvent = (data: StreamEvent) => sendStreamEvent(controller, data);
 
       try {
         const body = (await request.json()) as RequestPayload;
@@ -67,7 +90,7 @@ Description: ${project.description}`;
           else if (line.toLowerCase().startsWith('description:')) translatedDescription = line.substring(12).trim();
         }
 
-        const translatedChapters: any[] = [];
+        const translatedChapters: GeneratedChapter[] = [];
         
         // Translate Chapters
         for (let i = 0; i < project.chapters.length; i++) {
@@ -103,10 +126,11 @@ ${chapter.content}`;
           translatedChapters.push({
             id: slugify(translatedChapterTitle) + `-${Date.now()}`,
             title: translatedChapterTitle.replace(/^['"]|['"]$/g, ''), // Strip quotes if any
-            status: "Done",
+            status: "Done" as const,
             wordCount: translatedContent.split(/\s+/).filter(Boolean).length,
             content: translatedContent,
             summary: `Translated to ${targetLanguage}.`,
+            outline: [],
           });
 
           sendEvent({ type: "log", agent: "Translation Agent", message: `Chapter ${chapterNum} translated successfully.`, status: "success" });

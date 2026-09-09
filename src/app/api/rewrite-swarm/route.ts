@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
 import { callModel } from "@/lib/ai-server-utils";
-import { sendStreamEvent } from "@/lib/app-utils";
+import { sendStreamEvent, type StreamEvent } from "@/lib/app-utils";
 import type { ApiSettings } from "@/lib/store-types";
+import { guardRequest } from "@/lib/api-guard";
 
 export const maxDuration = 300;
 export const dynamic = "force-dynamic";
@@ -18,11 +18,14 @@ type RewriteRequest = {
 };
 
 export async function POST(request: Request) {
+  const blocked = guardRequest(request, { limit: 10 });
+  if (blocked) return blocked;
+
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
     async start(controller) {
-      const sendEvent = (data: any) => sendStreamEvent(controller, data);
+      const sendEvent = (data: StreamEvent) => sendStreamEvent(controller, data);
 
       try {
         const body = (await request.json()) as RewriteRequest;

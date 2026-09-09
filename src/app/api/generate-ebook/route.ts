@@ -1,10 +1,9 @@
-import { NextResponse } from "next/server";
-import type { ApiSettings, GeneratedProjectPayload } from "@/lib/store-types";
-import { providerDefaults } from "@/lib/ai-providers";
-import { robustParseJson, slugify, sendStreamEvent } from "@/lib/app-utils";
+import type { ApiSettings, GeneratedProjectPayload, OutlinePoint } from "@/lib/store-types";
+import { robustParseJson, slugify, sendStreamEvent, type StreamEvent } from "@/lib/app-utils";
 import { mdToHtml } from "@/lib/markdown-utils";
 import { getToneDirective } from "@/lib/tone-standards";
-import { isLiveAiReady } from "@/lib/ai-server-utils";
+import { callModel } from "@/lib/ai-server-utils";
+import { guardRequest } from "@/lib/api-guard";
 
 type RequestPayload = {
   api: ApiSettings;
@@ -35,121 +34,8 @@ type ChatResponse = {
 };
 
 
-function normalizeApi(api: ApiSettings): ApiSettings {
-  if (api.provider === "custom" || api.provider === "ollama" || api.provider === "ollama_cloud") {
-    let baseUrl = api.baseUrl || "";
-    if (baseUrl === "https://ollama.com" || baseUrl === "https://ollama.com/api" || baseUrl === "https://ollama.com/api/") {
-      baseUrl = "https://ollama.com/v1/chat/completions";
-    } else if (baseUrl === "http://localhost:11434" || baseUrl === "http://localhost:11434/api" || baseUrl === "http://localhost:11434/api/") {
-      baseUrl = "http://localhost:11434/v1/chat/completions";
-    }
-    return { ...api, baseUrl };
-  }
-
-  return {
-    ...api,
-    baseUrl: providerDefaults[api.provider].baseUrl,
-    model: api.model || providerDefaults[api.provider].model,
-  };
-}
-
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-
-async function callModel({
-  api,
-  systemPrompt,
-  userPrompt,
-  temperature,
-  topP,
-}: {
-  api: ApiSettings;
-  systemPrompt: string;
-  userPrompt: string;
-  temperature: number;
-  topP: number;
-}) {
-  const normalizedApi = normalizeApi(api);
-  const isClaude = normalizedApi.provider === "claude";
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
-
-  if (normalizedApi.apiKey) {
-    if (isClaude) {
-      headers["x-api-key"] = normalizedApi.apiKey;
-      headers["anthropic-version"] = "2023-06-01";
-    } else {
-      headers.Authorization = `Bearer ${normalizedApi.apiKey}`;
-    }
-  }
-
-  if (normalizedApi.provider === "openrouter") {
-    if (normalizedApi.siteUrl) headers["HTTP-Referer"] = normalizedApi.siteUrl;
-    if (normalizedApi.appName) headers["X-Title"] = normalizedApi.appName;
-  }
-
-  const bodyData: any = isClaude
-    ? {
-        model: normalizedApi.model,
-        system: systemPrompt,
-        messages: [{ role: "user", content: userPrompt }],
-        max_tokens: 4096,
-        temperature,
-        top_p: topP,
-      }
-    : {
-        model: normalizedApi.model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        temperature,
-        top_p: topP,
-      };
-
-  console.log("CALLING LLM:", normalizedApi.provider, normalizedApi.baseUrl);
-  const response = await fetch(normalizedApi.baseUrl, {
-    method: "POST",
-    headers,
-    body: JSON.stringify(bodyData),
-  });
-
-  let payload: any = {};
-  const contentType = response.headers.get("content-type") || "";
-  if (contentType.includes("application/json")) {
-    try {
-      payload = await response.json();
-    } catch (e) {
-      console.error("Failed to parse JSON response:", e);
-    }
-  } else {
-    const text = await response.text();
-    payload = { error: { message: text || response.statusText || `HTTP ${response.status}` } };
-  }
-
-  if (!response.ok) {
-    const errorMsg = payload.error?.message || (isClaude ? payload.error?.msg : null) || "The AI provider returned an error.";
-    throw new Error(errorMsg);
-  }
-
-  let text = "";
-  let total_tokens = 0;
-
-  if (isClaude && Array.isArray(payload.content)) {
-    text = payload.content.map((item: any) => item.text).join("\n").trim();
-    total_tokens = (payload.usage?.input_tokens || 0) + (payload.usage?.output_tokens || 0);
-  } else {
-    text = payload.choices?.[0]?.message?.content?.trim();
-    total_tokens = payload.usage?.total_tokens || 0;
-  }
-
-  if (!text) {
-    throw new Error("The AI provider returned an empty response.");
-  }
-
-  return { text, usage: { total_tokens } };
-}
 
 function buildFallbackProject(draft: RequestPayload["draft"]): GeneratedProjectPayload {
   const chapterCount = Math.max(3, Math.min(30, Math.round(draft.length / 1000)));
@@ -205,17 +91,21 @@ type Blueprint = {
   chapters: Array<{
     title: string;
     summary: string;
+    focus?: string;
     outline: string[];
   }>;
 };
 
 export async function POST(request: Request) {
+  const blocked = guardRequest(request, { limit: 6 });
+  if (blocked) return blocked;
+
   let draftForFallback: RequestPayload["draft"] | null = null;
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
     async start(controller) {
-      const sendEvent = (data: any) => sendStreamEvent(controller, data);
+      const sendEvent = (data: StreamEvent) => sendStreamEvent(controller, data);
 
       try {
         const body = (await request.json()) as RequestPayload;
@@ -291,7 +181,7 @@ ${bibliography}
         });
         sendEvent({ type: "usage", tokens: planningUsage.total_tokens });
         const planningResult = robustParseJson(planningText) || {};
-        const planning = planningResult as any;
+        const planning = planningResult as Partial<Blueprint>;
         sendEvent({ type: "log", agent: "Planning Agent", message: "Book blueprint and TOC finalized.", status: "success" });
 
         await sleep(500);
@@ -323,7 +213,7 @@ ${bibliography}
         }
 
         for (let i = 1; i <= targetChapterCount; i++) {
-          const plannedChapter = usePlannedChapters ? planning.chapters[i - 1] : null;
+          const plannedChapter = usePlannedChapters ? planning.chapters?.[i - 1] ?? null : null;
           const chapterContextTitle = plannedChapter ? plannedChapter.title : `Chapter ${i}`;
           
           sendEvent({ type: "log", agent: "Outline Agent", message: `Architecting ${chapterContextTitle}...`, status: "pending" });
@@ -384,7 +274,7 @@ CRITICAL DEPTH REQUIREMENT: You MUST generate ${bulletPointTarget} and for every
            const chapterNum = index + 1;
            let outlineListHtml = "";
            if (Array.isArray(outline) && outline.length > 0) {
-             outlineListHtml = `<ul style="list-style-type: none; padding-left: 0;">\n${outline.map((o: any, idx: number) => {
+             outlineListHtml = `<ul style="list-style-type: none; padding-left: 0;">\n${outline.map((o: OutlinePoint, idx: number) => {
                if (typeof o === 'string') return `<li>${o}</li>`;
                if (o.point && Array.isArray(o.subpoints)) {
                    // Clean up existing numbers AI might have added to avoid triple numbering

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAppStore } from "@/lib/app-store";
-import { User, UserPlan, UserFeatures } from "@/lib/store-types";
+import { User, UserPlan, UserFeatures, UpgradeRequest } from "@/lib/store-types";
 
 export default function AdminDashboard() {
   const users = useAppStore((state) => state.users);
@@ -171,7 +171,7 @@ export default function AdminDashboard() {
     setEditingUser(null);
   };
 
-  const handleApproveRequest = (req: any) => {
+  const handleApproveRequest = (req: UpgradeRequest) => {
     const user = users.find((u) => u.id === req.userId);
     if (user) {
       const nextFeatures = {
@@ -456,7 +456,7 @@ export default function AdminDashboard() {
                 <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Role</span>
                 <select
                   value={roleFilter}
-                  onChange={(e) => setRoleFilter(e.target.value as any)}
+                  onChange={(e) => setRoleFilter(e.target.value as "all" | "user" | "admin")}
                   className="bg-surface border border-outline-variant/20 rounded-lg py-1.5 px-3 text-on-surface text-xs font-semibold outline-none"
                 >
                   <option value="all">All Roles</option>
@@ -469,7 +469,7 @@ export default function AdminDashboard() {
                 <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Status</span>
                 <select
                   value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as any)}
+                  onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "suspended")}
                   className="bg-surface border border-outline-variant/20 rounded-lg py-1.5 px-3 text-on-surface text-xs font-semibold outline-none"
                 >
                   <option value="all">All Statuses</option>

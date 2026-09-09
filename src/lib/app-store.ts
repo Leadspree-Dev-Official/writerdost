@@ -860,9 +860,9 @@ export const useAppStore = create<AppStore>()(
         const lines = rawLines.filter(Boolean);
         if (lines.length === 0) return;
 
-        let title = lines[0];
+        const title = lines[0];
         let audience = "";
-        let chapters: OutlineChapter[] = [];
+        const chapters: OutlineChapter[] = [];
 
         // Identify sections by keywords
         const descriptionIdx = rawLines.findIndex((l) => l.toUpperCase().includes("DESCRIPTION"));
@@ -1251,7 +1251,7 @@ export const useAppStore = create<AppStore>()(
         if (users.some((u) => u.email.toLowerCase() === userPayload.email.toLowerCase())) {
           return { success: false, error: "A user with this email already exists." };
         }
-        const plan = (userPayload as any).plan || "Basic";
+        const plan = userPayload.plan || "Basic";
         const defaultFeatures: UserFeatures = {
           createEbook: true,
           rewriteEbook: plan === "Pro" || plan === "Enterprise",
@@ -1261,7 +1261,7 @@ export const useAppStore = create<AppStore>()(
         const newUser: User = {
           ...userPayload,
           plan,
-          allowedFeatures: (userPayload as any).allowedFeatures || defaultFeatures,
+          allowedFeatures: userPayload.allowedFeatures || defaultFeatures,
           id: Math.random().toString(36).substring(7),
           registeredAt: new Date().toISOString(),
         } as User;
@@ -1334,8 +1334,8 @@ export const useAppStore = create<AppStore>()(
         })),
       applyOptimization: (type) => {
         const { api, settings } = get();
-        let newApi = { ...api };
-        let newSettings = { ...settings };
+        const newApi = { ...api };
+        const newSettings = { ...settings };
 
         if (type === "cost") {
           newSettings.temperature = 0.5;

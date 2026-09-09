@@ -3,9 +3,7 @@
 import { ChangeEvent, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/app-store";
-import { calculateProjectWords, robustParseJson, STREAM_DELIMITER } from "@/lib/app-utils";
-import type { GeneratedProjectPayload } from "@/lib/store-types";
-import { GenerationOverlay } from "@/components/ui/GenerationOverlay";
+import { robustParseJson, STREAM_DELIMITER } from "@/lib/app-utils";
 
 import { TONES, TONE_GUIDE } from "@/lib/tone-standards";
 

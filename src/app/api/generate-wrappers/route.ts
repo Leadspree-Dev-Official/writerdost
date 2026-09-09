@@ -1,115 +1,20 @@
 import { NextRequest } from "next/server";
-import { providerDefaults } from "@/lib/ai-providers";
-import type { ApiSettings } from "@/lib/store-types";
-import { STREAM_DELIMITER, robustParseJson } from "@/lib/app-utils";
-import { slugify } from "@/lib/app-utils";
-import { normalizeApi } from "@/lib/ai-server-utils";
-
-async function callModel({
-  api,
-  systemPrompt,
-  userPrompt,
-  temperature,
-  topP,
-}: {
-  api: ApiSettings;
-  systemPrompt: string;
-  userPrompt: string;
-  temperature: number;
-  topP?: number;
-}) {
-  const normalizedApi = normalizeApi(api);
-  const isClaude = normalizedApi.provider === "claude";
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
-
-  if (normalizedApi.apiKey) {
-    if (isClaude) {
-      headers["x-api-key"] = normalizedApi.apiKey;
-      headers["anthropic-version"] = "2023-06-01";
-    } else {
-      headers.Authorization = `Bearer ${normalizedApi.apiKey}`;
-    }
-  }
-
-  if (normalizedApi.provider === "openrouter") {
-    if (normalizedApi.siteUrl) headers["HTTP-Referer"] = normalizedApi.siteUrl;
-    if (normalizedApi.appName) headers["X-Title"] = normalizedApi.appName;
-  }
-
-  const bodyData: any = isClaude
-    ? {
-        model: normalizedApi.model,
-        system: systemPrompt,
-        messages: [{ role: "user", content: userPrompt }],
-        max_tokens: 4096,
-        temperature,
-        topP,
-      }
-    : {
-        model: normalizedApi.model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        temperature,
-        top_p: topP,
-      };
-
-  let text = "";
-  let total_tokens = 0;
-
-  const abortController = new AbortController();
-  const timeoutId = setTimeout(() => abortController.abort(), 300000); // 5 minutes
-
-  try {
-    const response = await fetch(normalizedApi.baseUrl, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(bodyData),
-      signal: abortController.signal,
-    });
-    clearTimeout(timeoutId);
-
-    const payload = await response.json();
-
-    if (!response.ok) {
-      const errorMsg = payload.error?.message || (isClaude ? payload.error?.msg : null) || "The AI provider returned an error.";
-      throw new Error(errorMsg);
-    }
-
-    if (isClaude && Array.isArray(payload.content)) {
-      text = payload.content.map((item: any) => item.text).join("\n").trim();
-      total_tokens = (payload.usage?.input_tokens || 0) + (payload.usage?.output_tokens || 0);
-    } else {
-      text = payload.choices?.[0]?.message?.content?.trim();
-      total_tokens = payload.usage?.total_tokens || 0;
-    }
-
-    if (!text) {
-      throw new Error("The AI provider returned an empty response.");
-    }
-
-    return { text, usage: { total_tokens } };
-  } catch (error: any) {
-    clearTimeout(timeoutId);
-    if (error.name === "AbortError") {
-      throw new Error("AI provider timed out after 5 minutes.");
-    }
-    throw error;
-  }
-}
+import { STREAM_DELIMITER, type StreamEvent } from "@/lib/app-utils";
+import { callModel } from "@/lib/ai-server-utils";
+import { guardRequest } from "@/lib/api-guard";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
+  const blocked = guardRequest(req, { limit: 6 });
+  if (blocked) return blocked;
+
   const { project, api, settings, profile } = await req.json();
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
-      const sendEvent = (data: any) => {
+      const sendEvent = (data: StreamEvent) => {
         controller.enqueue(encoder.encode(JSON.stringify(data) + STREAM_DELIMITER));
       };
 
@@ -159,7 +64,7 @@ export async function POST(req: NextRequest) {
             id: 'front-toc',
             title: 'Table of Contents',
             outline: [],
-            content: `<h2>Table of Contents</h2>\n<ul>\n${project.chapters.map((ch: any) => `<li><strong>${ch.title}</strong></li>`).join('\n')}\n</ul>\n<blockquote><p><em>✏️ Note: Page numbers and live anchors will be generated automatically upon PDF export.</em></p></blockquote>`,
+            content: `<h2>Table of Contents</h2>\n<ul>\n${project.chapters.map((ch: { title: string }) => `<li><strong>${ch.title}</strong></li>`).join('\n')}\n</ul>\n<blockquote><p><em>✏️ Note: Page numbers and live anchors will be generated automatically upon PDF export.</em></p></blockquote>`,
             summary: "Auto-generated Table of Contents",
             status: "Done" as const,
             wordCount: project.chapters.length * 5

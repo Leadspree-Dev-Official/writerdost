@@ -8,6 +8,31 @@ import GlobalOverlay from "@/components/GlobalOverlay";
 import AuthGuard from "@/components/AuthGuard";
 import { useAppStore } from "@/lib/app-store";
 
+/**
+ * Decorative star positions. These are generated once from a fixed seed rather
+ * than with Math.random() at render time: random values differ between the
+ * server pass and the client pass, which makes React discard the markup and
+ * warn about a hydration mismatch.
+ */
+const STAR_FIELD = (() => {
+  let seed = 1337;
+  const next = () => {
+    // Mulberry32 — small, deterministic, good enough for scatter.
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+
+  return Array.from({ length: 20 }, () => ({
+    size: next() * 2 + 1,
+    left: next() * 100,
+    top: next() * 100,
+    duration: next() * 4 + 3,
+    delay: next() * 5,
+  }));
+})();
+
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAuthPage = pathname === "/login" || pathname === "/signup";
@@ -56,28 +81,20 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
 
             {/* Minimal Subtle Twinkling Stars */}
             <div className="absolute inset-0 opacity-40">
-              {[...Array(20)].map((_, i) => {
-                const size = Math.random() * 2 + 1;
-                const left = Math.random() * 100;
-                const top = Math.random() * 100;
-                const duration = Math.random() * 4 + 3;
-                const delay = Math.random() * 5;
-
-                return (
-                  <div
-                    key={i}
-                    className="absolute rounded-full bg-white shadow-sm"
-                    style={{
-                      width: `${size}px`,
-                      height: `${size}px`,
-                      left: `${left}%`,
-                      top: `${top}%`,
-                      animation: `twinkle ${duration}s ease-in-out infinite`,
-                      animationDelay: `${delay}s`
-                    }}
-                  />
-                );
-              })}
+              {STAR_FIELD.map((star, i) => (
+                <div
+                  key={i}
+                  className="absolute rounded-full bg-white shadow-sm"
+                  style={{
+                    width: `${star.size}px`,
+                    height: `${star.size}px`,
+                    left: `${star.left}%`,
+                    top: `${star.top}%`,
+                    animation: `twinkle ${star.duration}s ease-in-out infinite`,
+                    animationDelay: `${star.delay}s`,
+                  }}
+                />
+              ))}
             </div>
           </div>
 

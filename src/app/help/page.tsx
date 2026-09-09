@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/lib/app-store";
 import { generateAiText } from "@/lib/ai-client";
@@ -87,8 +86,8 @@ export default function HelpPage() {
         userPrompt: searchQuery,
       });
       setAiResponse(response);
-    } catch (err: any) {
-      setAiError(err.message || "Failed to get AI response.");
+    } catch (err: unknown) {
+      setAiError(err instanceof Error ? err.message : "Failed to get AI response.");
     } finally {
       setIsAiSearching(false);
     }
@@ -210,7 +209,7 @@ export default function HelpPage() {
                   )}
 
                   {!isAiSearching && !aiResponse && !aiError && (
-                    <p className="text-xs text-slate-500 italic">Type your question and press Enter or click 'Ask AI' for intelligent help.</p>
+                    <p className="text-xs text-slate-500 italic">Type your question and press Enter or click &apos;Ask AI&apos; for intelligent help.</p>
                   )}
                 </div>
 

@@ -2,6 +2,24 @@ import { Project } from "./app-store";
 import { htmlToText } from "./markdown-utils";
 import { Document, Packer, Paragraph, HeadingLevel, AlignmentType, TextRun, PageBreak } from "docx";
 
+/** A node in the docx body we assemble while walking the chapter HTML. */
+type DocxNode = Paragraph | TextRun;
+
+/** Inline run formatting carried down through nested elements. */
+type RunStyles = {
+  bold?: boolean;
+  /** docx spells this "italics" — "italic" is silently ignored. */
+  italics?: boolean;
+  underline?: Record<string, never>;
+  color?: string;
+  size?: number;
+};
+
+/** Block formatting inherited from the enclosing element. */
+type BlockStyles = {
+  alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
+};
+
 /**
  * Generates a plain text representation of the entire project manuscript.
  */
@@ -73,7 +91,7 @@ export async function downloadDocx(project: Project) {
           ...project.chapters.flatMap((chapter, index) => {
             const parser = new DOMParser();
             const doc = parser.parseFromString(chapter.content, "text/html");
-            const children: any[] = [];
+            const children: Paragraph[] = [];
 
             // Add Page Break before every chapter except the first
             if (index > 0) {
@@ -105,8 +123,8 @@ export async function downloadDocx(project: Project) {
             const spacingAfter = pxToTwips(ds?.paragraphAfter, 180);
 
             // Parse body content
-            const walk = (node: Node, styles: any = {}, parentStyles: any = {}): any[] => {
-              const nodes: any[] = [];
+            const walk = (node: Node, styles: RunStyles = {}, parentStyles: BlockStyles = {}): DocxNode[] => {
+              const nodes: DocxNode[] = [];
               node.childNodes.forEach((child) => {
                 if (child.nodeType === Node.TEXT_NODE) {
                   const text = child.textContent || "";
@@ -147,7 +165,7 @@ export async function downloadDocx(project: Project) {
                       ...styles, 
                       color: color || "000000", 
                       bold: true,
-                      italic: styles.italic || false
+                      italics: styles.italics || false
                     };
                     
                     const size = sizeMap[tagName as keyof typeof sizeMap];
@@ -163,7 +181,7 @@ export async function downloadDocx(project: Project) {
                   } else if (tagName === "strong" || tagName === "b") {
                     nodes.push(...walk(el, { ...styles, color, bold: true }, { alignment }));
                   } else if (tagName === "em" || tagName === "i") {
-                    nodes.push(...walk(el, { ...styles, color, italic: true }, { alignment }));
+                    nodes.push(...walk(el, { ...styles, color, italics: true }, { alignment }));
                   } else if (tagName === "u") {
                     nodes.push(...walk(el, { ...styles, color, underline: {} }, { alignment }));
                   } else if (tagName === "br") {
@@ -180,7 +198,7 @@ export async function downloadDocx(project: Project) {
 
             const parsedContent = walk(doc.body);
             // Some elements might be flat TextRuns that need to be wrapped in a Paragraph
-            let currentParagraphChildren: any[] = [];
+            let currentParagraphChildren: DocxNode[] = [];
             
             parsedContent.forEach((node) => {
               if (node instanceof Paragraph) {

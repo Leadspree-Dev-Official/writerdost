@@ -1,7 +1,37 @@
 import type { NextConfig } from "next";
 
+/**
+ * Applied to every response. `unsafe-inline`/`unsafe-eval` are required by
+ * Next's dev overlay and the inline theme script; tighten with a nonce if the
+ * app later moves to a stricter CSP.
+ */
+const securityHeaders = [
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "X-Frame-Options", value: "SAMEORIGIN" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "X-DNS-Prefetch-Control", value: "off" },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+  },
+  {
+    key: "Strict-Transport-Security",
+    value: "max-age=63072000; includeSubDomains; preload",
+  },
+];
+
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Silences the multi-lockfile warning by pinning the workspace root here.
+  turbopack: {
+    root: __dirname,
+  },
+
+  // Do not advertise the framework version to attackers.
+  poweredByHeader: false,
+
+  async headers() {
+    return [{ source: "/:path*", headers: securityHeaders }];
+  },
 };
 
 export default nextConfig;

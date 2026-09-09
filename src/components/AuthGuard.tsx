@@ -11,8 +11,10 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const [isHydrated, setIsHydrated] = useState(false);
 
   // Wait for store hydration to avoid premature redirects
+  // Zustand's persist middleware fills the store on the client only. Until
+  // that has happened `currentUser` is null everywhere, so redirecting before
+  // this flips would bounce a signed-in user to /login on every refresh.
   useEffect(() => {
-    // Zustand's persist hydrates on the client side, we wait one tick
     setIsHydrated(true);
   }, []);
 

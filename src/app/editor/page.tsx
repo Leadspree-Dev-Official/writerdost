@@ -3,11 +3,10 @@
 import Editor from "@/components/ui/Editor";
 import { DesignSettings } from "@/components/DesignSettings";
 import { generateAiText } from "@/lib/ai-client";
-import { useAppStore } from "@/lib/app-store";
+import { useAppStore, type ProjectChapter } from "@/lib/app-store";
 import { findChapterById, findProjectById, calculateProjectWords, robustParseJson, STREAM_DELIMITER } from "@/lib/app-utils";
 import { htmlToText, mdToHtml } from "@/lib/markdown-utils";
 import { useState, useEffect, useRef } from "react";
-import { GenerationOverlay } from "@/components/ui/GenerationOverlay";
 import clsx from "clsx";
 
 
@@ -73,6 +72,8 @@ export default function EditorPage() {
       const draftStartTime = Date.now();
       const controller = new AbortController();
       setAbortController(controller);
+      // Read outside the render path (this runs in a click handler), so the
+      // store snapshot cannot desync from what React rendered.
       useAppStore.getState().setCancelGeneration(handleCancelGeneration);
 
       const response = await fetch("/api/draft-chapters", {
@@ -152,11 +153,11 @@ export default function EditorPage() {
           }
         }
       }
-    } catch (error: any) {
-      if (error.name === "AbortError") {
+    } catch (error: unknown) {
+      if (error instanceof Error && error.name === "AbortError") {
         addGenerationLog({ agent: "System", message: "Drafting paused.", status: "error" });
       } else {
-        addGenerationLog({ agent: "System", message: error.message || "Drafting failed.", status: "error" });
+        addGenerationLog({ agent: "System", message: (error instanceof Error ? error.message : String(error)) || "Drafting failed.", status: "error" });
       }
     } finally {
       setTimeout(() => {
@@ -179,6 +180,8 @@ export default function EditorPage() {
       const wrapperStartTime = Date.now();
       const controller = new AbortController();
       setAbortController(controller);
+      // Read outside the render path (this runs in a click handler), so the
+      // store snapshot cannot desync from what React rendered.
       useAppStore.getState().setCancelGeneration(handleCancelGeneration);
 
       const response = await fetch("/api/generate-wrappers", {
@@ -214,10 +217,10 @@ export default function EditorPage() {
             } else if (event.type === "final" && event.wrappers) {
               setGenerationProgress(100);
               
-              let newChapters = [...project.chapters];
+              const newChapters = [...project.chapters];
               
               // Smart merge to handle placeholders and correct positioning
-              event.wrappers.forEach((wrapper: any) => {
+              event.wrappers.forEach((wrapper: ProjectChapter) => {
                 // Find if a placeholder with a similar title exists
                 const existingIndex = newChapters.findIndex(ch => 
                   ch.title.toLowerCase() === wrapper.title.toLowerCase() || 
@@ -266,9 +269,9 @@ export default function EditorPage() {
           }
         }
       }
-    } catch (error: any) {
-      setMessage(error.message || "Wrapper generation failed.");
-      addGenerationLog({ agent: "System", message: error.message || "Wrapper generation failed.", status: "error" });
+    } catch (error: unknown) {
+      setMessage((error instanceof Error ? error.message : String(error)) || "Wrapper generation failed.");
+      addGenerationLog({ agent: "System", message: (error instanceof Error ? error.message : String(error)) || "Wrapper generation failed.", status: "error" });
     } finally {
       setTimeout(() => {
         finishGeneration();
@@ -702,8 +705,8 @@ export default function EditorPage() {
                 
                 setGenerationProgress(100);
               } catch (error) {
-                addGenerationLog({ agent: "Editorial Agent", message: error instanceof Error ? error.message : "AI assist failed.", status: "error" });
-                setMessage(error instanceof Error ? error.message : "AI assist failed.");
+                addGenerationLog({ agent: "Editorial Agent", message: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : "AI assist failed.", status: "error" });
+                setMessage(error instanceof Error ? (error instanceof Error ? error.message : String(error)) : "AI assist failed.");
               } finally {
                 setAiAssistLoading(false);
                 setTimeout(() => finishGeneration(), 2000);

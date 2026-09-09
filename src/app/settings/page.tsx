@@ -80,29 +80,36 @@ export default function SettingsPage() {
   const updateApiSettings = useAppStore((state) => state.updateApiSettings);
   const [message, setMessage] = useState("");
   const [testing, setTesting] = useState(false);
-  const [isCustomModelEditing, setIsCustomModelEditing] = useState(false);
+  // null = follow the provider default; true/false = the user chose explicitly.
+  const [customModelOverride, setCustomModelOverride] = useState<boolean | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<"untested" | "success" | "failed">("untested");
-  const [isCustomInput, setIsCustomInput] = useState(false);
+  const [isCustomInput, setIsCustomInput] = useState(
+    () =>
+      !presetRates.includes(useAppStore.getState().usage.inputTokenRate) ||
+      !presetRates.includes(useAppStore.getState().usage.outputTokenRate),
+  );
   const [customInputRate, setCustomInputRate] = useState("");
   const [customOutputRate, setCustomOutputRate] = useState("");
 
-  useEffect(() => {
-    if (!presetRates.includes(useAppStore.getState().usage.inputTokenRate) || !presetRates.includes(useAppStore.getState().usage.outputTokenRate)) {
-      setIsCustomInput(true);
-    }
-  }, []);
-
+  // Mirrors the persisted rates into the text inputs when they change outside
+  // this form (store rehydration, or the preset dropdown writing a new rate).
   useEffect(() => {
     setCustomInputRate(usage.inputTokenRate.toString());
     setCustomOutputRate(usage.outputTokenRate.toString());
   }, [isCustomInput, usage.inputTokenRate, usage.outputTokenRate]);
 
+  // Any credential change invalidates the previous test result.
   useEffect(() => {
     setConnectionStatus("untested");
     setMessage("");
   }, [api.provider, api.model, api.baseUrl, api.apiKey]);
   
   const usesPresetModels = ["openai", "claude", "gemini", "deepseek", "openrouter", "ollama", "ollama_cloud"].includes(api.provider);
+
+  // Providers with presets start on the dropdown; custom providers start in
+  // free-text mode. Derived rather than synced in an effect so switching
+  // provider cannot render one frame with the previous provider's mode.
+  const isCustomModelEditing = customModelOverride ?? !usesPresetModels;
   
   const hasRequiredKey = api.provider === "ollama" || api.provider === "ollama_cloud" || Boolean(api.apiKey);
   const hasBasicConfig = Boolean(api.baseUrl && api.model);
@@ -133,14 +140,6 @@ export default function SettingsPage() {
     statusTextClass = "text-blue-500 dark:text-blue-400";
   }
 
-  // Deeplink: Always reset to dropdown mode when switching to a provider with presets
-  useEffect(() => {
-    if (usesPresetModels) {
-      setIsCustomModelEditing(false);
-    } else {
-      setIsCustomModelEditing(true);
-    }
-  }, [api.provider, usesPresetModels]);
   const activeModelOptions =
     api.provider === "openrouter"
       ? modelOptions.openrouter
@@ -249,7 +248,7 @@ export default function SettingsPage() {
                   onChange={(event) => {
                     const provider = event.target.value as typeof api.provider;
                     updateApiSettings({ provider });
-                    setIsCustomModelEditing(!(provider === "openrouter" || provider === "ollama" || provider === "ollama_cloud"));
+                    setCustomModelOverride(!(provider === "openrouter" || provider === "ollama" || provider === "ollama_cloud"));
                   }}
                 >
                   <option value="openai">OpenAI</option>
@@ -269,7 +268,7 @@ export default function SettingsPage() {
                   {usesPresetModels ? (
                     <button
                       className="text-xs font-bold text-primary hover:underline"
-                      onClick={() => setIsCustomModelEditing((value) => !value)}
+                      onClick={() => setCustomModelOverride(!isCustomModelEditing)}
                       type="button"
                     >
                       {isCustomModelEditing ? "Use Dropdown" : "Edit"}
@@ -585,7 +584,7 @@ export default function SettingsPage() {
                   className="bg-primary/10 text-primary px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 cursor-pointer hover:bg-primary/20 transition-all active:scale-95" 
                   type="button"
                   onClick={() => {
-                    useAppStore.getState().applyOptimization(item.type as any);
+                    useAppStore.getState().applyOptimization(item.type as "cost" | "speed" | "quality");
                     setMessage(`Optimization applied: ${item.label}. API settings and model parameters have been updated.`);
                   }}
                 >

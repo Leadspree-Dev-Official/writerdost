@@ -1,121 +1,16 @@
-import { robustParseJson, sendStreamEvent, slugify } from "@/lib/app-utils";
+import { sendStreamEvent, type StreamEvent } from "@/lib/app-utils";
 import { mdToHtml } from "@/lib/markdown-utils";
-import type { ApiSettings } from "@/lib/store-types";
-import { providerDefaults } from "@/lib/ai-providers";
 import { EBOOK_FORMATTING_STANDARDS } from "@/lib/ebook-standards";
 import { getToneDirective } from "@/lib/tone-standards";
-import { normalizeApi } from "@/lib/ai-server-utils";
-
-async function callModel({
-  api,
-  systemPrompt,
-  userPrompt,
-  temperature,
-  topP,
-}: {
-  api: ApiSettings;
-  systemPrompt: string;
-  userPrompt: string;
-  temperature: number;
-  topP: number;
-}) {
-  const normalizedApi = normalizeApi(api);
-  const isClaude = normalizedApi.provider === "claude";
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
-
-  if (normalizedApi.apiKey) {
-    if (isClaude) {
-      headers["x-api-key"] = normalizedApi.apiKey;
-      headers["anthropic-version"] = "2023-06-01";
-    } else {
-      headers.Authorization = `Bearer ${normalizedApi.apiKey}`;
-    }
-  }
-
-  if (normalizedApi.provider === "openrouter") {
-    if (normalizedApi.siteUrl) headers["HTTP-Referer"] = normalizedApi.siteUrl;
-    if (normalizedApi.appName) headers["X-Title"] = normalizedApi.appName;
-  }
-
-  const bodyData: any = isClaude
-    ? {
-        model: normalizedApi.model,
-        system: systemPrompt,
-        messages: [{ role: "user", content: userPrompt }],
-        max_tokens: 4096,
-        temperature,
-        topP,
-      }
-    : {
-        model: normalizedApi.model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        temperature,
-        top_p: topP,
-      };
-
-  let text = "";
-  let total_tokens = 0;
-
-  const abortController = new AbortController();
-  const timeoutId = setTimeout(() => abortController.abort(), 300000); // 5 minutes
-
-  try {
-    const response = await fetch(normalizedApi.baseUrl, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(bodyData),
-      signal: abortController.signal,
-    });
-    clearTimeout(timeoutId);
-
-    let payload: any = {};
-    const contentType = response.headers.get("content-type") || "";
-    if (contentType.includes("application/json")) {
-      try {
-        payload = await response.json();
-      } catch (e) {
-        console.error("Failed to parse JSON response:", e);
-      }
-    } else {
-      const text = await response.text();
-      payload = { error: { message: text || response.statusText || `HTTP ${response.status}` } };
-    }
-
-    if (!response.ok) {
-      const errorMsg = payload.error?.message || (isClaude ? payload.error?.msg : null) || "The AI provider returned an error.";
-      throw new Error(errorMsg);
-    }
-
-    if (isClaude && Array.isArray(payload.content)) {
-      text = payload.content.map((item: any) => item.text).join("\n").trim();
-      total_tokens = (payload.usage?.input_tokens || 0) + (payload.usage?.output_tokens || 0);
-    } else {
-      text = payload.choices?.[0]?.message?.content?.trim();
-      total_tokens = payload.usage?.total_tokens || 0;
-    }
-
-    if (!text) {
-      throw new Error("The AI provider returned an empty response.");
-    }
-
-    return { text, usage: { total_tokens } };
-  } catch (error: any) {
-    clearTimeout(timeoutId);
-    if (error.name === "AbortError") {
-      throw new Error("AI provider timed out after 5 minutes.");
-    }
-    throw error;
-  }
-}
+import { callModel } from "@/lib/ai-server-utils";
+import { guardRequest } from "@/lib/api-guard";
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function POST(req: Request) {
+  const blocked = guardRequest(req, { limit: 6 });
+  if (blocked) return blocked;
+
   const { project, api, settings } = await req.json();
 
   if (!project || !api || !settings) {
@@ -126,7 +21,7 @@ export async function POST(req: Request) {
 
   const stream = new ReadableStream({
     async start(controller) {
-      const sendEvent = (data: any) => sendStreamEvent(controller, data);
+      const sendEvent = (data: StreamEvent) => sendStreamEvent(controller, data);
       const heartbeat = setInterval(() => sendEvent({ type: "ping" }), 20000);
 
       try {

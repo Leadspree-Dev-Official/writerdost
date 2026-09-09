@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
 import { callModel } from "@/lib/ai-server-utils";
-import { sendStreamEvent, slugify } from "@/lib/app-utils";
+import { sendStreamEvent, slugify, type StreamEvent } from "@/lib/app-utils";
 import { mdToHtml } from "@/lib/markdown-utils";
 import { getToneDirective } from "@/lib/tone-standards";
-import type { ApiSettings, GeneratedProjectPayload } from "@/lib/store-types";
+import type { ApiSettings, GeneratedProjectPayload, GeneratedChapter } from "@/lib/store-types";
+import { guardRequest } from "@/lib/api-guard";
 
 export const maxDuration = 300;
 export const dynamic = "force-dynamic";
@@ -27,11 +27,14 @@ type RequestPayload = {
 };
 
 export async function POST(request: Request) {
+  const blocked = guardRequest(request, { limit: 6 });
+  if (blocked) return blocked;
+
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
     async start(controller) {
-      const sendEvent = (data: any) => sendStreamEvent(controller, data);
+      const sendEvent = (data: StreamEvent) => sendStreamEvent(controller, data);
 
       try {
         const body = (await request.json()) as RequestPayload;
@@ -69,7 +72,7 @@ Do NOT return anything except the JSON array. Do not use markdown blocks like \`
           console.error("Failed to parse spun outline, falling back to original:", e);
         }
 
-        const chapters: any[] = [];
+        const chapters: GeneratedChapter[] = [];
         const totalChapters = spunChapters.length;
         const wordsPerChapter = Math.round(outline.targetLength / (totalChapters || 1));
 
@@ -114,7 +117,8 @@ Instructions: Expand these topics into deep, insightful prose. Do not just list 
           chapters.push({
             id: slugify(chapterData.title),
             title: chapterData.title,
-            status: "Done",
+            outline: [],
+            status: "Done" as const,
             wordCount: proseMd.split(/\s+/).filter(Boolean).length,
             content: chapterTitleHeader + mdToHtml(proseMd),
             summary: `Content generated from provided topics for ${chapterData.title}.`,
