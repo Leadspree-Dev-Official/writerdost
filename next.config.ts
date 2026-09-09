@@ -30,7 +30,15 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
 
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    // `next dev` serves some internal manifests with a JSON content type but
+    // loads them as scripts, which nosniff blocks. Skip that one dev-only path;
+    // production builds get the headers everywhere.
+    const source =
+      process.env.NODE_ENV === "development"
+        ? "/((?!_next/static/development).*)"
+        : "/:path*";
+
+    return [{ source, headers: securityHeaders }];
   },
 };
 

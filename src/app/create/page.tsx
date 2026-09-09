@@ -7,7 +7,6 @@ import { robustParseJson, STREAM_DELIMITER } from "@/lib/app-utils";
 
 import { TONES, TONE_GUIDE } from "@/lib/tone-standards";
 
-const tones = TONES;
 
 export default function IdeaAndInput() {
   const router = useRouter();
@@ -221,230 +220,236 @@ export default function IdeaAndInput() {
 
   return (
     <>
-      <div className="flex-1 p-10 max-w-5xl mx-auto w-full">
-        <div className="mb-12">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-bold tracking-[0.2em] text-primary uppercase">Step 01 of 09: Concept Generation</span>
-            <span className="text-[10px] font-bold tracking-[0.2em] text-on-surface-variant uppercase">
-              Progress: {Math.min(95, Math.round((createDraft.vision.length / 6 + createDraft.audience.length / 3) / 2))}%
-            </span>
+      <div className="page">
+        <div className="page-head">
+          <div>
+            <h1 className="page-title">New ebook</h1>
+            <p className="page-sub">
+              Describe the book once. Quick draft creates the project immediately; the agents research,
+              plan and write the chapters for you.
+            </p>
           </div>
-          <div className="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden flex gap-1">
-            <div
-              className="h-full bg-gradient-to-br from-primary to-primary-container rounded-full transition-all duration-500"
-              style={{ width: `${Math.min(95, Math.round((createDraft.vision.length / 6 + createDraft.audience.length / 3) / 2))}%` }}
-            />
-            <div className="flex-1 h-full bg-surface-container/50 rounded-full" />
+          <div className="flex items-center gap-2">
+            <button
+              className="btn btn-secondary btn-lg"
+              onClick={() => {
+                const project = createProjectFromDraft();
+                setMessage(`Created "${project.title}".`);
+                router.push("/editor");
+              }}
+              type="button"
+            >
+              Quick draft
+            </button>
+            <button
+              className="btn btn-primary btn-lg"
+              onClick={handleGenerateWithAI}
+              disabled={isGenerating}
+              type="button"
+            >
+              <span className="material-symbols-outlined">auto_awesome</span>
+              {isGenerating ? "Running agents…" : "Generate with agents"}
+            </button>
           </div>
         </div>
 
-        <div className="mb-10 text-center">
-          <h2 className="text-4xl md:text-5xl font-extrabold text-on-surface tracking-tight mb-4">Start Your New Masterpiece</h2>
-          <p className="text-on-surface-variant text-lg max-w-2xl mx-auto leading-relaxed">
-            Define the vision once, then move directly into an editable project with working chapters, blog support, and settings tied to your profile.
+        {message && (
+          <p
+            role="status"
+            className="mb-4 px-3 py-2 rounded-[var(--radius)] bg-emerald-500/10 border border-emerald-500/25 text-[12.5px] text-emerald-700 dark:text-emerald-400"
+          >
+            {message}
           </p>
-        </div>
+        )}
 
-        {message ? (
-          <div className="mb-8 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 p-4 text-sm text-emerald-500">{message}</div>
-        ) : null}
-
-        <div className="grid grid-cols-12 gap-6">
-          <div className="col-span-12 md:col-span-8">
-            <div className="bg-surface-container-lowest rounded-xl p-8 shadow-sm h-full border border-transparent hover:border-primary/20 transition-colors">
-              <label className="block text-[10px] font-bold tracking-widest text-slate-400 uppercase mb-4">The Vision</label>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2 min-w-0 space-y-4">
+            <div className="panel panel-pad">
+              <label htmlFor="vision" className="label">
+                What is the book about?
+              </label>
               <textarea
-                className="w-full bg-surface-container-low border-0 rounded-xl p-6 text-on-surface placeholder-slate-400 focus:ring-2 focus:ring-primary/20 text-lg resize-none outline-none"
-                placeholder="What's your ebook about? Describe the core topic, the problems it solves, or the story you want to tell..."
-                rows={8}
+                id="vision"
+                className="textarea min-h-[8.5rem]"
+                placeholder="The core topic, the problem it solves, or the story you want to tell."
                 value={createDraft.vision}
                 onChange={(event) => updateCreateDraft({ vision: event.target.value })}
               />
+              <p className="hint">The agents use this as the brief for research and chapter planning.</p>
             </div>
-          </div>
 
-          <div className="col-span-12 md:col-span-4">
-            <div className="bg-surface-container-lowest rounded-xl p-6 shadow-sm h-full border border-transparent flex flex-col">
-              <div className="flex items-center justify-between mb-4">
-                <label className="text-[10px] font-bold tracking-widest text-on-surface-variant uppercase">Research Hub</label>
-                <div className="flex gap-1 bg-surface-container p-1 rounded-lg">
-                  {(["file", "link", "youtube"] as const).map((t) => (
-                    <button
-                      key={t}
-                      className={`px-4 py-2 rounded-full text-xs font-bold border transition-all ${
-                        activeTab === t
-                          ? "bg-primary text-white border-primary shadow-md shadow-primary/10"
-                          : "bg-white dark:bg-white/[0.04] text-slate-500 dark:text-slate-400 border-slate-100 dark:border-white/[0.06] hover:border-primary/20"
-                      }`}
-                      onClick={() => setActiveTab(t)}
-                      type="button"
-                    >
-                      <span className="material-symbols-outlined text-sm">
-                        {t === "file" ? "upload_file" : t === "link" ? "link" : "smart_display"}
-                      </span>
-                    </button>
-                  ))}
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="panel panel-pad">
+                <label htmlFor="audience" className="label">
+                  Target audience
+                </label>
+                <input
+                  id="audience"
+                  className="input"
+                  placeholder="Early-stage founders, high-school teachers…"
+                  type="text"
+                  value={createDraft.audience}
+                  onChange={(event) => updateCreateDraft({ audience: event.target.value })}
+                />
               </div>
 
-              <div className="flex-1">
-                {activeTab === "file" ? (
-                  <label className="border-2 border-dashed border-outline-variant rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:border-primary/40 transition-colors">
-                    <span className="material-symbols-outlined text-on-surface-variant mb-2">cloud_upload</span>
-                    <p className="text-[10px] font-bold text-on-surface-variant uppercase">Upload PDF, TXT, DOCX</p>
-                    <input className="hidden" multiple type="file" onChange={handleFileChange} />
+              <div className="panel panel-pad">
+                <div className="flex items-baseline justify-between">
+                  <label htmlFor="length" className="label">
+                    Length
                   </label>
-                ) : (
-                  <div className="flex gap-2">
-                    <input
-                      className="flex-1 bg-surface-container-low border-0 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary/20 outline-none"
-                      placeholder={activeTab === "youtube" ? "Paste YouTube URL..." : "Paste Website URL..."}
-                      type="text"
-                      value={linkInput}
-                      onChange={(e) => setLinkInput(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleAddLink()}
-                    />
-                    <button
-                      className="bg-primary text-white p-2 rounded-lg hover:opacity-90 transition-opacity"
-                      onClick={handleAddLink}
-                      type="button"
-                    >
-                      <span className="material-symbols-outlined text-sm">add</span>
-                    </button>
-                  </div>
-                )}
-
-                <div className="mt-4 space-y-2 max-h-[180px] overflow-y-auto pr-1 thin-scrollbar">
-                  {(createDraft.researchSources || []).map((source) => (
-                    <div key={source.id} className="flex items-center justify-between bg-surface-container-low p-2.5 rounded-xl group animate-in fade-in slide-in-from-right-2 duration-300">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className={`material-symbols-outlined text-sm ${
-                          source.type === 'file' ? 'text-blue-500' : source.type === 'youtube' ? 'text-red-500' : 'text-emerald-500'
-                        }`}>
-                          {source.type === "file" ? "description" : source.type === "youtube" ? "play_circle" : "public"}
-                        </span>
-                        <span className="text-[11px] font-medium text-on-surface-variant truncate">{source.label}</span>
-                      </div>
-                      <button
-                        className="text-slate-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"
-                        onClick={() => removeResearchSource(source.id)}
-                        type="button"
-                      >
-                        <span className="material-symbols-outlined text-xs">close</span>
-                      </button>
-                    </div>
-                  ))}
-                  {!(createDraft.researchSources?.length) && (
-                    <div className="py-8 text-center">
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">No sources added</p>
-                    </div>
-                  )}
+                  <span className="text-[12.5px] font-semibold text-on-surface num">
+                    {createDraft.length.toLocaleString()} words
+                  </span>
+                </div>
+                <input
+                  id="length"
+                  className="w-full h-1 mt-2 bg-on-surface/12 rounded-full appearance-none cursor-pointer accent-primary"
+                  max="100000"
+                  min="1000"
+                  step="1000"
+                  type="range"
+                  value={createDraft.length}
+                  onChange={(event) => updateCreateDraft({ length: Number(event.target.value) })}
+                />
+                <div className="flex justify-between text-[11px] text-on-surface-variant mt-1.5">
+                  <span>1k</span>
+                  <span>100k</span>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="col-span-12 md:col-span-6">
-            <div className="bg-surface-container-lowest rounded-xl p-8 shadow-sm border border-transparent">
-              <label className="block text-[10px] font-bold tracking-widest text-on-surface-variant uppercase mb-4">Target Audience</label>
-              <input
-                className="w-full bg-white dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] rounded-2xl px-5 py-4 text-sm font-bold focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600 text-on-surface"
-                placeholder="e.g. Early-stage startup founders, High-school teachers..."
-                type="text"
-                value={createDraft.audience}
-                onChange={(event) => updateCreateDraft({ audience: event.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="col-span-12 md:col-span-6">
-            <div className="bg-surface-container-lowest rounded-xl p-8 shadow-sm border border-transparent">
-              <div className="flex justify-between items-center mb-4">
-                <label className="block text-[10px] font-bold tracking-widest text-on-surface-variant uppercase">Estimated Length</label>
-                <span className="text-primary font-bold text-sm">~{createDraft.length.toLocaleString()} words</span>
-              </div>
-              <input
-                className="w-full h-1.5 bg-surface-container-high rounded-lg appearance-none cursor-pointer accent-primary"
-                max="100000"
-                min="1000"
-                step="1000"
-                type="range"
-                value={createDraft.length}
-                onChange={(event) => updateCreateDraft({ length: Number(event.target.value) })}
-              />
-              <div className="flex justify-between text-[10px] text-on-surface-variant mt-2 font-medium">
-                <span>SHORT READ</span>
-                <span>FULL MASTERPIECE</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="col-span-12">
-            <div className="bg-surface-container-lowest rounded-xl p-8 shadow-sm border border-transparent">
-              <label className="block text-[10px] font-bold tracking-widest text-on-surface-variant uppercase mb-6">Tone & Style</label>
-              <div className="flex flex-wrap gap-4">
+            <div className="panel panel-pad">
+              <span className="label">Tone</span>
+              <div className="flex flex-wrap gap-1.5">
                 {TONES.map((tone) => (
                   <button
                     key={tone}
                     className={
                       createDraft.tone === tone
-                        ? "flex items-center gap-2 px-6 py-3 rounded-xl bg-primary/10 border border-primary/20 text-primary font-bold text-sm transition-all scale-[1.02] shadow-sm shadow-primary/10"
-                        : "flex items-center gap-2 px-6 py-3 rounded-xl bg-surface-container-low text-on-surface-variant hover:bg-surface-container transition-all font-semibold text-sm"
+                        ? "btn btn-sm bg-primary/12 text-primary border-primary/25"
+                        : "btn btn-sm btn-secondary"
                     }
+                    aria-pressed={createDraft.tone === tone}
                     onClick={() => updateCreateDraft({ tone })}
-                    title={`${TONE_GUIDE[tone].objective}\n\nRules: ${TONE_GUIDE[tone].execution}`}
+                    title={`${TONE_GUIDE[tone].objective}\n\n${TONE_GUIDE[tone].execution}`}
                     type="button"
                   >
-                    <span className="material-symbols-outlined text-lg">
-                      {TONE_GUIDE[tone].icon}
-                    </span>
+                    <span className="material-symbols-outlined text-[15px]">{TONE_GUIDE[tone].icon}</span>
                     {tone}
                   </button>
                 ))}
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="mt-12 flex items-center justify-between pb-12">
-          <button
-            className="flex items-center gap-2 text-on-surface-variant font-bold text-sm hover:text-on-surface transition-colors"
-            onClick={() => {
-              resetCreateDraft();
-              setMessage("Draft inputs cleared.");
-            }}
-            type="button"
-          >
-            <span className="material-symbols-outlined">arrow_back</span>
-            Discard Draft
-          </button>
-          <div className="flex gap-3">
+          <div className="min-w-0">
+            <div className="panel overflow-hidden">
+              <div className="panel-head">
+                <span className="panel-title">Research sources</span>
+                <span className="row-meta">{createDraft.researchSources?.length ?? 0}</span>
+              </div>
+
+              <div className="panel-pad">
+                <div className="tabs !mb-3">
+                  {(["file", "link", "youtube"] as const).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      className="tab"
+                      data-active={activeTab === t}
+                      onClick={() => setActiveTab(t)}
+                    >
+                      <span className="material-symbols-outlined text-[15px]">
+                        {t === "file" ? "upload_file" : t === "link" ? "link" : "smart_display"}
+                      </span>
+                      {t === "file" ? "File" : t === "link" ? "Link" : "YouTube"}
+                    </button>
+                  ))}
+                </div>
+
+                {activeTab === "file" ? (
+                  <label className="flex flex-col items-center justify-center gap-1 py-4 px-3 border border-dashed border-[var(--hairline-strong)] rounded-[var(--radius)] cursor-pointer hover:border-primary/50 hover:bg-primary/[0.03] transition-colors text-center">
+                    <span className="material-symbols-outlined text-[18px] text-on-surface-variant">
+                      upload
+                    </span>
+                    <span className="text-[12.5px] font-medium text-on-surface">Add a file</span>
+                    <span className="text-[11px] text-on-surface-variant">PDF, DOCX, TXT or MD</span>
+                    <input className="hidden" multiple type="file" onChange={handleFileChange} />
+                  </label>
+                ) : (
+                  <div className="flex gap-1.5">
+                    <input
+                      className="input"
+                      aria-label={activeTab === "youtube" ? "YouTube URL" : "Website URL"}
+                      placeholder={activeTab === "youtube" ? "YouTube URL" : "Website URL"}
+                      type="url"
+                      value={linkInput}
+                      onChange={(e) => setLinkInput(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleAddLink()}
+                    />
+                    <button className="btn btn-secondary shrink-0" onClick={handleAddLink} type="button">
+                      Add
+                    </button>
+                  </div>
+                )}
+
+                <div className="mt-3 space-y-1 max-h-[13rem] overflow-y-auto">
+                  {(createDraft.researchSources || []).map((source) => (
+                    <div
+                      key={source.id}
+                      className="group flex items-center gap-2 h-7 px-2 rounded-[var(--radius)] hover:bg-on-surface/[0.05] transition-colors"
+                    >
+                      <span
+                        className={`material-symbols-outlined text-[15px] shrink-0 ${
+                          source.type === "file"
+                            ? "text-sky-500"
+                            : source.type === "youtube"
+                              ? "text-rose-500"
+                              : "text-emerald-500"
+                        }`}
+                      >
+                        {source.type === "file"
+                          ? "description"
+                          : source.type === "youtube"
+                            ? "play_circle"
+                            : "public"}
+                      </span>
+                      <span className="text-[12px] text-on-surface-variant truncate flex-1">
+                        {source.label}
+                      </span>
+                      <button
+                        className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 text-on-surface-variant hover:text-error transition-opacity shrink-0"
+                        onClick={() => removeResearchSource(source.id)}
+                        aria-label={`Remove ${source.label}`}
+                        type="button"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">close</span>
+                      </button>
+                    </div>
+                  ))}
+                  {!createDraft.researchSources?.length && (
+                    <p className="text-[12px] text-on-surface-variant py-2">
+                      Optional. Sources ground the research agent in your own material.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <button
-              className="border border-primary/20 text-primary px-6 py-4 rounded-xl font-bold flex items-center gap-3 hover:bg-primary/5 transition-all"
+              className="btn btn-ghost btn-sm mt-3"
               onClick={() => {
-                const project = createProjectFromDraft();
-                setMessage(`Project "${project.title}" created from the local draft. Opening the editor next.`);
-                router.push("/editor");
+                resetCreateDraft();
+                setMessage("Draft cleared.");
               }}
               type="button"
             >
-              Quick Draft
-            </button>
-            <button
-              className="bg-gradient-to-br from-primary to-primary-container text-white px-8 py-4 rounded-xl font-bold flex items-center gap-3 shadow-xl shadow-primary/20 hover:opacity-90 active:scale-95 transition-all disabled:opacity-60"
-              onClick={handleGenerateWithAI}
-              disabled={isGenerating}
-              type="button"
-            >
-              {isGenerating ? "Running AI Agents..." : "Generate With AI Agents"}
-              <span className="material-symbols-outlined">arrow_forward</span>
+              Clear draft
             </button>
           </div>
         </div>
       </div>
-
-      <div className="fixed top-0 right-0 -z-10 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full translate-x-1/2 -translate-y-1/2" />
-      <div className="fixed bottom-0 left-0 -z-10 w-[300px] h-[300px] bg-primary/10 blur-[100px] rounded-full -translate-x-1/4 translate-y-1/4" />
     </>
   );
 }

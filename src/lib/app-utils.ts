@@ -7,10 +7,10 @@ export const findChapterById = (project: Project | undefined, chapterId: string)
   project?.chapters.find((chapter) => chapter.id === chapterId) ?? project?.chapters[0];
 
 export const statusChipClasses: Record<string, string> = {
-  Planning: "bg-amber-100 text-amber-800",
-  Drafting: "bg-sky-100 text-sky-800",
-  Editing: "bg-violet-100 text-violet-800",
-  Ready: "bg-emerald-100 text-emerald-800",
+  Planning: "bg-amber-500/12 text-amber-700 dark:text-amber-400",
+  Drafting: "bg-sky-500/12 text-sky-700 dark:text-sky-400",
+  Editing: "bg-violet-500/12 text-violet-700 dark:text-violet-400",
+  Ready: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-400",
 };
 
 export function slugify(input: string) {
