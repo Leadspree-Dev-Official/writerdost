@@ -197,14 +197,11 @@ export default function AdminDashboard() {
   };
 
   return (
-    <main className="flex-1 p-8 max-w-7xl mx-auto w-full font-body">
-      {/* Title & Add User Header */}
-      <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+    <main className="page">
+      <div className="page-head">
         <div>
-          <h2 className="text-3xl font-black text-on-surface tracking-tight">Admin Control Panel</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Superuser settings. Add, update, and manage LeadSpree workspace accounts.
-          </p>
+          <h1 className="page-title">Admin</h1>
+          <p className="page-sub">Add, update and manage workspace accounts.</p>
         </div>
         <button
           onClick={() => {
@@ -212,35 +209,35 @@ export default function AdminDashboard() {
             setFormError(null);
             setFormSuccess(null);
           }}
-          className="bg-primary hover:bg-primary-container text-on-primary font-bold px-5 py-3 rounded-xl shadow-lg shadow-primary/20 active:scale-95 transition-all flex items-center gap-2 self-start sm:self-auto"
+          className="btn btn-primary btn-lg self-start sm:self-auto"
         >
-          <span className="material-symbols-outlined text-sm">person_add</span>
-          {showAddForm ? "View Users Table" : "Create New User"}
+          <span className="material-symbols-outlined">person_add</span>
+          {showAddForm ? "View users" : "New user"}
         </button>
-      </section>
+      </div>
 
       {/* Metrics Row */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="bg-surface-container-low border border-outline-variant/10 p-5 rounded-2xl">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Users</p>
-          <p className="text-2xl font-black text-on-surface mt-1">{totalUsers}</p>
+      <section className="metrics !grid-cols-2 lg:!grid-cols-4 mb-4">
+        <div className="metric">
+          <p className="metric-label">Total Users</p>
+          <p className="metric-value">{totalUsers}</p>
         </div>
-        <div className="bg-surface-container-low border border-outline-variant/10 p-5 rounded-2xl">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-500">Active Status</p>
-          <p className="text-2xl font-black text-on-surface mt-1">{activeUsers}</p>
+        <div className="metric">
+          <p className="metric-label text-emerald-500">Active Status</p>
+          <p className="metric-value">{activeUsers}</p>
         </div>
-        <div className="bg-surface-container-low border border-outline-variant/10 p-5 rounded-2xl">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-500 dark:text-indigo-400">Super Admins</p>
-          <p className="text-2xl font-black text-on-surface mt-1">{adminUsers}</p>
+        <div className="metric">
+          <p className="metric-label text-indigo-500 dark:text-indigo-400">Super Admins</p>
+          <p className="metric-value">{adminUsers}</p>
         </div>
-        <div className="bg-surface-container-low border border-outline-variant/10 p-5 rounded-2xl">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-rose-500">Suspended</p>
-          <p className="text-2xl font-black text-on-surface mt-1">{suspendedUsers}</p>
+        <div className="metric">
+          <p className="metric-label text-rose-500">Suspended</p>
+          <p className="metric-value">{suspendedUsers}</p>
         </div>
       </section>
 
       {/* Tabs Selector */}
-      <section className="flex border-b border-outline-variant/10 mb-6 gap-6">
+      <section className="flex border-b border-outline-variant/10 mb-6 gap-4">
         <button
           onClick={() => { setActiveTab("users"); setShowAddForm(false); }}
           className={`pb-3 font-bold text-sm tracking-wider uppercase border-b-2 transition-all ${
@@ -261,7 +258,7 @@ export default function AdminDashboard() {
         >
           Upgrade Requests
           {upgradeRequests.filter(r => r.status === 'pending').length > 0 && (
-            <span className="bg-amber-500 text-slate-950 font-black text-[10px] w-5 h-5 rounded-full flex items-center justify-center">
+            <span className="bg-amber-500 text-amber-950 font-semibold text-[10px] w-5 h-5 rounded-full flex items-center justify-center">
               {upgradeRequests.filter(r => r.status === 'pending').length}
             </span>
           )}
@@ -270,57 +267,57 @@ export default function AdminDashboard() {
 
       {/* Conditional View: Add User Form, Requests Table, or Users Table */}
       {showAddForm ? (
-        <section className="max-w-xl bg-surface-container-low border border-outline-variant/15 rounded-3xl p-6 shadow-sm">
-          <h3 className="text-lg font-extrabold text-on-surface mb-6">Create New User Account</h3>
+        <section className="max-w-xl bg-surface-container-low border border-outline-variant/15 rounded-[var(--radius-lg)] p-4 shadow-sm">
+          <h3 className="text-lg font-semibold text-on-surface mb-6">Create New User Account</h3>
           
           {formError && (
-            <div className="mb-4 p-4 rounded-xl bg-red-950/20 border border-red-800/30 text-red-500 text-xs font-semibold">
+            <div className="mb-4 p-4 rounded-[var(--radius)] bg-red-950/20 border border-red-800/30 text-red-500 text-xs font-semibold">
               {formError}
             </div>
           )}
           {formSuccess && (
-            <div className="mb-4 p-4 rounded-xl bg-emerald-950/20 border border-emerald-800/30 text-emerald-500 text-xs font-semibold">
+            <div className="mb-4 p-4 rounded-[var(--radius)] bg-emerald-950/20 border border-emerald-800/30 text-emerald-500 text-xs font-semibold">
               {formSuccess}
             </div>
           )}
 
-          <form onSubmit={handleAddUser} className="space-y-4">
+          <form onSubmit={handleAddUser} className="space-y-2">
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Full Name</label>
+              <label className="block text-xs font-bold text-slate-500 mb-2">Full Name</label>
               <input
                 type="text"
                 placeholder="Name"
                 value={newFullName}
                 onChange={(e) => setNewFullName(e.target.value)}
-                className="w-full bg-surface border border-outline-variant/20 rounded-xl py-3 px-4 text-on-surface text-sm font-semibold outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+                className="w-full bg-surface border border-outline-variant/20 rounded-[var(--radius)] py-3 px-4 text-on-surface text-sm font-semibold outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Email Address</label>
+              <label className="block text-xs font-bold text-slate-500 mb-2">Email Address</label>
               <input
                 type="email"
                 placeholder="user@leadspree.com"
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
-                className="w-full bg-surface border border-outline-variant/20 rounded-xl py-3 px-4 text-on-surface text-sm font-semibold outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+                className="w-full bg-surface border border-outline-variant/20 rounded-[var(--radius)] py-3 px-4 text-on-surface text-sm font-semibold outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Password</label>
+              <label className="block text-xs font-bold text-slate-500 mb-2">Password</label>
               <input
                 type="text"
                 placeholder="Choose temporary password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full bg-surface border border-outline-variant/20 rounded-xl py-3 px-4 text-on-surface text-sm font-semibold outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+                className="w-full bg-surface border border-outline-variant/20 rounded-[var(--radius)] py-3 px-4 text-on-surface text-sm font-semibold outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">User Role</label>
+              <label className="block text-xs font-bold text-slate-500 mb-2">User Role</label>
               <select
                 value={newRole}
                 onChange={(e) => setNewRole(e.target.value as "user" | "admin")}
-                className="w-full bg-surface border border-outline-variant/20 rounded-xl py-3 px-4 text-on-surface text-sm font-semibold outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+                className="w-full bg-surface border border-outline-variant/20 rounded-[var(--radius)] py-3 px-4 text-on-surface text-sm font-semibold outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
               >
                 <option value="user">Standard User (Author)</option>
                 <option value="admin">Super Admin</option>
@@ -330,14 +327,14 @@ export default function AdminDashboard() {
             <div className="flex gap-3 pt-2">
               <button
                 type="submit"
-                className="bg-primary hover:bg-primary-container text-on-primary font-bold px-6 py-3 rounded-xl transition-all"
+                className="bg-primary hover:bg-primary-container text-on-primary font-bold px-6 py-3 rounded-[var(--radius)] transition-all"
               >
                 Save Account
               </button>
               <button
                 type="button"
                 onClick={() => setShowAddForm(false)}
-                className="border border-outline-variant/30 text-on-surface hover:bg-surface-container-high font-bold px-6 py-3 rounded-xl transition-all"
+                className="border border-outline-variant/30 text-on-surface hover:bg-surface-container-high font-bold px-6 py-3 rounded-[var(--radius)] transition-all"
               >
                 Cancel
               </button>
@@ -346,9 +343,9 @@ export default function AdminDashboard() {
         </section>
       ) : activeTab === "requests" ? (
         /* Upgrade Requests Tracker Dashboard */
-        <section className="bg-surface-container-low border border-outline-variant/10 rounded-3xl overflow-hidden shadow-sm">
-          <div className="p-6 border-b border-outline-variant/10">
-            <h3 className="text-base font-extrabold text-on-surface">Feature Access Requests</h3>
+        <section className="bg-surface-container-low border border-outline-variant/10 rounded-[var(--radius-lg)] overflow-hidden shadow-sm">
+          <div className="p-4 border-b border-outline-variant/10">
+            <h3 className="text-base font-semibold text-on-surface">Feature Access Requests</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               Approve upgrade requests submitted by authors wishing to access locked modules.
             </p>
@@ -357,12 +354,12 @@ export default function AdminDashboard() {
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-left">
               <thead>
-                <tr className="border-b border-outline-variant/10 text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider bg-surface-container-high/30">
-                  <th className="py-4 px-6">Author Profile</th>
-                  <th className="py-4 px-6">Requested Module</th>
-                  <th className="py-4 px-6">Request Date</th>
-                  <th className="py-4 px-6">Status</th>
-                  <th className="py-4 px-6 text-right">Actions</th>
+                <tr className="border-b border-outline-variant/10 text-slate-500 dark:text-slate-400 text-[10px] font-bold bg-surface-container-high/30">
+                  <th className="py-2 px-6">Author Profile</th>
+                  <th className="py-2 px-6">Requested Module</th>
+                  <th className="py-2 px-6">Request Date</th>
+                  <th className="py-2 px-6">Status</th>
+                  <th className="py-2 px-6 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/5">
@@ -377,21 +374,21 @@ export default function AdminDashboard() {
 
                     return (
                       <tr key={req.id} className="hover:bg-surface-container-high/20 transition-colors text-xs font-semibold text-on-surface">
-                        <td className="py-4 px-6">
+                        <td className="py-2 px-6">
                           <div>
                             <p className="font-bold text-sm text-on-surface">{req.userName}</p>
                             <p className="text-slate-500 dark:text-slate-400 text-xs font-medium mt-0.5">{req.userEmail}</p>
                           </div>
                         </td>
-                        <td className="py-4 px-6">
-                          <span className="font-bold text-white bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-lg">
+                        <td className="py-2 px-6">
+                          <span className="font-bold text-white bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-[var(--radius)]">
                             {featureNames[req.feature] || req.feature}
                           </span>
                         </td>
-                        <td className="py-4 px-6 text-slate-500 dark:text-slate-400">
+                        <td className="py-2 px-6 text-slate-500 dark:text-slate-400">
                           {formatDate(req.timestamp)}
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-2 px-6">
                           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border ${
                             req.status === "pending"
                               ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
@@ -400,19 +397,19 @@ export default function AdminDashboard() {
                             {req.status}
                           </span>
                         </td>
-                        <td className="py-4 px-6 text-right">
+                        <td className="py-2 px-6 text-right">
                           {req.status === "pending" ? (
                             <div className="flex items-center justify-end gap-2">
                               <button
                                 onClick={() => handleApproveRequest(req)}
-                                className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3.5 py-1.5 rounded-lg text-xs transition-colors flex items-center gap-1.5"
+                                className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3.5 py-1.5 rounded-[var(--radius)] text-xs transition-colors flex items-center gap-1.5"
                               >
                                 <span className="material-symbols-outlined text-[14px]">check</span>
                                 Grant Access
                               </button>
                               <button
                                 onClick={() => adminResolveUpgradeRequest(req.id)}
-                                className="border border-outline-variant/20 hover:bg-white/[0.04] text-slate-400 hover:text-white font-bold px-3.5 py-1.5 rounded-lg text-xs transition-colors"
+                                className="border border-outline-variant/20 hover:bg-white/[0.04] text-slate-400 hover:text-white font-bold px-3.5 py-1.5 rounded-[var(--radius)] text-xs transition-colors"
                               >
                                 Dismiss
                               </button>
@@ -437,9 +434,9 @@ export default function AdminDashboard() {
         </section>
       ) : (
         /* Users Table Dashboard */
-        <section className="bg-surface-container-low border border-outline-variant/10 rounded-3xl overflow-hidden shadow-sm">
+        <section className="bg-surface-container-low border border-outline-variant/10 rounded-[var(--radius-lg)] overflow-hidden shadow-sm">
           {/* Table Controls (Search & Filters) */}
-          <div className="p-6 border-b border-outline-variant/10 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="p-4 border-b border-outline-variant/10 flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="relative w-full md:w-80">
               <span className="absolute left-3 top-3.5 text-slate-400 text-sm material-symbols-outlined">search</span>
               <input
@@ -447,7 +444,7 @@ export default function AdminDashboard() {
                 placeholder="Search users by name or email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-surface border border-outline-variant/20 rounded-xl py-2.5 pl-10 pr-4 text-on-surface text-xs font-semibold outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+                className="w-full bg-surface border border-outline-variant/20 rounded-[var(--radius)] py-2.5 pl-10 pr-4 text-on-surface text-xs font-semibold outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
               />
             </div>
 
@@ -457,7 +454,7 @@ export default function AdminDashboard() {
                 <select
                   value={roleFilter}
                   onChange={(e) => setRoleFilter(e.target.value as "all" | "user" | "admin")}
-                  className="bg-surface border border-outline-variant/20 rounded-lg py-1.5 px-3 text-on-surface text-xs font-semibold outline-none"
+                  className="bg-surface border border-outline-variant/20 rounded-[var(--radius)] py-1.5 px-3 text-on-surface text-xs font-semibold outline-none"
                 >
                   <option value="all">All Roles</option>
                   <option value="user">User</option>
@@ -470,7 +467,7 @@ export default function AdminDashboard() {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "suspended")}
-                  className="bg-surface border border-outline-variant/20 rounded-lg py-1.5 px-3 text-on-surface text-xs font-semibold outline-none"
+                  className="bg-surface border border-outline-variant/20 rounded-[var(--radius)] py-1.5 px-3 text-on-surface text-xs font-semibold outline-none"
                 >
                   <option value="all">All Statuses</option>
                   <option value="active">Active</option>
@@ -484,13 +481,13 @@ export default function AdminDashboard() {
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-left">
               <thead>
-                <tr className="border-b border-outline-variant/10 text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider bg-surface-container-high/30">
-                  <th className="py-4 px-6">User Profile</th>
-                  <th className="py-4 px-6">Registered Date</th>
-                  <th className="py-4 px-6">Access Role</th>
-                  <th className="py-4 px-6">Subscription Plan</th>
-                  <th className="py-4 px-6">Status</th>
-                  <th className="py-4 px-6 text-right">Actions</th>
+                <tr className="border-b border-outline-variant/10 text-slate-500 dark:text-slate-400 text-[10px] font-bold bg-surface-container-high/30">
+                  <th className="py-2 px-6">User Profile</th>
+                  <th className="py-2 px-6">Registered Date</th>
+                  <th className="py-2 px-6">Access Role</th>
+                  <th className="py-2 px-6">Subscription Plan</th>
+                  <th className="py-2 px-6">Status</th>
+                  <th className="py-2 px-6 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/5">
@@ -501,8 +498,8 @@ export default function AdminDashboard() {
 
                     return (
                       <tr key={user.id} className="hover:bg-surface-container-high/20 transition-colors text-xs font-semibold text-on-surface">
-                        <td className="py-4 px-6 flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500/10 to-amber-500/10 border border-outline-variant/10 flex items-center justify-center text-primary font-black uppercase text-sm shrink-0">
+                        <td className="py-2 px-6 flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-[var(--radius)] bg-gradient-to-tr from-indigo-500/10 to-amber-500/10 border border-outline-variant/10 flex items-center justify-center text-primary font-semibold uppercase text-sm shrink-0">
                             {user.fullName.charAt(0)}
                           </div>
                           <div>
@@ -510,10 +507,10 @@ export default function AdminDashboard() {
                             <p className="text-slate-500 dark:text-slate-400 text-xs font-medium mt-0.5">{user.email}</p>
                           </div>
                         </td>
-                        <td className="py-4 px-6 text-slate-500 dark:text-slate-400">
+                        <td className="py-2 px-6 text-slate-500 dark:text-slate-400">
                           {formatDate(user.registeredAt)}
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-2 px-6">
                           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border ${
                             user.role === "admin"
                               ? "bg-indigo-500/10 text-indigo-500 border-indigo-500/20"
@@ -522,7 +519,7 @@ export default function AdminDashboard() {
                             {user.role}
                           </span>
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-2 px-6">
                           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border ${
                             user.plan === "Enterprise"
                               ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
@@ -535,7 +532,7 @@ export default function AdminDashboard() {
                             {user.plan || "Basic"}
                           </span>
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-2 px-6">
                           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border ${
                             user.status === "active"
                               ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
@@ -544,10 +541,10 @@ export default function AdminDashboard() {
                             {user.status}
                           </span>
                         </td>
-                        <td className="py-4 px-6 text-right">
+                        <td className="py-2 px-6 text-right">
                           <div className="flex items-center justify-end gap-2.5">
                             {isDeleting ? (
-                              <div className="flex items-center gap-2 bg-red-950/20 p-1 px-2 rounded-lg border border-red-800/30">
+                              <div className="flex items-center gap-2 bg-red-950/20 p-1 px-2 rounded-[var(--radius)] border border-red-800/30">
                                 <span className="text-[10px] text-red-400 font-bold uppercase mr-1">Confirm delete?</span>
                                 <button
                                   onClick={() => confirmDelete(user.id)}
@@ -567,7 +564,7 @@ export default function AdminDashboard() {
                                 <button
                                   onClick={() => handleOpenEditAccess(user)}
                                   title="Edit user access plan & feature overrides"
-                                  className="p-1.5 rounded-lg border border-outline-variant/10 text-slate-500 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all"
+                                  className="btn btn-ghost btn-icon btn-sm hover:text-primary"
                                 >
                                   <span className="material-symbols-outlined text-sm">key</span>
                                 </button>
@@ -575,7 +572,7 @@ export default function AdminDashboard() {
                                   onClick={() => handleToggleRole(user)}
                                   disabled={isSelf}
                                   title={isSelf ? "You cannot modify your own role" : `Switch to ${user.role === "admin" ? "user" : "admin"}`}
-                                  className={`p-1.5 rounded-lg border border-outline-variant/10 text-slate-500 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all ${isSelf ? "opacity-30 cursor-not-allowed" : ""}`}
+                                  className={`p-1.5 rounded-[var(--radius)] border border-outline-variant/10 text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-all ${isSelf ? "opacity-30 cursor-not-allowed" : ""}`}
                                 >
                                   <span className="material-symbols-outlined text-sm">manage_accounts</span>
                                 </button>
@@ -583,7 +580,7 @@ export default function AdminDashboard() {
                                   onClick={() => handleToggleStatus(user)}
                                   disabled={isSelf}
                                   title={isSelf ? "You cannot suspend yourself" : `${user.status === "active" ? "Suspend" : "Activate"} user`}
-                                  className={`p-1.5 rounded-lg border border-outline-variant/10 text-slate-500 transition-all ${
+                                  className={`p-1.5 rounded-[var(--radius)] border border-outline-variant/10 text-slate-500 transition-all ${
                                     user.status === "active"
                                       ? "hover:text-red-400 hover:bg-red-500/10"
                                       : "hover:text-emerald-400 hover:bg-emerald-500/10"
@@ -597,7 +594,7 @@ export default function AdminDashboard() {
                                   onClick={() => handleDeleteClick(user.id)}
                                   disabled={isSelf}
                                   title={isSelf ? "You cannot delete yourself" : "Delete user account"}
-                                  className={`p-1.5 rounded-lg border border-outline-variant/10 text-slate-500 hover:text-red-500 hover:bg-red-500/10 transition-all ${isSelf ? "opacity-30 cursor-not-allowed" : ""}`}
+                                  className={`btn btn-ghost btn-icon btn-sm hover:text-error ${isSelf ? "opacity-30 cursor-not-allowed" : ""}`}
                                 >
                                   <span className="material-symbols-outlined text-sm">delete</span>
                                 </button>
@@ -624,7 +621,7 @@ export default function AdminDashboard() {
       {/* Edit Access Plan & Overrides Modal */}
       {editingUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-md p-4 animate-fade-in">
-          <div className="relative w-full max-w-lg rounded-3xl border border-white/[0.08] bg-slate-900 p-6 md:p-8 shadow-2xl overflow-hidden">
+          <div className="relative w-full max-w-lg rounded-[var(--radius-lg)] border border-white/[0.08] bg-slate-900 p-4 md:p-4 shadow-2xl overflow-hidden">
             {/* Ambient glows inside modal */}
             <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-500/10 blur-[80px] pointer-events-none" />
             <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-amber-500/5 blur-[80px] pointer-events-none" />
@@ -632,28 +629,28 @@ export default function AdminDashboard() {
             <div className="relative z-10">
               <div className="flex items-center justify-between border-b border-white/[0.06] pb-4 mb-6">
                 <div>
-                  <h3 className="text-lg font-black text-white">Edit Access Permissions</h3>
+                  <h3 className="text-lg font-semibold text-white">Edit Access Permissions</h3>
                   <p className="text-xs text-slate-400 mt-1">Configure subscription plans and overrides for {editingUser.fullName}</p>
                 </div>
                 <button
                   onClick={() => setEditingUser(null)}
-                  className="w-8 h-8 rounded-lg hover:bg-white/[0.04] text-slate-400 hover:text-white flex items-center justify-center transition-all"
+                  className="w-8 h-8 rounded-[var(--radius)] hover:bg-white/[0.04] text-slate-400 hover:text-white flex items-center justify-center transition-all"
                 >
                   <span className="material-symbols-outlined">close</span>
                 </button>
               </div>
 
               {/* Form Controls */}
-              <div className="space-y-6">
+              <div className="space-y-3">
                 {/* Plan Dropdown Selection */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2.5">
+                  <label className="block text-xs font-bold text-slate-400 mb-2.5">
                     Select Access Plan
                   </label>
                   <select
                     value={selectedPlan}
                     onChange={(e) => handlePlanChange(e.target.value as UserPlan)}
-                    className="w-full bg-slate-950 border border-white/[0.08] rounded-xl py-3 px-4 text-white text-sm font-semibold outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+                    className="w-full bg-slate-950 border border-white/[0.08] rounded-[var(--radius)] py-3 px-4 text-white text-sm font-semibold outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
                   >
                     <option value="Basic">Basic Plan (Create Only)</option>
                     <option value="Pro">Pro Plan (Create, Rewrite, Blog)</option>
@@ -667,7 +664,7 @@ export default function AdminDashboard() {
 
                 {/* Manual Checkbox Overrides */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
+                  <label className="block text-xs font-bold text-slate-400 mb-3">
                     Allowed Features & Manual Overrides
                   </label>
                   <div className="space-y-2.5">
@@ -681,7 +678,7 @@ export default function AdminDashboard() {
                       return (
                         <label
                           key={feat.key}
-                          className="flex items-start gap-3 p-3.5 rounded-xl border border-white/[0.04] hover:bg-white/[0.02] cursor-pointer transition-colors"
+                          className="flex items-start gap-3 p-3.5 rounded-[var(--radius)] border border-white/[0.04] hover:bg-white/[0.02] cursor-pointer transition-colors"
                         >
                           <input
                             type="checkbox"
@@ -704,13 +701,13 @@ export default function AdminDashboard() {
               <div className="flex gap-3 justify-end border-t border-white/[0.06] pt-5 mt-6">
                 <button
                   onClick={handleSaveAccess}
-                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6 py-2.5 rounded-xl text-xs shadow-lg shadow-indigo-950/45 transition-all"
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6 py-2.5 rounded-[var(--radius)] text-xs shadow-lg shadow-indigo-950/45 transition-all"
                 >
                   Save Access Settings
                 </button>
                 <button
                   onClick={() => setEditingUser(null)}
-                  className="border border-white/10 text-slate-400 hover:text-white hover:bg-white/[0.04] font-bold px-5 py-2.5 rounded-xl text-xs transition-all"
+                  className="border border-white/10 text-slate-400 hover:text-white hover:bg-white/[0.04] font-bold px-5 py-2.5 rounded-[var(--radius)] text-xs transition-all"
                 >
                   Cancel
                 </button>

@@ -44,19 +44,15 @@ export default function BlogGeneratorPage() {
   if (!blog || !projects) return null;
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="p-8 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-start flex-1"
-    >
-      <div className="lg:col-span-4 flex flex-col gap-6">
-        <section className="bg-surface-container-low p-6 rounded-xl flex flex-col gap-4">
-          <h2 className="text-xs font-bold tracking-widest text-on-surface-variant uppercase">Context</h2>
+    <div className="page grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+      <div className="lg:col-span-4 flex flex-col gap-4">
+        <section className="bg-surface-container-low p-4 rounded-[var(--radius)] flex flex-col gap-4">
+          <h2 className="text-xs font-bold text-on-surface-variant uppercase">Context</h2>
           <div className="flex flex-col gap-2">
             <label className="text-sm font-semibold text-on-surface/70">Select Project / Ebook</label>
             <div className="relative">
               <select
-                className="w-full bg-surface-container-lowest border-none rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 appearance-none outline-none"
+                className="w-full bg-surface-container-lowest border-none rounded-[var(--radius)] py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 appearance-none outline-none"
                 value={blog.projectId || ""}
                 onChange={(event) => loadBlogFromProject(event.target.value)}
               >
@@ -71,12 +67,12 @@ export default function BlogGeneratorPage() {
           </div>
         </section>
 
-        <section className="bg-surface-container-low p-6 rounded-xl flex flex-col gap-4">
-          <h2 className="text-xs font-bold tracking-widest text-on-surface-variant uppercase">Length Setting</h2>
+        <section className="bg-surface-container-low p-4 rounded-[var(--radius)] flex flex-col gap-4">
+          <h2 className="text-xs font-bold text-on-surface-variant uppercase">Length Setting</h2>
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-on-surface/70">Estimated Words</span>
-              <span className="text-sm font-black text-primary bg-primary/10 px-2 py-0.5 rounded-md">{targetWords}</span>
+              <span className="text-sm font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-md">{targetWords}</span>
             </div>
             <input 
               type="range" 
@@ -85,7 +81,7 @@ export default function BlogGeneratorPage() {
               step="100" 
               value={targetWords} 
               onChange={(e) => updateBlog({ targetWords: parseInt(e.target.value) })}
-              className="w-full h-2 bg-surface-container-lowest rounded-lg appearance-none cursor-pointer accent-primary"
+              className="w-full h-2 bg-surface-container-lowest rounded-[var(--radius)] appearance-none cursor-pointer accent-primary"
             />
             <div className="flex justify-between text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter">
               <span>500 words</span>
@@ -94,9 +90,9 @@ export default function BlogGeneratorPage() {
           </div>
         </section>
 
-        <section className="bg-surface-container-low p-6 rounded-xl flex flex-col gap-4">
+        <section className="bg-surface-container-low p-4 rounded-[var(--radius)] flex flex-col gap-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xs font-bold tracking-widest text-on-surface-variant uppercase">AI Title Suggestions</h2>
+              <h2 className="text-xs font-bold text-on-surface-variant uppercase">AI Title Suggestions</h2>
             <button
               className="text-primary text-xs font-bold hover:underline disabled:opacity-60"
               onClick={async () => {
@@ -141,26 +137,23 @@ export default function BlogGeneratorPage() {
             </button>
           </div>
           <div className="flex flex-col gap-3">
-            <AnimatePresence mode="popLayout">
-              {suggestions.map((suggestion) => (
-                <motion.button
-                  key={suggestion}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="bg-surface-container-lowest p-3 rounded-lg border-l-4 border-primary/20 hover:border-primary transition-all cursor-pointer group text-left"
-                  onClick={() => updateBlog({ title: suggestion })}
-                  type="button"
-                >
-                  <p className="text-sm font-medium leading-tight group-hover:text-primary">{suggestion}</p>
-                </motion.button>
-              ))}
-            </AnimatePresence>
+            {suggestions.map((suggestion) => (
+              <button
+                key={suggestion}
+                className="bg-surface-container-lowest dark:bg-white/[0.03] p-2.5 rounded-[var(--radius)] border border-[var(--hairline-strong)] hover:border-primary hover:bg-primary/[0.05] transition-colors cursor-pointer group text-left"
+                onClick={() => updateBlog({ title: suggestion })}
+                type="button"
+              >
+                <span className="block text-[12.5px] font-medium leading-snug text-on-surface group-hover:text-primary">
+                  {suggestion}
+                </span>
+              </button>
+            ))}
           </div>
         </section>
 
-        <section className="bg-surface-container-low p-6 rounded-xl flex flex-col gap-4">
-          <h2 className="text-xs font-bold tracking-widest text-on-surface-variant uppercase">SEO Strategy</h2>
+        <section className="bg-surface-container-low p-4 rounded-[var(--radius)] flex flex-col gap-4">
+          <h2 className="text-xs font-bold text-on-surface-variant uppercase">SEO Strategy</h2>
           <div className="flex flex-wrap gap-2">
             {keywords.map((keyword) => (
               <button
@@ -176,31 +169,31 @@ export default function BlogGeneratorPage() {
           <div className="mt-2">
             <label className="text-xs font-semibold text-on-surface/50 mb-1 block">Meta Description</label>
             <textarea
-              className="w-full min-h-24 rounded-xl bg-surface-container-lowest p-4 text-xs outline-none focus:ring-2 focus:ring-primary/20"
+              className="w-full min-h-24 rounded-[var(--radius)] bg-surface-container-lowest p-4 text-xs outline-none focus:ring-2 focus:ring-primary/20"
               value={blog.metaDescription || ""}
               onChange={(event) => updateBlog({ metaDescription: event.target.value })}
             />
           </div>
         </section>
 
-        <section className="bg-surface-container-low p-6 rounded-xl flex flex-col gap-4">
-          <h2 className="text-xs font-bold tracking-widest text-on-surface-variant uppercase">Blog Metrics</h2>
-          <div className="flex flex-col gap-4 bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/10">
+        <section className="bg-surface-container-low p-4 rounded-[var(--radius)] flex flex-col gap-4">
+          <h2 className="text-xs font-bold text-on-surface-variant uppercase">Blog Metrics</h2>
+          <div className="flex flex-col gap-4 bg-surface-container-lowest p-4 rounded-[var(--radius)] border border-outline-variant/10">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Drafting Time</span>
+              <span className="text-[10px] font-semibold text-slate-400">Drafting Time</span>
               <span className="text-xs font-bold text-indigo-500">{blogDraftTime !== null ? formatTime(blogDraftTime) : "0m 0s"}</span>
             </div>
             <div className="h-px bg-slate-100 dark:bg-white/[0.04] w-full" />
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tokens Used</span>
+              <span className="text-[10px] font-semibold text-slate-400">Tokens Used</span>
               <span className="text-xs font-bold text-slate-900 dark:text-slate-200">{blogTokens.toLocaleString()}</span>
             </div>
           </div>
         </section>
 
-        <section className="bg-slate-900 dark:bg-primary/10 text-white dark:text-on-surface p-6 rounded-xl border border-transparent dark:border-primary/20">
-          <p className="text-xs uppercase tracking-[0.2em] text-slate-400 font-bold mb-2">Source Project</p>
-          <h3 className="text-2xl font-black">{selectedProject?.title}</h3>
+        <section className="bg-slate-900 dark:bg-primary/10 text-white dark:text-on-surface p-4 rounded-[var(--radius)] border border-transparent dark:border-primary/20">
+          <p className="text-xs uppercase text-slate-400 font-bold mb-2">Source Project</p>
+          <h3 className="text-2xl font-semibold">{selectedProject?.title}</h3>
           <p className="text-sm text-slate-300 mt-3">{selectedProject?.description}</p>
           <button
             className="mt-5 rounded-full bg-white/10 px-4 py-2 text-xs font-bold"
@@ -224,22 +217,22 @@ export default function BlogGeneratorPage() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="mb-6 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 p-4 text-sm text-emerald-700 dark:text-emerald-400 overflow-hidden"
+              className="mb-6 rounded-[var(--radius-lg)] bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 p-4 text-sm text-emerald-700 dark:text-emerald-400 overflow-hidden"
             >
               {message}
             </motion.div>
           )}
         </AnimatePresence>
 
-        <div className="bg-white dark:bg-white/[0.03] shadow-sm dark:shadow-none ring-1 ring-black/5 dark:ring-white/[0.06] rounded-2xl min-h-[800px] flex flex-col border border-outline-variant/10 dark:border-white/[0.06] overflow-hidden">
-          <div className="px-8 py-4 flex items-center justify-between border-b border-surface-container-low">
+        <div className="bg-white dark:bg-white/[0.03] shadow-sm dark:shadow-none ring-1 ring-black/5 dark:ring-white/[0.06] rounded-[var(--radius-lg)] min-h-[800px] flex flex-col border border-outline-variant/10 dark:border-white/[0.06] overflow-hidden">
+          <div className="px-8 py-2 flex items-center justify-between border-b border-surface-container-low">
             <div className="flex items-center gap-2 text-on-surface-variant/40">
               <span className="material-symbols-outlined text-sm">schedule</span>
               <span className="text-xs font-medium">Last saved: {blog.lastSavedLabel}</span>
             </div>
             <div className="flex items-center gap-4">
               <button
-                className="text-[10px] font-black tracking-wider uppercase text-on-surface-variant hover:text-primary transition-colors disabled:opacity-60"
+                className="text-[10px] font-semibold tracking-wider uppercase text-on-surface-variant hover:text-primary transition-colors disabled:opacity-60"
                 onClick={async () => {
                   if (!selectedProject) return;
                   if (!api.baseUrl || !api.model || (!api.apiKey && api.provider !== "ollama")) {
@@ -279,7 +272,7 @@ export default function BlogGeneratorPage() {
                 {generatingDraft ? "Drafting..." : "Draft With AI"}
               </button>
               <button
-                className="text-[10px] font-black tracking-wider uppercase text-on-surface-variant hover:text-primary transition-colors"
+                className="text-[10px] font-semibold tracking-wider uppercase text-on-surface-variant hover:text-primary transition-colors"
                 onClick={() => {
                   if (typeof window === "undefined") return;
                   const blob = new Blob([`${blog.title}\n\n${blog.draft}`], { type: "text/plain" });
@@ -295,7 +288,7 @@ export default function BlogGeneratorPage() {
                 Export
               </button>
               <button
-                className="text-[10px] font-black tracking-wider uppercase text-on-surface-variant hover:text-rose-500 transition-colors"
+                className="text-[10px] font-semibold tracking-wider uppercase text-on-surface-variant hover:text-rose-500 transition-colors"
                 onClick={() => {
                   if (window.confirm("Are you sure you want to clear the entire blog canvas? This cannot be undone.")) {
                     updateBlog({ title: "", draft: "" });
@@ -309,12 +302,13 @@ export default function BlogGeneratorPage() {
             </div>
           </div>
 
-          <div className="px-8 py-6 flex flex-col gap-4 bg-surface-container-lowest flex-1">
+          <div className="px-4 py-3 flex flex-col gap-2.5 bg-surface-container-lowest flex-1 min-w-0">
             <input
-              className="w-full text-3xl font-black tracking-tight outline-none bg-transparent"
+              className="w-full text-[19px] font-semibold tracking-[-0.018em] outline-none bg-transparent text-on-surface placeholder:text-on-surface-variant"
               value={blog.title || ""}
               onChange={(event) => updateBlog({ title: event.target.value })}
-              placeholder="Post Title..."
+              aria-label="Post title"
+              placeholder="Post title"
             />
             <div className="flex flex-wrap gap-2">
               {keywords.map((keyword) => (
@@ -333,6 +327,6 @@ export default function BlogGeneratorPage() {
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

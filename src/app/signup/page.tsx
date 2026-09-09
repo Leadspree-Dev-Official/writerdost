@@ -52,8 +52,8 @@ export default function SignupPage() {
       {/* Main card container */}
       <div className="relative z-10 w-full max-w-md mx-4">
         {/* LeadSpree Branding */}
-        <div className="flex flex-col items-center mb-8 text-center">
-          <div className="relative flex items-center justify-center w-16 h-16 mb-4 rounded-2xl bg-gradient-to-br from-indigo-600 via-indigo-700 to-amber-500 shadow-xl shadow-indigo-950/50">
+        <div className="flex flex-col items-center mb-5 text-center">
+          <div className="relative flex items-center justify-center w-16 h-16 mb-4 rounded-[var(--radius-lg)] bg-gradient-to-br from-indigo-600 via-indigo-700 to-amber-500 shadow-xl shadow-indigo-950/50">
             <svg
               className="w-10 h-10 text-white animate-pulse"
               fill="none"
@@ -68,23 +68,23 @@ export default function SignupPage() {
                 d="M13 10V3L4 14h7v7l9-11h-7z"
               />
             </svg>
-            <div className="absolute inset-0 rounded-2xl border border-white/20 scale-95" />
+            <div className="absolute inset-0 rounded-[var(--radius-lg)] border border-white/20 scale-95" />
           </div>
 
-          <h2 className="text-3xl font-black tracking-tight text-white">
-            WriterDost <span className="bg-gradient-to-r from-indigo-400 to-indigo-500 bg-clip-text text-transparent">AI</span>
+          <h2 className="text-[22px] font-semibold tracking-tight text-white">
+            WriterDost <span className="text-indigo-400">AI</span>
           </h2>
-          <p className="text-xs uppercase tracking-[0.2em] text-slate-400 font-semibold mt-1.5">
+          <p className="text-xs uppercase text-slate-400 font-semibold mt-1.5">
             by LeadSpree
           </p>
         </div>
 
         {/* Form Card */}
-        <div className="bg-[#141424]/60 backdrop-blur-xl border border-slate-800 rounded-3xl p-8 shadow-2xl shadow-black/40">
-          <h3 className="text-xl font-bold text-slate-100 mb-6 text-center">Create Account</h3>
+        <div className="bg-[#141424]/60 backdrop-blur-xl border border-slate-800 rounded-[var(--radius-lg)] p-5 shadow-2xl shadow-black/40">
+          <h3 className="text-xl font-bold text-slate-100 mb-4 text-center">Create Account</h3>
 
           {error && (
-            <div className="mb-6 p-4 rounded-xl bg-red-950/50 border border-red-800/40 text-red-400 text-xs font-semibold flex items-start gap-2.5">
+            <div className="mb-4 p-4 rounded-[var(--radius)] bg-red-950/50 border border-red-800/40 text-red-400 text-xs font-semibold flex items-start gap-2.5">
               <span className="material-symbols-outlined text-sm mt-0.5 shrink-0">error</span>
               <span>{error}</span>
             </div>
@@ -100,7 +100,7 @@ export default function SignupPage() {
                 placeholder="Julian Thorne"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full bg-[#0c0c14]/80 border border-slate-800 rounded-xl py-3 px-4 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-slate-200 text-sm font-semibold outline-none transition-all"
+                className="w-full bg-[#0c0c14]/80 border border-slate-800 rounded-[var(--radius)] py-3 px-4 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-slate-200 text-sm font-semibold outline-none transition-all"
                 disabled={loading}
               />
             </div>
@@ -114,7 +114,7 @@ export default function SignupPage() {
                 placeholder="you@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-[#0c0c14]/80 border border-slate-800 rounded-xl py-3 px-4 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-slate-200 text-sm font-semibold outline-none transition-all"
+                className="w-full bg-[#0c0c14]/80 border border-slate-800 rounded-[var(--radius)] py-3 px-4 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-slate-200 text-sm font-semibold outline-none transition-all"
                 disabled={loading}
               />
             </div>
@@ -128,7 +128,7 @@ export default function SignupPage() {
                 placeholder="At least 6 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-[#0c0c14]/80 border border-slate-800 rounded-xl py-3 px-4 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-slate-200 text-sm font-semibold outline-none transition-all"
+                className="w-full bg-[#0c0c14]/80 border border-slate-800 rounded-[var(--radius)] py-3 px-4 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-slate-200 text-sm font-semibold outline-none transition-all"
                 disabled={loading}
               />
             </div>
@@ -142,7 +142,7 @@ export default function SignupPage() {
                 placeholder="Re-enter password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full bg-[#0c0c14]/80 border border-slate-800 rounded-xl py-3 px-4 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-slate-200 text-sm font-semibold outline-none transition-all"
+                className="w-full bg-[#0c0c14]/80 border border-slate-800 rounded-[var(--radius)] py-3 px-4 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-slate-200 text-sm font-semibold outline-none transition-all"
                 disabled={loading}
               />
             </div>
@@ -150,7 +150,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full relative overflow-hidden bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white rounded-xl py-3.5 px-4 font-bold text-sm shadow-lg shadow-indigo-950/20 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center mt-2"
+              className="btn btn-primary btn-lg w-full mt-2"
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />

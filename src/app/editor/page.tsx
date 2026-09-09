@@ -332,7 +332,7 @@ export default function EditorPage() {
               }}
             >
               <div className="flex flex-col items-center justify-center h-full" style={{ minHeight: "864px" }}>
-                <h1 className="text-5xl font-black text-slate-900 text-center mb-6 leading-tight">{project.title}</h1>
+                <h1 className="text-5xl font-bold text-slate-900 text-center mb-6 leading-tight">{project.title}</h1>
                 <p className="text-lg text-slate-500 italic text-center">Manuscript Version 1.0</p>
               </div>
               <div className="absolute bottom-8 left-0 right-0 text-center">
@@ -354,7 +354,7 @@ export default function EditorPage() {
               }}
             >
               <div 
-                className="prose max-w-none text-slate-800 prose-headings:text-slate-900 prose-headings:font-black"
+                className="prose max-w-none text-slate-800 prose-headings:text-slate-900 prose-headings:font-bold"
                 style={{ 
                   color: "#1e293b",
                   fontFamily: "'Inter', 'Georgia', serif",
@@ -378,17 +378,18 @@ export default function EditorPage() {
     <div className="flex flex-1 overflow-hidden h-full">
       <aside className={clsx(
         "bg-surface-container-low overflow-x-hidden border-r border-transparent no-print transition-all duration-300 flex flex-col h-full",
-        isEditorSidebarCollapsed ? "w-20 px-2 py-4 items-center" : "w-72"
+        isEditorSidebarCollapsed ? "w-14 px-1.5 py-2 items-center" : "w-60"
       )}>
         {/* Fixed Top */}
-        <div className={clsx("shrink-0", isEditorSidebarCollapsed ? "mb-3 w-full" : "px-6 pt-6 pb-3")}>
+        <div className={clsx("shrink-0", isEditorSidebarCollapsed ? "mb-2 w-full" : "px-3 pt-3 pb-2")}>
           <div className={clsx("flex items-center w-full", isEditorSidebarCollapsed ? "mb-3 justify-center" : "mb-4 justify-between")}>
-            {!isEditorSidebarCollapsed && <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Manuscript Structure</label>}
+            {!isEditorSidebarCollapsed && <span className="section-title">Chapters</span>}
             <button 
               onClick={toggleEditorSidebar}
-              className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors shrink-0"
+              className="btn btn-ghost btn-icon btn-sm shrink-0"
+              aria-label={isEditorSidebarCollapsed ? "Expand chapter list" : "Collapse chapter list"}
             >
-              <span className="material-symbols-outlined">{isEditorSidebarCollapsed ? 'menu' : 'menu_open'}</span>
+              <span className="material-symbols-outlined text-[17px]">{isEditorSidebarCollapsed ? 'left_panel_open' : 'left_panel_close'}</span>
             </button>
           </div>
           <div className={clsx("flex w-full", isEditorSidebarCollapsed ? "flex-col items-center gap-3" : "items-center justify-between")}>
@@ -397,7 +398,7 @@ export default function EditorPage() {
                title="Full Manuscript View"
                className={clsx(
                  "text-primary transition-all flex items-center",
-                 isEditorSidebarCollapsed ? "w-12 h-12 justify-center bg-primary/10 rounded-xl hover:bg-primary/20" : "text-[10px] font-black hover:underline gap-1"
+                 isEditorSidebarCollapsed ? "w-12 h-12 justify-center bg-primary/10 rounded-[var(--radius)] hover:bg-primary/20" : "text-[10px] font-semibold hover:underline gap-1"
                )}
              >
                <span className={clsx("material-symbols-outlined", isEditorSidebarCollapsed ? "text-xl" : "text-xs")}>auto_stories</span>
@@ -411,7 +412,7 @@ export default function EditorPage() {
                title="Add Chapter"
                className={clsx(
                  "text-emerald-600 transition-all flex items-center",
-                 isEditorSidebarCollapsed ? "w-12 h-12 justify-center bg-emerald-600/10 rounded-xl hover:bg-emerald-600/20" : "text-[10px] font-black hover:scale-105 gap-1"
+                 isEditorSidebarCollapsed ? "w-12 h-12 justify-center bg-emerald-600/10 rounded-[var(--radius)] hover:bg-emerald-600/20" : "text-[10px] font-semibold hover:scale-105 gap-1"
                )}
              >
                <span className={clsx("material-symbols-outlined", isEditorSidebarCollapsed ? "text-xl" : "text-xs")}>add_circle</span>
@@ -431,8 +432,8 @@ export default function EditorPage() {
                 key={item.id}
                 className={
                   item.id === chapter.id
-                    ? "group flex items-center p-3 rounded-xl bg-surface-container-lowest shadow-sm border-l-4 border-primary/80 w-full text-left cursor-pointer"
-                    : "group flex items-center p-3 rounded-xl hover:bg-surface-container-lowest hover:shadow-sm transition-all border-l-4 border-transparent w-full text-left cursor-pointer"
+                    ? "group flex items-center gap-2 p-2 rounded-[var(--radius)] bg-primary/10 text-primary w-full text-left cursor-pointer"
+                    : "group flex items-center gap-2 p-2 rounded-[var(--radius)] hover:bg-on-surface/[0.055] transition-colors w-full text-left cursor-pointer"
                 }
                 title={isEditorSidebarCollapsed ? `${item.title} (${item.wordCount} words)` : undefined}
                 onClick={() => {
@@ -483,7 +484,7 @@ export default function EditorPage() {
             {(project.status === "Planning" || project.status === "Drafting" || project.status === "Editing") && (
                <button
                  className={clsx(
-                   "bg-emerald-600 text-white rounded-2xl shadow-xl shadow-emerald-600/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center",
+                   "bg-emerald-600 text-white rounded-[var(--radius-lg)] shadow-xl shadow-emerald-600/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center",
                    isEditorSidebarCollapsed ? "w-12 h-12" : "w-full py-3 text-sm font-bold gap-2"
                  )}
                  onClick={handleDraftContent}
@@ -500,7 +501,7 @@ export default function EditorPage() {
                  {!project.chapters.find(c => c.id === 'front-title-page') && (
                     <button
                       className={clsx(
-                        "bg-indigo-500 text-white rounded-2xl shadow-xl shadow-indigo-500/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center",
+                        "bg-indigo-500 text-white rounded-[var(--radius-lg)] shadow-xl shadow-indigo-500/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center",
                         isEditorSidebarCollapsed ? "w-12 h-12" : "w-full py-3 text-sm font-bold gap-2"
                       )}
                       onClick={handleGenerateWrappers}
@@ -513,7 +514,7 @@ export default function EditorPage() {
                  )}
                 <button
                   className={clsx(
-                    "bg-primary text-white rounded-2xl shadow-xl shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center",
+                    "bg-primary text-white rounded-[var(--radius-lg)] shadow-xl shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center",
                     isEditorSidebarCollapsed ? "w-12 h-12" : "w-full py-3 text-sm font-bold gap-2"
                   )}
                   onClick={() => {
@@ -536,7 +537,7 @@ export default function EditorPage() {
             {project.status === "Ready" && (
                 <button
                   className={clsx(
-                    "bg-amber-500 text-white rounded-2xl shadow-xl shadow-amber-500/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center",
+                    "bg-amber-500 text-white rounded-[var(--radius-lg)] shadow-xl shadow-amber-500/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center",
                     isEditorSidebarCollapsed ? "w-12 h-12" : "w-full py-3 text-sm font-bold gap-2"
                   )}
                   onClick={() => {
@@ -556,18 +557,18 @@ export default function EditorPage() {
             <div className="space-y-3 pt-3">
               <DesignSettings projectId={project.id} />
               <div className="w-full">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3 block">Project Metrics</label>
-                <div className="bg-surface-container-low p-4 rounded-xl border border-outline-variant/10 space-y-3">
+                <label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 mb-3 block">Project Metrics</label>
+                <div className="bg-surface-container-low p-4 rounded-[var(--radius)] border border-outline-variant/10 space-y-3">
                   <div className="flex items-center justify-between">
-                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Outline Time</span>
+                     <span className="text-[10px] font-semibold text-slate-400">Outline Time</span>
                      <span className="text-xs font-bold text-emerald-500">{project.outlineDuration !== undefined ? `${Math.floor(project.outlineDuration / 60)}m ${project.outlineDuration % 60}s` : "0m 0s"}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Drafting Time</span>
+                     <span className="text-[10px] font-semibold text-slate-400">Drafting Time</span>
                      <span className="text-xs font-bold text-indigo-500">{project.draftDuration !== undefined ? `${Math.floor(project.draftDuration / 60)}m ${project.draftDuration % 60}s` : "0m 0s"}</span>
                   </div>
                   <div className="flex items-center justify-between border-t border-outline-variant/10 pt-3">
-                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tokens Used</span>
+                     <span className="text-[10px] font-semibold text-slate-400">Tokens Used</span>
                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{project.tokensUsed?.toLocaleString() || "0"}</span>
                   </div>
                 </div>
@@ -590,32 +591,20 @@ export default function EditorPage() {
           "--p-margin-after": project.designSettings?.paragraphAfter || "12px",
         } as React.CSSProperties}
       >
-        <div className="flex-1 overflow-y-auto px-4 md:px-8 lg:px-12 py-12 scroll-smooth custom-typography-container">
-          <div className="w-full max-w-[90%] lg:max-w-5xl xl:max-w-6xl mx-auto">
-            <div className="flex items-center justify-between mb-8 no-print">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-1">{project.title}</p>
-                <h2 className="text-2xl font-black text-on-surface">{chapter.title}</h2>
-              </div>
-              <div className="flex gap-2 items-center shrink-0">
-                <div 
-                  className="rounded-full bg-surface-container-lowest px-4 py-2 text-xs font-bold text-on-surface-variant shadow-sm border border-outline-variant/10 whitespace-nowrap"
-                  title="Current chapter word count"
-                >
-                  {chapter.wordCount.toLocaleString()} words
-                </div>
-                <div 
-                  className="rounded-full bg-primary/10 px-4 py-2 text-xs font-bold text-primary shadow-sm border border-primary/20 whitespace-nowrap"
-                  title="Total project word count"
-                >
-                  Total: {calculateProjectWords(project).toLocaleString()} words
-                </div>
-              </div>
+        <div className="flex-1 overflow-y-auto px-4 md:px-8 py-6 scroll-smooth custom-typography-container">
+          <div className="w-full max-w-[46rem] mx-auto">
+            <div className="flex items-baseline justify-between gap-4 mb-4 no-print">
+              <h2 className="text-[17px] font-semibold tracking-[-0.017em] text-on-surface truncate">
+                {chapter.title}
+              </h2>
+              <span className="row-meta shrink-0 whitespace-nowrap">
+                {chapter.wordCount.toLocaleString()} / {calculateProjectWords(project).toLocaleString()} words
+              </span>
             </div>
 
           {message ? (
             <div
-              className={`mb-4 rounded-2xl p-4 text-sm ${
+              className={`mb-4 rounded-[var(--radius-lg)] p-4 text-sm ${
                 message.toLowerCase().includes("error") ||
                 message.toLowerCase().includes("failed") ||
                 message.toLowerCase().includes("rate-limit")

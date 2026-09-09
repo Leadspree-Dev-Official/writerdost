@@ -165,15 +165,19 @@ export default function SettingsPage() {
         : api.model;
 
   return (
-    <div className="p-4 sm:p-8 max-w-6xl mx-auto space-y-8 flex-1 w-full">
-      <div className="space-y-1">
-        <h2 className="text-3xl font-extrabold tracking-tight text-on-surface">AI & API Settings</h2>
-        <p className="text-on-surface-variant text-sm">Model choices and generation controls now persist across the full workspace.</p>
+    <div className="page">
+      <div className="page-head">
+        <div>
+          <h1 className="page-title">AI settings</h1>
+          <p className="page-sub">
+            Your provider, model and generation controls. These persist across the whole workspace.
+          </p>
+        </div>
       </div>
 
       {message && !message.includes("API test failed") && !message.includes("Connection successful") ? (
         <div
-          className={`rounded-2xl p-4 text-sm ${
+          className={`rounded-[var(--radius-lg)] p-4 text-sm ${
             message.toLowerCase().includes("failed") || message.toLowerCase().includes("error")
               ? "bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 text-rose-700 dark:text-rose-400"
               : "bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400"
@@ -183,9 +187,9 @@ export default function SettingsPage() {
         </div>
       ) : null}
 
-      <div className="grid grid-cols-12 gap-6">
-        <div className="col-span-12 lg:col-span-8 space-y-6">
-          <section className="bg-surface-container-low p-6 rounded-xl border border-outline-variant/10">
+      <div className="grid grid-cols-12 gap-4">
+        <div className="col-span-12 lg:col-span-8 space-y-3">
+          <section className="bg-surface-container-low p-4 rounded-[var(--radius)] border border-outline-variant/10">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-bold text-on-surface flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary">cloud_done</span>
@@ -206,7 +210,7 @@ export default function SettingsPage() {
               ].map((provider) => (
                 <button
                   key={provider.key}
-                  className={`bg-surface-container-lowest p-5 rounded-xl border shadow-sm hover:shadow-md transition-shadow text-left ${
+                  className={`bg-surface-container-lowest p-5 rounded-[var(--radius)] border shadow-sm hover:shadow-md transition-shadow text-left ${
                     api.provider === provider.key ? "border-primary/30 ring-2 ring-primary/10" : "border-outline-variant/5"
                   }`}
                   onClick={() => updateApiSettings({ provider: provider.key as typeof api.provider })}
@@ -214,7 +218,7 @@ export default function SettingsPage() {
                 >
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center font-bold text-on-surface">
+                      <div className="w-10 h-10 rounded-[var(--radius)] bg-surface-container flex items-center justify-center font-bold text-on-surface">
                         {provider.icon.length === 1 ? provider.icon : <span className="material-symbols-outlined">{provider.icon}</span>}
                       </div>
                       <div>
@@ -224,7 +228,7 @@ export default function SettingsPage() {
                         </p>
                       </div>
                     </div>
-                    <span className={`px-4 py-1.5 bg-on-surface text-surface text-xs font-bold rounded-lg`}>{api.provider === provider.key ? "Active" : "Use"}</span>
+                    <span className={`px-4 py-1.5 bg-on-surface text-surface text-xs font-bold rounded-[var(--radius)]`}>{api.provider === provider.key ? "Active" : "Use"}</span>
                   </div>
                   <p className="text-[11px] text-on-surface-variant leading-tight">{provider.description}</p>
                 </button>
@@ -232,7 +236,7 @@ export default function SettingsPage() {
             </div>
           </section>
 
-          <section className="bg-surface-container-low p-6 rounded-xl border border-outline-variant/10">
+          <section className="bg-surface-container-low p-4 rounded-[var(--radius)] border border-outline-variant/10">
             {/* Header with Title only */}
             <div className="flex items-center gap-2 mb-6">
               <span className="material-symbols-outlined text-primary">key</span>
@@ -241,9 +245,9 @@ export default function SettingsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-[11px] font-black uppercase tracking-wider text-on-surface-variant block">Provider</label>
+                <label className="text-[11px] font-semibold text-on-surface-variant block">Provider</label>
                 <select
-                  className="w-full bg-surface-container-lowest border-none rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                  className="w-full bg-surface-container-lowest border-none rounded-[var(--radius)] py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
                   value={api.provider || "openai"}
                   onChange={(event) => {
                     const provider = event.target.value as typeof api.provider;
@@ -264,7 +268,7 @@ export default function SettingsPage() {
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-3">
-                  <label className="text-[11px] font-black uppercase tracking-wider text-on-surface-variant block">Model</label>
+                  <label className="text-[11px] font-semibold text-on-surface-variant block">Model</label>
                   {usesPresetModels ? (
                     <button
                       className="text-xs font-bold text-primary hover:underline"
@@ -277,7 +281,7 @@ export default function SettingsPage() {
                 </div>
                 {usesPresetModels && !isCustomModelEditing ? (
                   <select
-                    className="w-full bg-surface-container-lowest border-none rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                    className="w-full bg-surface-container-lowest border-none rounded-[var(--radius)] py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
                     value={selectedModelValue || ""}
                     onChange={(event) => updateApiSettings({ model: event.target.value })}
                   >
@@ -289,7 +293,7 @@ export default function SettingsPage() {
                   </select>
                 ) : (
                   <input
-                    className="w-full bg-surface-container-lowest border-none rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                    className="w-full bg-surface-container-lowest border-none rounded-[var(--radius)] py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
                     value={api.model || ""}
                     onChange={(event) => updateApiSettings({ model: event.target.value })}
                   />
@@ -297,18 +301,18 @@ export default function SettingsPage() {
               </div>
 
               <div className="space-y-2 md:col-span-2">
-                <label className="text-[11px] font-black uppercase tracking-wider text-on-surface-variant block">Base URL</label>
+                <label className="text-[11px] font-semibold text-on-surface-variant block">Base URL</label>
                 <input
-                  className="w-full bg-surface-container-lowest border-none rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                  className="w-full bg-surface-container-lowest border-none rounded-[var(--radius)] py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
                   value={api.baseUrl || ""}
                   onChange={(event) => updateApiSettings({ baseUrl: event.target.value })}
                 />
               </div>
 
               <div className="space-y-2 md:col-span-2">
-                <label className="text-[11px] font-black uppercase tracking-wider text-on-surface-variant block">API Key</label>
+                <label className="text-[11px] font-semibold text-on-surface-variant block">API Key</label>
                 <input
-                  className="w-full bg-surface-container-lowest border-none rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                  className="w-full bg-surface-container-lowest border-none rounded-[var(--radius)] py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
                   placeholder={api.provider === "ollama" || api.provider === "ollama_cloud" ? "Optional for Ollama" : "Paste your API key"}
                   type="password"
                   value={api.apiKey || ""}
@@ -317,18 +321,18 @@ export default function SettingsPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[11px] font-black uppercase tracking-wider text-on-surface-variant block">App Name</label>
+                <label className="text-[11px] font-semibold text-on-surface-variant block">App Name</label>
                 <input
-                  className="w-full bg-surface-container-lowest border-none rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                  className="w-full bg-surface-container-lowest border-none rounded-[var(--radius)] py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
                   value={api.appName || ""}
                   onChange={(event) => updateApiSettings({ appName: event.target.value })}
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-[11px] font-black uppercase tracking-wider text-on-surface-variant block">Site URL</label>
+                <label className="text-[11px] font-semibold text-on-surface-variant block">Site URL</label>
                 <input
-                  className="w-full bg-surface-container-lowest border-none rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                  className="w-full bg-surface-container-lowest border-none rounded-[var(--radius)] py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
                   value={api.siteUrl || ""}
                   onChange={(event) => updateApiSettings({ siteUrl: event.target.value })}
                 />
@@ -336,10 +340,10 @@ export default function SettingsPage() {
             </div>
 
             <div className="mt-8 border-t border-outline-variant/20 pt-6">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                   <button
-                    className="px-6 py-2.5 bg-on-surface text-surface text-sm font-bold rounded-xl disabled:opacity-60 hover:opacity-90 transition-colors"
+                    className="px-6 py-2.5 bg-on-surface text-surface text-sm font-bold rounded-[var(--radius)] disabled:opacity-60 hover:opacity-90 transition-colors"
                     disabled={testing || !api.baseUrl || !api.model || (!api.apiKey && api.provider !== "ollama" && api.provider !== "ollama_cloud")}
                     onClick={async () => {
                       setTesting(true);
@@ -373,7 +377,7 @@ export default function SettingsPage() {
                   </button>
                   
                   <div className="flex flex-col">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-0.5">Status Details</span>
+                    <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 mb-0.5">Status Details</span>
                     <div className="flex flex-col items-start gap-1">
                       <div className="flex items-center gap-2">
                         <div className={`w-2 h-2 rounded-full ${statusDotClass}`}></div>
@@ -397,13 +401,13 @@ export default function SettingsPage() {
             </div>
           </section>
 
-          <section className="bg-surface-container-low p-6 rounded-xl">
+          <section className="bg-surface-container-low p-4 rounded-[var(--radius)]">
             <h3 className="text-lg font-bold text-on-surface mb-6 flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">tune</span>
               Advanced Model Controls
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
                 <button className="flex items-center justify-between w-full" onClick={() => updateSettings({ creativeMode: !settings.creativeMode })} type="button">
                   <div className="text-left">
                     <p className="text-sm font-bold">Creative Mode</p>
@@ -423,18 +427,18 @@ export default function SettingsPage() {
                   </div>
                 </button>
               </div>
-              <div className="space-y-6">
+              <div className="space-y-3">
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <p className="text-sm font-bold">Temperature</p>
-                    <span className="text-xs font-black text-primary px-2 py-0.5 bg-primary/10 rounded">{settings.temperature.toFixed(2)}</span>
+                    <span className="text-xs font-semibold text-primary px-2 py-0.5 bg-primary/10 rounded">{settings.temperature.toFixed(2)}</span>
                   </div>
                   <input className="w-full accent-primary" max="1" min="0" step="0.05" type="range" value={settings.temperature || 0} onChange={(event) => updateSettings({ temperature: Number(event.target.value) })} />
                 </div>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <p className="text-sm font-bold">Top P</p>
-                    <span className="text-xs font-black text-primary px-2 py-0.5 bg-primary/10 rounded">{settings.topP.toFixed(2)}</span>
+                    <span className="text-xs font-semibold text-primary px-2 py-0.5 bg-primary/10 rounded">{settings.topP.toFixed(2)}</span>
                   </div>
                   <input className="w-full accent-primary" max="1" min="0" step="0.05" type="range" value={settings.topP || 0} onChange={(event) => updateSettings({ topP: Number(event.target.value) })} />
                 </div>
@@ -443,8 +447,8 @@ export default function SettingsPage() {
           </section>
         </div>
 
-        <div className="col-span-12 lg:col-span-4 space-y-6">
-          <div className="bg-slate-900 dark:bg-white/[0.03] text-white dark:text-on-surface p-6 rounded-xl shadow-xl dark:shadow-none space-y-6 relative overflow-hidden group border border-transparent dark:border-white/[0.06]">
+        <div className="col-span-12 lg:col-span-4 space-y-3">
+          <div className="bg-slate-900 dark:bg-white/[0.03] text-white dark:text-on-surface p-4 rounded-[var(--radius)] shadow-xl dark:shadow-none space-y-3 relative overflow-hidden group border border-transparent dark:border-white/[0.06]">
             <div className="absolute -top-12 -right-12 w-32 h-32 bg-indigo-500/20 blur-3xl rounded-full" />
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold flex items-center gap-2">
@@ -452,7 +456,7 @@ export default function SettingsPage() {
                 Usage & Costs
               </h3>
               <button 
-                className="text-[10px] uppercase font-black text-slate-500 hover:text-rose-400 transition-colors opacity-0 group-hover:opacity-100"
+                className="text-[10px] uppercase font-semibold text-slate-500 hover:text-rose-400 transition-colors opacity-0 group-hover:opacity-100"
                 onClick={() => {
                   if (confirm("Reset all usage data?")) {
                     useAppStore.getState().resetUsage();
@@ -465,9 +469,9 @@ export default function SettingsPage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-6 border-b border-slate-800 dark:border-white/[0.06]">
               <div className="space-y-1.5">
-                <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Input / 1M</label>
+                <label className="text-[10px] text-slate-500 font-bold block">Input / 1M</label>
                 <select 
-                  className="w-full bg-slate-800 dark:bg-white/[0.05] border-none rounded-lg py-1.5 px-2 text-xs font-bold focus:ring-1 focus:ring-indigo-500 outline-none cursor-pointer text-white dark:text-on-surface"
+                  className="w-full bg-slate-800 dark:bg-white/[0.05] border-none rounded-[var(--radius)] py-1.5 px-2 text-xs font-bold focus:ring-1 focus:ring-indigo-500 outline-none cursor-pointer text-white dark:text-on-surface"
                   value={isCustomInput ? "custom" : usage.inputTokenRate}
                   onChange={(e) => {
                     const val = e.target.value;
@@ -499,7 +503,7 @@ export default function SettingsPage() {
                           useAppStore.getState().updateUsageRates(parsed, usage.outputTokenRate);
                         }
                       }}
-                      className="w-full bg-slate-850 dark:bg-white/[0.07] border-none rounded-lg py-1.5 pl-5 pr-2 text-xs font-bold focus:ring-1 focus:ring-indigo-500 outline-none text-white dark:text-on-surface"
+                      className="w-full bg-slate-850 dark:bg-white/[0.07] border-none rounded-[var(--radius)] py-1.5 pl-5 pr-2 text-xs font-bold focus:ring-1 focus:ring-indigo-500 outline-none text-white dark:text-on-surface"
                       placeholder="0.00"
                     />
                   </div>
@@ -507,9 +511,9 @@ export default function SettingsPage() {
               </div>
               
               <div className="space-y-1.5">
-                <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Output / 1M</label>
+                <label className="text-[10px] text-slate-500 font-bold block">Output / 1M</label>
                 <select 
-                  className="w-full bg-slate-800 dark:bg-white/[0.05] border-none rounded-lg py-1.5 px-2 text-xs font-bold focus:ring-1 focus:ring-indigo-500 outline-none cursor-pointer text-white dark:text-on-surface"
+                  className="w-full bg-slate-800 dark:bg-white/[0.05] border-none rounded-[var(--radius)] py-1.5 px-2 text-xs font-bold focus:ring-1 focus:ring-indigo-500 outline-none cursor-pointer text-white dark:text-on-surface"
                   value={isCustomInput ? "custom" : usage.outputTokenRate}
                   onChange={(e) => {
                     const val = e.target.value;
@@ -541,7 +545,7 @@ export default function SettingsPage() {
                           useAppStore.getState().updateUsageRates(usage.inputTokenRate, parsed);
                         }
                       }}
-                      className="w-full bg-slate-850 dark:bg-white/[0.07] border-none rounded-lg py-1.5 pl-5 pr-2 text-xs font-bold focus:ring-1 focus:ring-indigo-500 outline-none text-white dark:text-on-surface"
+                      className="w-full bg-slate-850 dark:bg-white/[0.07] border-none rounded-[var(--radius)] py-1.5 pl-5 pr-2 text-xs font-bold focus:ring-1 focus:ring-indigo-500 outline-none text-white dark:text-on-surface"
                       placeholder="0.00"
                     />
                   </div>
@@ -550,9 +554,9 @@ export default function SettingsPage() {
             </div>
 
             <div className="space-y-1">
-              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Est. Cost (Global)</p>
+              <p className="text-slate-400 text-[10px] font-bold">Est. Cost (Global)</p>
               <div className="flex items-baseline gap-2">
-                <p className="text-4xl font-black">{formatCurrency((usage.totalTokens / 1000000) * ((usage.inputTokenRate + usage.outputTokenRate) / 2))}</p>
+                <p className="text-4xl font-semibold">{formatCurrency((usage.totalTokens / 1000000) * ((usage.inputTokenRate + usage.outputTokenRate) / 2))}</p>
                 <span className="text-[10px] text-slate-500 font-bold bg-slate-800 dark:bg-white/[0.05] px-1.5 py-0.5 rounded">
                   Avg: ${((usage.inputTokenRate + usage.outputTokenRate) / 2).toFixed(3)}
                 </span>
@@ -571,8 +575,8 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <div className="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/10">
-            <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-4">Quick Optimizations</h4>
+          <div className="bg-surface-container-lowest p-4 rounded-[var(--radius)] border border-outline-variant/10">
+            <h4 className="text-xs font-semibold text-slate-400 dark:text-slate-500 mb-4">Quick Optimizations</h4>
             <div className="flex flex-wrap gap-2">
               {[
                 { label: "Lower Token Cost", type: "cost", icon: "auto_fix" },
@@ -599,7 +603,7 @@ export default function SettingsPage() {
 
       <div className="flex justify-end items-center gap-4 py-8 border-t border-outline-variant/20">
         <button
-          className="px-6 py-2.5 rounded-xl font-bold text-sm text-on-surface-variant hover:bg-surface-container-low transition-all"
+          className="px-6 py-2.5 rounded-[var(--radius)] font-bold text-sm text-on-surface-variant hover:bg-surface-container-low transition-all"
           onClick={() =>
             updateSettings({
               defaultModel: "GPT-4o (OpenAI)",
@@ -614,7 +618,7 @@ export default function SettingsPage() {
           Reset to Defaults
         </button>
         <button
-          className="px-8 py-2.5 bg-gradient-to-br from-primary to-primary-container text-white rounded-xl font-bold text-sm shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 active:translate-y-0"
+          className="px-8 py-2.5 bg-gradient-to-br from-primary to-primary-container text-white rounded-[var(--radius)] font-bold text-sm shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 active:translate-y-0"
           onClick={() => setMessage("Settings saved. API credentials and generation defaults are ready to use.")}
           type="button"
         >

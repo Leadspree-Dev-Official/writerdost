@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useRef } from "react";
 import clsx from "clsx";
 import { useAppStore } from "@/lib/app-store";
 
@@ -44,8 +45,24 @@ export default function Sidebar() {
   const toggleSidebar = useAppStore((state) => state.toggleGlobalSidebar);
   const currentUser = useAppStore((state) => state.currentUser);
   const logout = useAppStore((state) => state.logout);
+  const hasAutoClosed = useRef(false);
 
   const currentProject = projects.find((item) => item.id === currentProjectId) ?? projects[0];
+
+  // Below `md` the sidebar is a drawer over the content, so it must start
+  // closed and close again on navigation. The collapsed flag is persisted and
+  // shared with desktop, where it means "narrow rail" instead.
+  const lastPath = useRef(pathname);
+  useEffect(() => {
+    const isMobile = window.matchMedia("(max-width: 767px)").matches;
+    if (!isMobile) return;
+    const navigated = lastPath.current !== pathname;
+    lastPath.current = pathname;
+    if (!collapsed && (navigated || !hasAutoClosed.current)) {
+      hasAutoClosed.current = true;
+      toggleSidebar();
+    }
+  }, [pathname, collapsed, toggleSidebar]);
 
   const groups = currentUser?.role === "admin"
     ? [...NAV_GROUPS, { label: "Admin", items: [{ name: "Control panel", href: "/admin", icon: "shield_person" }] }]
@@ -61,7 +78,17 @@ export default function Sidebar() {
     );
 
   return (
-    <nav
+    <>
+      {!collapsed && (
+        <button
+          type="button"
+          aria-label="Close navigation"
+          onClick={toggleSidebar}
+          className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-[1px] md:hidden"
+        />
+      )}
+
+      <nav
       aria-label="Main"
       className={clsx(
         "fixed left-0 top-0 h-screen z-50 flex flex-col transition-[width,transform] duration-200 overflow-x-hidden",
@@ -208,6 +235,7 @@ export default function Sidebar() {
           </button>
         </div>
       </div>
-    </nav>
+      </nav>
+    </>
   );
 }

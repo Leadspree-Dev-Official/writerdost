@@ -99,42 +99,26 @@ export default function HelpPage() {
     : [];
 
   return (
-    <div className="flex-1 w-full min-h-screen bg-surface transition-colors duration-300">
-      {/* Hero Section */}
-      <section className="pt-20 pb-32 px-8 text-center relative">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent -z-10" />
-        
-        <motion.h1 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-5xl md:text-6xl font-black text-on-surface mb-6 tracking-tight"
-        >
-          How can we <span className="text-primary">help you?</span>
-        </motion.h1>
-        
-        <motion.p 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="text-lg text-slate-500 dark:text-slate-400 mb-12 max-w-2xl mx-auto"
-        >
-          Search our knowledge base for instructions, tips, and troubleshooting guides for the Writerdost AI workspace.
-        </motion.p>
+    <div className="page">
+      <section className="relative">
+        <div className="page-head">
+          <div>
+            <h1 className="page-title">Help</h1>
+            <p className="page-sub">
+              Instructions, tips and troubleshooting for the WriterDost workspace. Ask a question and the
+              assistant will answer from the docs.
+            </p>
+          </div>
+        </div>
 
         {/* Search Box */}
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2 }}
-          className="max-w-2xl mx-auto relative group"
-        >
-          <div className="absolute -inset-1 bg-gradient-to-r from-primary to-indigo-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-          <div className="relative flex items-center bg-surface-container-lowest rounded-2xl border border-outline-variant/10 shadow-2xl overflow-hidden px-6 h-16 transition-all duration-300">
-            <span className="material-symbols-outlined text-slate-400 mr-4">search</span>
+        <div className="max-w-2xl relative">
+          <div className="relative flex items-center gap-2 bg-surface-container-lowest dark:bg-white/[0.03] rounded-[var(--radius)] border border-[var(--hairline-strong)] overflow-hidden px-2.5 h-9 focus-within:border-primary transition-colors">
+            <span className="material-symbols-outlined text-[17px] text-on-surface-variant">search</span>
             <input 
               type="text" 
-              placeholder="Search for articles, features, or issues..."
-              className="flex-1 bg-transparent border-none outline-none text-on-surface placeholder:text-slate-500 font-medium pr-4"
+              placeholder="Search help, or ask a question"
+              className="flex-1 bg-transparent border-none outline-none text-[13px] text-on-surface placeholder:text-on-surface-variant"
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -148,7 +132,7 @@ export default function HelpPage() {
                 <button 
                   onClick={handleAiSearch}
                   disabled={isAiSearching}
-                  className="bg-primary text-on-primary px-4 py-1.5 rounded-lg text-xs font-bold hover:scale-105 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50"
+                  className="bg-primary text-on-primary px-4 py-1.5 rounded-[var(--radius)] text-xs font-bold hover:scale-105 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50"
                 >
                   {isAiSearching ? (
                     <span className="w-3 h-3 border-2 border-on-primary/30 border-t-on-primary rounded-full animate-spin" />
@@ -178,13 +162,13 @@ export default function HelpPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
-                className="absolute top-full left-0 right-0 mt-4 bg-surface-container-lowest rounded-2xl border border-outline-variant/10 shadow-2xl z-50 overflow-y-auto max-h-[80vh] text-left"
+                className="absolute top-full left-0 right-0 mt-4 bg-surface-container-lowest rounded-[var(--radius-lg)] border border-outline-variant/10 shadow-2xl z-50 overflow-y-auto max-h-[80vh] text-left"
               >
                 {/* AI Assistant Section */}
                 <div className="p-4 bg-primary/5 border-b border-outline-variant/10">
                   <div className="flex items-center gap-2 mb-3">
                     <span className="material-symbols-outlined text-primary text-sm">smart_toy</span>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-primary">AI Assistant</p>
+                    <p className="text-[10px] font-semibold text-primary">AI Assistant</p>
                   </div>
                   
                   {isAiSearching && (
@@ -217,7 +201,7 @@ export default function HelpPage() {
                 {filteredArticles.length > 0 && (
                   <>
                     <div className="p-4 border-b border-outline-variant/10">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Related Articles</p>
+                      <p className="text-[10px] font-semibold text-slate-400">Related Articles</p>
                     </div>
                     <div className="max-h-[300px] overflow-y-auto p-2">
                       {filteredArticles.map(art => (
@@ -227,7 +211,7 @@ export default function HelpPage() {
                             setSelectedArticle(art.id);
                             setSearchQuery("");
                           }}
-                          className="w-full text-left p-4 hover:bg-primary/5 rounded-xl transition-all group"
+                          className="w-full text-left p-4 hover:bg-primary/5 rounded-[var(--radius)] transition-all group"
                         >
                           <p className="text-sm font-bold text-on-surface mb-1 group-hover:text-primary">{art.title}</p>
                           <p className="text-xs text-slate-500 line-clamp-1">{art.content}</p>
@@ -239,24 +223,21 @@ export default function HelpPage() {
               </motion.div>
             )}
           </AnimatePresence>
-        </motion.div>
+        </div>
       </section>
 
       {/* Main Content */}
-      <section className="max-w-6xl mx-auto px-8 pb-32">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
-          {categories.map((cat, idx) => (
-            <motion.div 
+      <section className="mt-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+          {categories.map((cat) => (
+            <div
               key={cat.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 + (idx * 0.1) }}
-              className="bg-surface-container-low rounded-3xl p-8 border border-outline-variant/5 hover:border-primary/20 transition-all group"
+              className="panel panel-pad hover:border-primary/25 transition-colors group"
             >
-              <div className={`w-14 h-14 ${cat.bg} ${cat.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
-                <span className="material-symbols-outlined text-3xl">{cat.icon}</span>
+              <div className={`w-7 h-7 ${cat.bg} ${cat.color} rounded-[var(--radius)] flex items-center justify-center mb-2.5`}>
+                <span className="material-symbols-outlined text-[16px]">{cat.icon}</span>
               </div>
-              <h3 className="text-xl font-black text-on-surface mb-4">{cat.title}</h3>
+              <h3 className="text-[13px] font-semibold text-on-surface mb-2">{cat.title}</h3>
               <ul className="space-y-3">
                 {cat.articles.map(art => (
                   <li key={art.id}>
@@ -270,22 +251,22 @@ export default function HelpPage() {
                   </li>
                 ))}
               </ul>
-            </motion.div>
+            </div>
           ))}
         </div>
 
         {/* Contact Support Section */}
-        <div className="bg-surface-container-high rounded-[2.5rem] p-10 md:p-16 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-10">
-          <div className="relative z-10 max-w-xl text-center md:text-left">
-            <h2 className="text-3xl md:text-4xl font-black text-on-surface mb-4">Still need help?</h2>
-            <p className="text-slate-500 dark:text-slate-400 mb-8">
-              Our support team is available 24/7 to assist you with any technical issues or writing challenges.
+        <div className="panel panel-pad relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="relative z-10 max-w-xl">
+            <h2 className="text-[17px] font-semibold text-on-surface mb-1.5">Still need help?</h2>
+            <p className="text-[12.5px] text-on-surface-variant mb-3">
+              Our support team is available 24/7 for technical issues or writing challenges.
             </p>
-            <div className="flex flex-wrap justify-center md:justify-start gap-4">
+            <div className="flex flex-wrap gap-2">
               <a 
                 href="https://wa.me/919051822558" 
                 target="_blank" 
-                className="bg-[#25D366] text-white px-8 py-4 rounded-2xl font-bold flex items-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-[#25D366]/20"
+                className="btn btn-lg !bg-[#25D366] !text-white hover:!bg-[#1fb555]"
               >
                 <span className="material-symbols-outlined">chat</span>
                 WhatsApp Support
@@ -293,7 +274,7 @@ export default function HelpPage() {
               <a 
                 href="https://writerdost.ai" 
                 target="_blank" 
-                className="bg-surface-container-lowest text-on-surface px-8 py-4 rounded-2xl font-bold flex items-center gap-3 hover:scale-105 active:scale-95 transition-all border border-outline-variant/10 shadow-xl"
+                className="btn btn-secondary btn-lg"
               >
                 <span className="material-symbols-outlined">language</span>
                 Official Website
@@ -325,9 +306,9 @@ export default function HelpPage() {
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               className="relative w-full max-w-2xl bg-surface-container-lowest rounded-[2rem] shadow-2xl border border-outline-variant/10 overflow-hidden"
             >
-              <div className="p-8 pb-0 flex justify-between items-start">
+              <div className="p-4 pb-0 flex justify-between items-start">
                 <div className="px-3 py-1 bg-primary/10 rounded-full">
-                  <span className="text-[10px] font-black text-primary uppercase tracking-widest">
+                  <span className="text-[10px] font-semibold text-primary">
                     {allArticles.find(a => a.id === selectedArticle)?.category}
                   </span>
                 </div>
@@ -338,8 +319,8 @@ export default function HelpPage() {
                   <span className="material-symbols-outlined text-slate-400">close</span>
                 </button>
               </div>
-              <div className="p-8 pt-6">
-                <h2 className="text-3xl font-black text-on-surface mb-6">
+              <div className="p-4 pt-6">
+                <h2 className="text-[15px] font-semibold text-on-surface mb-3">
                   {allArticles.find(a => a.id === selectedArticle)?.title}
                 </h2>
                 <div className="prose dark:prose-invert max-w-none">
@@ -347,11 +328,11 @@ export default function HelpPage() {
                     {allArticles.find(a => a.id === selectedArticle)?.content}
                   </p>
                 </div>
-                <div className="mt-12 pt-8 border-t border-outline-variant/10 flex items-center justify-between">
+                <div className="mt-6 pt-8 border-t border-outline-variant/10 flex items-center justify-between">
                   <p className="text-xs text-slate-500 italic">Was this helpful?</p>
                   <div className="flex gap-2">
-                    <button className="px-4 py-2 bg-emerald-500/10 text-emerald-500 rounded-lg text-xs font-bold hover:bg-emerald-500/20 transition-all">Yes, thanks!</button>
-                    <button className="px-4 py-2 bg-rose-500/10 text-rose-500 rounded-lg text-xs font-bold hover:bg-rose-500/20 transition-all">Not really</button>
+                    <button className="px-4 py-2 bg-emerald-500/10 text-emerald-500 rounded-[var(--radius)] text-xs font-bold hover:bg-emerald-500/20 transition-all">Yes, thanks!</button>
+                    <button className="px-4 py-2 bg-rose-500/10 text-rose-500 rounded-[var(--radius)] text-xs font-bold hover:bg-rose-500/20 transition-all">Not really</button>
                   </div>
                 </div>
               </div>

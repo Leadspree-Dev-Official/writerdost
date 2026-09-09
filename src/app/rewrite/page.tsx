@@ -442,20 +442,16 @@ export default function RewritePage() {
 
   return (
     <>
-      <div className="flex-1 p-8 max-w-6xl mx-auto w-full animate-in fade-in duration-700">
-        <div className="mb-12 lg:flex lg:items-end lg:justify-between border-b border-outline-variant/5 pb-8">
+      <div className="page">
+        <div className="page-head">
           <div>
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                <span className="material-symbols-outlined">auto_fix_high</span>
-              </div>
-              <h2 className="text-4xl font-black tracking-tight text-on-surface">Rewrite Ebook</h2>
-            </div>
-            <p className="text-on-surface-variant max-w-2xl leading-relaxed text-sm">
-              Premium manuscript transformation powered by <span className="text-primary font-bold">Deep Swarm Intelligence</span>.
+            <h1 className="page-title">Rewrite</h1>
+            <p className="page-sub">
+              Transform an existing manuscript: a quick pass, a multi-agent rewrite, a rebuild from an
+              outline, or a translation.
             </p>
           </div>
-          <div className="flex bg-surface-container-low/80 backdrop-blur-md p-1.5 rounded-2xl gap-1 mt-6 lg:mt-0 shadow-inner border border-white/5">
+          <div className="flex items-center gap-1 p-0.5 rounded-[var(--radius)] bg-on-surface/[0.05] border border-[var(--hairline)]">
             {[
               { id: "Simple", label: "Quick Fix", icon: "bolt" },
               { id: "Deep", label: "Deep Swarm", icon: "account_tree" },
@@ -464,7 +460,7 @@ export default function RewritePage() {
             ].map((flow) => (
               <button
                 key={flow.id}
-                className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
+                className={`px-5 py-2.5 rounded-[var(--radius)] text-xs font-semibold transition-all flex items-center gap-2 ${
                   rewrite.flow === flow.id
                     ? "bg-white dark:bg-white/[0.08] shadow-xl shadow-primary/5 dark:shadow-none text-primary dark:text-indigo-300 scale-[1.02]"
                     : "text-on-surface-variant hover:text-on-surface hover:bg-white/40 dark:hover:bg-white/[0.04]"
@@ -480,7 +476,7 @@ export default function RewritePage() {
         </div>
 
         {message ? (
-          <div className="mb-8 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 p-4 text-sm text-emerald-700 dark:text-emerald-400 flex items-center justify-between">
+          <div className="mb-4 rounded-[var(--radius-lg)] bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 p-4 text-sm text-emerald-700 dark:text-emerald-400 flex items-center justify-between">
             {message}
             <button onClick={() => setMessage("")} className="text-emerald-900/40 dark:text-emerald-400/40 hover:text-emerald-900 dark:hover:text-emerald-300 transition-colors">
               <span className="material-symbols-outlined text-sm">close</span>
@@ -488,28 +484,28 @@ export default function RewritePage() {
           </div>
         ) : null}
 
-        <div className="grid grid-cols-12 gap-8">
+        <div className="grid grid-cols-12 gap-4">
           {/* Main Workspace */}
           <div className="col-span-12 lg:col-span-8 space-y-8">
             {rewrite.flow === "Outline" ? (
-              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-6 duration-700 fill-mode-both">
-                <div className="bg-white/40 dark:bg-white/[0.03] backdrop-blur-xl rounded-[2.5rem] p-10 border border-white/60 dark:border-white/[0.06] shadow-2xl shadow-primary/5 dark:shadow-none relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
+              <div className="space-y-3 animate-in fade-in slide-in-from-bottom-6 duration-700 fill-mode-both">
+                <div className="bg-white/40 dark:bg-white/[0.03] backdrop-blur-xl rounded-[var(--radius-lg)] p-5 border border-white/60 dark:border-white/[0.06] shadow-2xl shadow-primary/5 dark:shadow-none relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-4 opacity-[0.03] pointer-events-none">
                     <span className="material-symbols-outlined text-[120px]">architecture</span>
                   </div>
                   
-                  <h3 className="text-2xl font-black mb-8 flex items-center gap-3">
-                    <span className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/20">
-                      <span className="material-symbols-outlined text-xl">architecture</span>
+                  <h3 className="text-[15px] font-semibold mb-3 flex items-center gap-2">
+                    <span className="w-10 h-10 rounded-[var(--radius)] bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/20">
+                      <span className="material-symbols-outlined text-[17px]">architecture</span>
                     </span>
                     Creative Blueprints
                   </h3>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
                     <div className="group">
-                      <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] block mb-3 pl-1">Ebook Master Title</label>
+                      <label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase block mb-3 pl-1">Ebook Master Title</label>
                       <input
-                        className="w-full bg-white/80 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] rounded-2xl px-5 py-4 text-sm font-bold focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600 text-on-surface"
+                        className="w-full bg-white/80 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] rounded-[var(--radius-lg)] px-5 py-2 text-sm font-bold focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600 text-on-surface"
                         placeholder="e.g. The Architecture of Tomorrow"
                         type="text"
                         value={outlineGenerator.title || ""}
@@ -517,9 +513,9 @@ export default function RewritePage() {
                       />
                     </div>
                     <div className="group">
-                      <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] block mb-3 pl-1">Primary Audience</label>
+                      <label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase block mb-3 pl-1">Primary Audience</label>
                       <input
-                        className="w-full bg-white/80 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] rounded-2xl px-5 py-4 text-sm font-bold focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600 text-on-surface"
+                        className="w-full bg-white/80 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] rounded-[var(--radius-lg)] px-5 py-2 text-sm font-bold focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600 text-on-surface"
                         placeholder="e.g. Tech Visionaries & Architects"
                         type="text"
                         value={outlineGenerator.audience || ""}
@@ -528,22 +524,22 @@ export default function RewritePage() {
                     </div>
                   </div>
                   
-                  <div className="space-y-6">
+                  <div className="space-y-3">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-2 mb-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em]">Curriculum Staging</span>
-                        <span className="px-2 py-0.5 bg-slate-900 dark:bg-primary text-white rounded text-[9px] font-black">{outlineGenerator.chapters.length} Units</span>
+                        <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em]">Curriculum Staging</span>
+                        <span className="px-2 py-0.5 bg-slate-900 dark:bg-primary text-white rounded text-[9px] font-semibold">{outlineGenerator.chapters.length} Units</span>
                       </div>
                       <div className="flex items-center gap-3">
                         <button 
                           onClick={() => setShowSmartImport(true)} 
-                          className="h-10 px-5 rounded-xl border-2 border-slate-900 dark:border-primary text-slate-900 dark:text-primary text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-slate-900 dark:hover:bg-primary hover:text-white transition-all active:scale-95 shadow-sm dark:shadow-none"
+                          className="h-10 px-5 rounded-[var(--radius)] border-2 border-slate-900 dark:border-primary text-slate-900 dark:text-primary text-[10px] font-semibold flex items-center gap-2 hover:bg-slate-900 dark:hover:bg-primary hover:text-white transition-all active:scale-95 shadow-sm dark:shadow-none"
                         >
                           <span className="material-symbols-outlined text-sm">text_fields</span> Smart Import
                         </button>
                         <button 
                           onClick={addOutlineChapter} 
-                          className="h-10 px-5 rounded-xl bg-slate-900 dark:bg-primary text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-primary dark:hover:bg-indigo-400 transition-all hover:shadow-lg hover:shadow-primary/20 active:scale-95 shadow-sm"
+                          className="h-10 px-5 rounded-[var(--radius)] bg-slate-900 dark:bg-primary text-white text-[10px] font-semibold flex items-center gap-2 hover:bg-primary dark:hover:bg-indigo-400 transition-all hover:shadow-lg hover:shadow-primary/20 active:scale-95 shadow-sm"
                         >
                           <span className="material-symbols-outlined text-sm">add_circle</span> New Chapter
                         </button>
@@ -554,14 +550,14 @@ export default function RewritePage() {
                     
                     <div className="grid grid-cols-1 gap-4">
                       {outlineGenerator.chapters.map((ch, idx) => (
-                        <div key={ch.id} className="bg-white/60 dark:bg-white/[0.03] backdrop-blur-sm rounded-3xl p-6 border border-white dark:border-white/[0.06] shadow-sm dark:shadow-none group hover:shadow-md transition-all hover:border-primary/10 dark:hover:border-primary/20">
+                        <div key={ch.id} className="bg-white/60 dark:bg-white/[0.03] backdrop-blur-sm rounded-[var(--radius-lg)] p-4 border border-white dark:border-white/[0.06] shadow-sm dark:shadow-none group hover:shadow-md transition-all hover:border-primary/10 dark:hover:border-primary/20">
                           <div className="flex items-center gap-5 mb-4">
-                            <span className="w-10 h-10 bg-slate-100 dark:bg-white/[0.06] rounded-2xl flex items-center justify-center text-xs font-black text-slate-500 dark:text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                            <span className="w-10 h-10 bg-slate-100 dark:bg-white/[0.06] rounded-[var(--radius-lg)] flex items-center justify-center text-xs font-semibold text-slate-500 dark:text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
                               {String(idx + 1).padStart(2, '0')}
                             </span>
                             <div className="flex-1">
                               <input
-                                className="bg-transparent border-0 font-black text-base w-full focus:ring-0 outline-none text-on-surface"
+                                className="bg-transparent border-0 font-semibold text-base w-full focus:ring-0 outline-none text-on-surface"
                                 placeholder={`Chapter ${idx + 1} Title`}
                                 value={ch.title || ""}
                                 onChange={(e) => updateOutlineChapter(ch.id, { title: e.target.value })}
@@ -569,13 +565,13 @@ export default function RewritePage() {
                             </div>
                             <button 
                               onClick={() => removeOutlineChapter(ch.id)} 
-                              className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-300 dark:text-slate-600 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all"
+                              className="btn btn-ghost btn-icon hover:text-error"
                             >
                                <span className="material-symbols-outlined text-lg">delete_outline</span>
                             </button>
                           </div>
                           <textarea
-                            className="w-full bg-slate-50/50 dark:bg-white/[0.03] rounded-2xl p-5 text-xs text-on-surface-variant font-medium min-h-24 resize-none focus:ring-4 focus:ring-primary/5 focus:bg-white dark:focus:bg-white/[0.06] outline-none border border-transparent focus:border-primary/10 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
+                            className="w-full bg-slate-50/50 dark:bg-white/[0.03] rounded-[var(--radius-lg)] p-5 text-xs text-on-surface-variant font-medium min-h-24 resize-none focus:ring-4 focus:ring-primary/5 focus:bg-white dark:focus:bg-white/[0.06] outline-none border border-transparent focus:border-primary/10 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
                             placeholder="Briefly list the key insights and topics for this chapter..."
                             value={ch.topics || ""}
                             onChange={(e) => updateOutlineChapter(ch.id, { topics: e.target.value })}
@@ -588,26 +584,26 @@ export default function RewritePage() {
               </div>
             ) : rewrite.flow === "Translate" ? (
               <div className="space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-700 fill-mode-both">
-                <div className="bg-white dark:bg-white/[0.03] rounded-[2.5rem] p-1.5 shadow-2xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-white/[0.06] overflow-hidden relative">
+                <div className="bg-white dark:bg-white/[0.03] rounded-[var(--radius-lg)] p-1.5 shadow-2xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-white/[0.06] overflow-hidden relative">
                   <div className="absolute -top-24 -left-24 w-64 h-64 bg-primary/5 dark:bg-primary/[0.03] rounded-full blur-3xl pointer-events-none" />
-                  <div className="bg-slate-50/50 dark:bg-transparent backdrop-blur-sm rounded-[2rem] border border-white dark:border-white/[0.04] p-8 md:p-12 relative z-10">
-                    <div className="flex flex-col md:flex-row md:items-start gap-8">
-                      <div className="w-20 h-20 bg-white dark:bg-white/[0.06] rounded-3xl flex items-center justify-center shadow-xl dark:shadow-none shadow-primary/10 border border-primary/5 dark:border-white/[0.06] shrink-0">
-                        <span className="material-symbols-outlined text-primary text-4xl">translate</span>
+                  <div className="bg-slate-50/50 dark:bg-transparent backdrop-blur-sm rounded-[2rem] border border-white dark:border-white/[0.04] p-4 md:p-12 relative z-10">
+                    <div className="flex flex-col md:flex-row md:items-start gap-4">
+                      <div className="w-8 h-8 rounded-[var(--radius)] bg-primary/10 flex items-center justify-center shrink-0">
+                        <span className="material-symbols-outlined text-primary text-[18px]">translate</span>
                       </div>
                       <div className="flex-1">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
-                          <h3 className="text-2xl font-black tracking-tight leading-none text-on-surface">Universal Translator</h3>
+                          <h3 className="text-[15px] font-semibold tracking-[-0.012em] text-on-surface">Universal Translator</h3>
                         </div>
                         <p className="text-on-surface-variant text-sm mb-6 max-w-xl leading-relaxed font-medium">
                           Select an existing project and seamlessly translate it into a new language. The AI acts as a contextual translator, preserving your tone, cultural nuances, and precise formatting.
                         </p>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
                           <div className="group">
-                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] block mb-3 pl-1">Source Project</label>
+                            <label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase block mb-3 pl-1">Source Project</label>
                             <select
-                              className="w-full bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.06] rounded-2xl px-5 py-4 text-sm font-bold focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none transition-all shadow-inner dark:shadow-none text-on-surface"
+                              className="w-full bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.06] rounded-[var(--radius-lg)] px-5 py-2 text-sm font-bold focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none transition-all shadow-inner dark:shadow-none text-on-surface"
                               value={rewrite.translateProjectId || ""}
                               onChange={(e) => updateRewrite({ translateProjectId: e.target.value })}
                             >
@@ -618,9 +614,9 @@ export default function RewritePage() {
                             </select>
                           </div>
                           <div className="group">
-                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] block mb-3 pl-1">Target Language</label>
+                            <label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase block mb-3 pl-1">Target Language</label>
                             <select
-                              className="w-full bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.06] rounded-2xl px-5 py-4 text-sm font-bold focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none transition-all shadow-inner dark:shadow-none text-on-surface"
+                              className="w-full bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.06] rounded-[var(--radius-lg)] px-5 py-2 text-sm font-bold focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none transition-all shadow-inner dark:shadow-none text-on-surface"
                               value={rewrite.targetLanguage || "Spanish"}
                               onChange={(e) => updateRewrite({ targetLanguage: e.target.value })}
                             >
@@ -638,18 +634,18 @@ export default function RewritePage() {
               </div>
             ) : (
               <div className="space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-700 fill-mode-both">
-                <div className="bg-white dark:bg-white/[0.03] rounded-[2.5rem] p-1.5 shadow-2xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-white/[0.06] overflow-hidden relative">
+                <div className="bg-white dark:bg-white/[0.03] rounded-[var(--radius-lg)] p-1.5 shadow-2xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-white/[0.06] overflow-hidden relative">
                   <div className="absolute -top-24 -left-24 w-64 h-64 bg-primary/5 dark:bg-primary/[0.03] rounded-full blur-3xl pointer-events-none" />
-                  <div className="bg-slate-50/50 dark:bg-transparent backdrop-blur-sm rounded-[2rem] border border-white dark:border-white/[0.04] p-8 md:p-12 relative z-10">
-                    <div className="flex flex-col md:flex-row md:items-start gap-8">
-                      <div className="w-20 h-20 bg-white dark:bg-white/[0.06] rounded-3xl flex items-center justify-center shadow-xl dark:shadow-none shadow-primary/10 border border-primary/5 dark:border-white/[0.06] shrink-0">
-                        <span className="material-symbols-outlined text-primary text-4xl">
+                  <div className="bg-slate-50/50 dark:bg-transparent backdrop-blur-sm rounded-[2rem] border border-white dark:border-white/[0.04] p-4 md:p-12 relative z-10">
+                    <div className="flex flex-col md:flex-row md:items-start gap-4">
+                      <div className="w-8 h-8 rounded-[var(--radius)] bg-primary/10 flex items-center justify-center shrink-0">
+                        <span className="material-symbols-outlined text-primary text-[18px]">
                           {rewrite.flow === "Deep" ? "account_tree" : "content_paste_go"}
                         </span>
                       </div>
                       <div className="flex-1">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
-                          <h3 className="text-2xl font-black tracking-tight leading-none text-on-surface">
+                          <h3 className="text-[15px] font-semibold tracking-[-0.012em] text-on-surface">
                             {rewrite.flow === "Deep" ? "Manuscript Core" : "Quick Text Entry"}
                           </h3>
                           
@@ -664,7 +660,7 @@ export default function RewritePage() {
                              <button 
                                 onClick={() => fileInputRef.current?.click()}
                                 disabled={extracting}
-                                className="flex items-center gap-2 px-6 py-3 bg-white/80 dark:bg-white/[0.04] hover:bg-white dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.06] rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 hover:text-primary transition-all shadow-sm dark:shadow-none active:scale-95 disabled:opacity-50"
+                                className="flex items-center gap-2 px-6 py-3 bg-white/80 dark:bg-white/[0.04] hover:bg-white dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.06] rounded-[var(--radius-lg)] text-[10px] font-semibold text-slate-500 dark:text-slate-400 hover:text-primary transition-all shadow-sm dark:shadow-none active:scale-95 disabled:opacity-50"
                              >
                                 <span className={extracting ? 'animate-spin' : ''}>
                                   <span className="material-symbols-outlined text-[16px]">
@@ -682,12 +678,12 @@ export default function RewritePage() {
                         </p>
                         <div className="relative group">
                           <textarea
-                            className="w-full min-h-80 rounded-3xl bg-white dark:bg-white/[0.04] p-8 border border-slate-200 dark:border-white/[0.06] outline-none focus:ring-8 focus:ring-primary/5 focus:border-primary/20 resize-none shadow-inner dark:shadow-none text-sm font-medium leading-relaxed transition-all text-on-surface"
+                            className="textarea min-h-[14rem] leading-relaxed"
                             value={rewrite.manuscript || ""}
                             onChange={(event) => updateRewrite({ manuscript: event.target.value })}
                             placeholder={rewrite.flow === "Deep" ? "Drop your full book content here..." : "Paste content to polish..."}
                           />
-                          <div className="absolute bottom-6 right-6 opacity-40 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                          <div className="absolute bottom-6 right-6 opacity-40 text-[10px] font-semibold text-slate-400 dark:text-slate-500">
                              {rewrite.manuscript.split(/\s+/).filter(Boolean).length} Words
                           </div>
                         </div>
@@ -700,9 +696,9 @@ export default function RewritePage() {
           </div>
 
           <div className="col-span-12 lg:col-span-4 space-y-8">
-            <div className="space-y-4">
+            <div className="space-y-2">
               <button
-                className="w-full bg-slate-900 dark:bg-primary text-white py-6 rounded-[2rem] font-black uppercase tracking-[0.3em] shadow-2xl shadow-slate-300 dark:shadow-primary/20 flex items-center justify-center gap-4 group transition-all hover:bg-primary dark:hover:bg-indigo-400 active:scale-95 disabled:opacity-50 relative overflow-hidden text-xs"
+                className="btn btn-primary btn-lg w-full group relative overflow-hidden"
                 onClick={async () => {
                   if (rewrite.flow === "Deep") {
                      handleDeepRewrite();
@@ -756,7 +752,7 @@ export default function RewritePage() {
                 type="button"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:animate-shimmer duration-1000" />
-                <span className="material-symbols-outlined text-xl group-hover:rotate-12 transition-transform">
+                <span className="material-symbols-outlined text-[17px] group-hover:rotate-12 transition-transform">
                   {rewrite.flow === "Deep" ? "account_tree" : rewrite.flow === "Outline" ? "auto_awesome_motion" : rewrite.flow === "Translate" ? "translate" : "auto_fix_high"}
                 </span>
                 {generating || isGenerating 
@@ -772,21 +768,21 @@ export default function RewritePage() {
             </div>
 
             {/* PROJECT METADATA CARD (RETURNED TO SIDEBAR) */}
-            <div className="bg-white/60 dark:bg-white/[0.03] backdrop-blur-xl rounded-[2rem] p-8 border border-white dark:border-white/[0.06] shadow-xl dark:shadow-none animate-in slide-in-from-right-4 duration-500">
-               <div className="flex items-center gap-4 mb-8">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shadow-lg shadow-primary/5">
-                  <span className="material-symbols-outlined text-xl">folder_managed</span>
+            <div className="bg-white/60 dark:bg-white/[0.03] backdrop-blur-xl rounded-[2rem] p-4 border border-white dark:border-white/[0.06] shadow-xl dark:shadow-none animate-in slide-in-from-right-4 duration-500">
+               <div className="flex items-center gap-4 mb-4">
+                <div className="w-10 h-10 rounded-[var(--radius)] bg-primary/10 text-primary flex items-center justify-center shadow-lg shadow-primary/5">
+                  <span className="material-symbols-outlined text-[17px]">folder_managed</span>
                 </div>
                 <div className="flex flex-col">
-                  <h4 className="font-black text-xs uppercase tracking-widest text-on-surface">Project Metadata</h4>
+                  <h4 className="font-semibold text-xs text-on-surface">Project Metadata</h4>
                   <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-tighter">Draft Identity</p>
                 </div>
               </div>
-              <div className="space-y-6">
+              <div className="space-y-3">
                 <div>
-                  <label className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] block mb-2 pl-1">Project Master Title</label>
+                  <label className="text-[9px] font-semibold text-slate-400 dark:text-slate-500 uppercase block mb-2 pl-1">Project Master Title</label>
                   <input
-                    className="w-full bg-slate-50/50 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] rounded-xl px-4 py-3 text-xs font-bold focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600 shadow-inner dark:shadow-none text-on-surface"
+                    className="w-full bg-slate-50/50 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] rounded-[var(--radius)] px-4 py-3 text-xs font-bold focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600 shadow-inner dark:shadow-none text-on-surface"
                     placeholder={rewrite.flow === "Outline" ? "Using Blueprint Title..." : "e.g. My Rewritten Concept"}
                     type="text"
                     disabled={rewrite.flow === "Outline"}
@@ -795,9 +791,9 @@ export default function RewritePage() {
                   />
                 </div>
                 <div>
-                  <label className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] block mb-2 pl-1">Primary Audience</label>
+                  <label className="text-[9px] font-semibold text-slate-400 dark:text-slate-500 uppercase block mb-2 pl-1">Primary Audience</label>
                   <input
-                    className="w-full bg-slate-50/50 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] rounded-xl px-4 py-3 text-xs font-bold focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600 shadow-inner dark:shadow-none text-on-surface"
+                    className="w-full bg-slate-50/50 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] rounded-[var(--radius)] px-4 py-3 text-xs font-bold focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600 shadow-inner dark:shadow-none text-on-surface"
                     placeholder="e.g. Aspiring Developers"
                     type="text"
                     disabled={rewrite.flow === "Outline"}
@@ -808,13 +804,13 @@ export default function RewritePage() {
                 
                 <div className="pt-2">
                   <div className="flex justify-between items-center mb-2">
-                    <label className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] pl-1">Estimated Words</label>
+                    <label className="text-[9px] font-semibold text-slate-400 dark:text-slate-500 uppercase pl-1">Estimated Words</label>
                     <span className="text-primary font-bold text-[10px]">
                       ~{(rewrite.flow === "Outline" ? (outlineGenerator.targetLength || 15000) : (rewrite.length || 20000)).toLocaleString()}
                     </span>
                   </div>
                   <input
-                    className="w-full h-1 bg-slate-100 dark:bg-white/[0.06] rounded-lg appearance-none cursor-pointer accent-primary"
+                    className="w-full h-1 bg-slate-100 dark:bg-white/[0.06] rounded-[var(--radius)] appearance-none cursor-pointer accent-primary"
                     max="100000"
                     min="1000"
                     step="1000"
@@ -834,20 +830,20 @@ export default function RewritePage() {
             </div>
 
             {/* CREATIVE VOICE DROPDOWN */}
-            <div className="bg-white/60 dark:bg-white/[0.03] backdrop-blur-xl rounded-[2rem] p-8 border border-white dark:border-white/[0.06] shadow-xl dark:shadow-none">
-              <div className="flex items-center gap-4 mb-8">
-                <div className="w-10 h-10 rounded-xl bg-slate-900 dark:bg-primary text-white flex items-center justify-center shadow-lg shadow-slate-200 dark:shadow-primary/20">
-                  <span className="material-symbols-outlined text-xl">psychology</span>
+            <div className="bg-white/60 dark:bg-white/[0.03] backdrop-blur-xl rounded-[2rem] p-4 border border-white dark:border-white/[0.06] shadow-xl dark:shadow-none">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-10 h-10 rounded-[var(--radius)] bg-slate-900 dark:bg-primary text-white flex items-center justify-center shadow-lg shadow-slate-200 dark:shadow-primary/20">
+                  <span className="material-symbols-outlined text-[17px]">psychology</span>
                 </div>
                 <div className="flex flex-col">
-                  <h4 className="font-black text-xs uppercase tracking-widest text-on-surface">Creative Voice</h4>
+                  <h4 className="font-semibold text-xs text-on-surface">Creative Voice</h4>
                   <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-tighter">Tone Configuration</p>
                 </div>
               </div>
               
               <div className="relative group">
                 <select
-                  className="w-full appearance-none bg-slate-50/50 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] rounded-2xl px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none cursor-pointer hover:bg-white dark:hover:bg-white/[0.06] transition-all shadow-sm dark:shadow-none"
+                  className="w-full appearance-none bg-slate-50/50 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] rounded-[var(--radius-lg)] px-6 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none cursor-pointer hover:bg-white dark:hover:bg-white/[0.06] transition-all shadow-sm dark:shadow-none"
                   value={(rewrite.flow === "Outline" ? outlineGenerator.tone : rewrite.tone) || "Professional"}
                   onChange={(e) => rewrite.flow === "Outline" ? updateOutlineGenerator({ tone: e.target.value }) : updateRewrite({ tone: e.target.value })}
                 >
@@ -864,19 +860,19 @@ export default function RewritePage() {
             </div>
 
             {rewrite.flow !== "Outline" && (
-              <div className="bg-white/60 dark:bg-white/[0.03] backdrop-blur-xl rounded-[2rem] p-8 border border-white dark:border-white/[0.06] shadow-xl dark:shadow-none">
-                <div className="flex items-center gap-4 mb-10">
-                  <div className="w-12 h-12 rounded-2xl bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/20">
-                    <span className="material-symbols-outlined text-2xl">verified_user</span>
+              <div className="bg-white/60 dark:bg-white/[0.03] backdrop-blur-xl rounded-[2rem] p-4 border border-white dark:border-white/[0.06] shadow-xl dark:shadow-none">
+                <div className="flex items-center gap-4 mb-5">
+                  <div className="w-7 h-7 rounded-[var(--radius)] bg-primary text-white flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-[16px]">verified_user</span>
                   </div>
                   <div className="flex flex-col">
-                    <h4 className="font-black text-xs uppercase tracking-widest text-on-surface">Audit Layers</h4>
+                    <h4 className="font-semibold text-xs text-on-surface">Audit Layers</h4>
                     <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-tighter">Safety & Style</p>
                   </div>
                 </div>
                 <div className="space-y-8">
                   <div className="flex items-center justify-between group">
-                    <span className="text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 group-hover:text-primary transition-colors">Humanize</span>
+                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 group-hover:text-primary transition-colors">Humanize</span>
                     <button
                       onClick={() => updateRewrite({ humanize: !rewrite.humanize })}
                       className={`w-14 h-7 rounded-full transition-all relative p-1 ${rewrite.humanize ? 'bg-primary shadow-lg shadow-primary/20' : 'bg-slate-200 dark:bg-white/[0.06]'}`}
@@ -886,7 +882,7 @@ export default function RewritePage() {
                     </button>
                   </div>
                   <div className="flex items-center justify-between group">
-                    <span className="text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 group-hover:text-primary transition-colors">Zero Plagiarism</span>
+                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 group-hover:text-primary transition-colors">Zero Plagiarism</span>
                     <button
                       onClick={() => updateRewrite({ avoidPlagiarism: !rewrite.avoidPlagiarism })}
                       className={`w-14 h-7 rounded-full transition-all relative p-1 ${rewrite.avoidPlagiarism ? 'bg-primary shadow-lg shadow-primary/20' : 'bg-slate-200 dark:bg-white/[0.06]'}`}
@@ -900,21 +896,21 @@ export default function RewritePage() {
             )}
 
 
-            <div className="bg-white/60 dark:bg-white/[0.03] backdrop-blur-xl rounded-[2rem] p-8 border border-white dark:border-white/[0.06] shadow-xl dark:shadow-none">
-              <h4 className="font-black text-xs uppercase tracking-widest text-on-surface mb-6">Rewrite Metrics</h4>
-              <div className="space-y-4 bg-slate-50/50 dark:bg-white/[0.03] p-5 rounded-2xl border border-slate-100 dark:border-white/[0.06]">
+            <div className="bg-white/60 dark:bg-white/[0.03] backdrop-blur-xl rounded-[2rem] p-4 border border-white dark:border-white/[0.06] shadow-xl dark:shadow-none">
+              <h4 className="font-semibold text-xs text-on-surface mb-6">Rewrite Metrics</h4>
+              <div className="space-y-2 bg-slate-50/50 dark:bg-white/[0.03] p-5 rounded-[var(--radius-lg)] border border-slate-100 dark:border-white/[0.06]">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Outline Time</span>
+                  <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">Outline Time</span>
                   <span className="text-xs font-bold text-emerald-500">{formatTime(metrics.outlineTime)}</span>
                 </div>
                 <div className="h-px bg-slate-200/50 dark:bg-white/[0.04] w-full" />
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Drafting Time</span>
+                  <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">Drafting Time</span>
                   <span className="text-xs font-bold text-indigo-500">{formatTime(metrics.draftingTime)}</span>
                 </div>
                 <div className="h-px bg-slate-200/50 dark:bg-white/[0.04] w-full" />
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Tokens Used</span>
+                  <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">Tokens Used</span>
                   <span className="text-xs font-bold text-slate-900 dark:text-slate-200">{metrics.tokens.toLocaleString()}</span>
                 </div>
               </div>
@@ -926,31 +922,31 @@ export default function RewritePage() {
       {/* Smart Import Modal — rendered at top level to avoid backdrop-blur/overflow clipping */}
       {showSmartImport && (
         <div 
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-8"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-4"
           style={{ backgroundColor: 'rgba(15, 23, 42, 0.75)' }}
           onClick={(e) => { if (e.target === e.currentTarget) setShowSmartImport(false); }}
         >
           <div 
-            className="bg-white dark:bg-[#1a1a2e] rounded-3xl sm:rounded-[2.5rem] w-full max-w-3xl max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200 dark:border-white/10 animate-in zoom-in-95 fade-in duration-300"
+            className="bg-white dark:bg-[#1a1a2e] rounded-[var(--radius-lg)] sm:rounded-[var(--radius-lg)] w-full max-w-3xl max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200 dark:border-white/10 animate-in zoom-in-95 fade-in duration-300"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="sticky top-0 z-10 bg-white dark:bg-[#1a1a2e] rounded-t-3xl sm:rounded-t-[2.5rem] px-8 sm:px-10 pt-8 pb-5 border-b border-slate-100 dark:border-white/[0.06]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                    <span className="material-symbols-outlined text-2xl">auto_awesome</span>
+                  <div className="w-7 h-7 rounded-[var(--radius)] bg-primary text-white flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-[16px]">auto_awesome</span>
                   </div>
                   <div>
-                    <h4 className="font-black text-lg tracking-tight text-slate-900 dark:text-white">Smart Blueprint Import</h4>
+                    <h4 className="font-semibold text-lg tracking-tight text-slate-900 dark:text-white">Smart Blueprint Import</h4>
                     <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold">Import existing book structure to regenerate</p>
                   </div>
                 </div>
                 <button 
                   onClick={() => setShowSmartImport(false)}
-                  className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/[0.1] flex items-center justify-center text-slate-500 dark:text-slate-400 transition-colors"
+                  className="w-10 h-10 rounded-[var(--radius)] bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/[0.1] flex items-center justify-center text-slate-500 dark:text-slate-400 transition-colors"
                 >
-                  <span className="material-symbols-outlined text-xl">close</span>
+                  <span className="material-symbols-outlined text-[17px]">close</span>
                 </button>
               </div>
             </div>
@@ -964,12 +960,12 @@ export default function RewritePage() {
 
               {/* Title Field */}
               <div>
-                <label className="flex items-center gap-2 text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.15em] mb-2.5 pl-1">
+                <label className="flex items-center gap-2 text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-[0.15em] mb-2.5 pl-1">
                   <span className="material-symbols-outlined text-sm text-indigo-500">title</span>
                   Ebook Title
                 </label>
                 <input
-                  className="w-full bg-slate-50 dark:bg-white/[0.05] px-5 py-4 rounded-2xl text-sm font-semibold border border-slate-200 dark:border-white/[0.08] outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/30 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 transition-all"
+                  className="w-full bg-slate-50 dark:bg-white/[0.05] px-5 py-2 rounded-[var(--radius-lg)] text-sm font-semibold border border-slate-200 dark:border-white/[0.08] outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/30 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 transition-all"
                   placeholder="e.g., Marketing Psychology Decoded"
                   value={importTitle}
                   onChange={(e) => setImportTitle(e.target.value)}
@@ -978,12 +974,12 @@ export default function RewritePage() {
 
               {/* Description Field */}
               <div>
-                <label className="flex items-center gap-2 text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.15em] mb-2.5 pl-1">
+                <label className="flex items-center gap-2 text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-[0.15em] mb-2.5 pl-1">
                   <span className="material-symbols-outlined text-sm text-indigo-500">description</span>
                   Description / Audience
                 </label>
                 <textarea
-                  className="w-full h-32 bg-slate-50 dark:bg-white/[0.05] px-5 py-4 rounded-2xl text-sm font-medium border border-slate-200 dark:border-white/[0.08] outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/30 resize-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 transition-all leading-relaxed"
+                  className="w-full h-32 bg-slate-50 dark:bg-white/[0.05] px-5 py-2 rounded-[var(--radius-lg)] text-sm font-medium border border-slate-200 dark:border-white/[0.08] outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/30 resize-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 transition-all leading-relaxed"
                   placeholder="Exploring consumer behavior, persuasion triggers, and marketing psychology for digital marketers and copywriters..."
                   value={importDescription}
                   onChange={(e) => setImportDescription(e.target.value)}
@@ -992,12 +988,12 @@ export default function RewritePage() {
 
               {/* Outline / Curriculum Field */}
               <div>
-                <label className="flex items-center gap-2 text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.15em] mb-2.5 pl-1">
+                <label className="flex items-center gap-2 text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-[0.15em] mb-2.5 pl-1">
                   <span className="material-symbols-outlined text-sm text-indigo-500">list_alt</span>
                   Curriculum / Outline
                 </label>
                 <textarea
-                  className="w-full h-56 bg-slate-50 dark:bg-white/[0.05] px-5 py-4 rounded-2xl text-sm font-medium border border-slate-200 dark:border-white/[0.08] outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/30 resize-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 transition-all font-mono leading-relaxed"
+                  className="w-full h-56 bg-slate-50 dark:bg-white/[0.05] px-5 py-2 rounded-[var(--radius-lg)] text-sm font-medium border border-slate-200 dark:border-white/[0.08] outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/30 resize-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 transition-all font-mono leading-relaxed"
                   placeholder={"1. Delving into Minds\n* The psychology of attention\n* Cognitive biases in decision making\n\n2. Persuasion Triggers\n* Social proof and authority\n* Scarcity and urgency"}
                   value={importOutlineText}
                   onChange={(e) => setImportOutlineText(e.target.value)}
@@ -1008,7 +1004,7 @@ export default function RewritePage() {
             {/* Footer */}
             <div className="sticky bottom-0 bg-white dark:bg-[#1a1a2e] rounded-b-3xl sm:rounded-b-[2.5rem] px-8 sm:px-10 pb-8 pt-5 border-t border-slate-100 dark:border-white/[0.06]">
               <button 
-                className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white py-5 rounded-2xl text-xs font-black uppercase tracking-[0.2em] transition-all active:scale-[0.98] shadow-xl shadow-indigo-500/20 flex items-center justify-center gap-3 disabled:opacity-50"
+                className="btn btn-primary btn-lg w-full"
                 disabled={!importTitle.trim() && !importOutlineText.trim()}
                 onClick={() => {
                   const combinedText = `${importTitle}\nDESCRIPTION\n${importDescription}\nCURRICULUM\n${importOutlineText}`;

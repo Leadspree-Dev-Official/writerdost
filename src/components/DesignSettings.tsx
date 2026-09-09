@@ -54,7 +54,7 @@ export const DesignSettings: React.FC<DesignSettingsProps> = ({ projectId }) => 
   };
 
   return (
-    <div className="rounded-2xl border border-outline-variant/10 overflow-hidden">
+    <div className="rounded-[var(--radius-lg)] border border-outline-variant/10 overflow-hidden">
       {/* Collapsible Header */}
       <button
         onClick={() => setIsOpen(!isOpen)}
@@ -62,7 +62,7 @@ export const DesignSettings: React.FC<DesignSettingsProps> = ({ projectId }) => 
       >
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-primary text-sm">text_fields</span>
-          <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">Typography & Spacing</span>
+          <span className="text-[10px] font-semibold text-on-surface-variant">Typography & Spacing</span>
         </div>
         <span className={`material-symbols-outlined text-slate-400 text-sm transition-transform ${isOpen ? "rotate-180" : ""}`}>
           expand_more
@@ -71,10 +71,10 @@ export const DesignSettings: React.FC<DesignSettingsProps> = ({ projectId }) => 
 
       {/* Collapsible Body */}
       {isOpen && (
-        <div className="px-4 py-4 space-y-5 bg-surface-container-highest/10">
+        <div className="px-4 py-2 space-y-5 bg-surface-container-highest/10">
           {/* Font Sizes Section */}
           <div>
-            <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-3">Font Sizes</p>
+            <p className="text-[9px] font-semibold text-slate-500 mb-3">Font Sizes</p>
             <div className="space-y-2.5">
               {FONT_FIELDS.map(({ key, label, tag }) => (
                 <div key={key} className="flex items-center justify-between gap-3">
@@ -84,7 +84,7 @@ export const DesignSettings: React.FC<DesignSettingsProps> = ({ projectId }) => 
                   <select 
                     value={settings[key]}
                     onChange={(e) => handleChange(key, e.target.value)}
-                    className="w-[76px] bg-surface-container-lowest border border-outline-variant/20 rounded-lg px-2 py-1.5 text-[11px] font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 text-right"
+                    className="w-[76px] bg-surface-container-lowest border border-outline-variant/20 rounded-[var(--radius)] px-2 py-1.5 text-[11px] font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 text-right"
                   >
                     {FONT_SIZES.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
@@ -95,7 +95,7 @@ export const DesignSettings: React.FC<DesignSettingsProps> = ({ projectId }) => 
 
           {/* Spacing Section */}
           <div className="border-t border-outline-variant/10 pt-4">
-            <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-3">Spacing</p>
+            <p className="text-[9px] font-semibold text-slate-500 mb-3">Spacing</p>
             <div className="space-y-2.5">
               <div className="flex items-center justify-between gap-3">
                 <label className="text-[10px] font-bold text-slate-400 whitespace-nowrap flex items-center gap-1">
@@ -105,7 +105,7 @@ export const DesignSettings: React.FC<DesignSettingsProps> = ({ projectId }) => 
                 <select 
                   value={settings.lineHeight}
                   onChange={(e) => handleChange("lineHeight", e.target.value)}
-                  className="w-[76px] bg-surface-container-lowest border border-outline-variant/20 rounded-lg px-2 py-1.5 text-[11px] font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 text-right"
+                  className="w-[76px] bg-surface-container-lowest border border-outline-variant/20 rounded-[var(--radius)] px-2 py-1.5 text-[11px] font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 text-right"
                 >
                   {LINE_HEIGHTS.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
@@ -118,7 +118,7 @@ export const DesignSettings: React.FC<DesignSettingsProps> = ({ projectId }) => 
                 <select 
                   value={settings.paragraphBefore}
                   onChange={(e) => handleChange("paragraphBefore", e.target.value)}
-                  className="w-[76px] bg-surface-container-lowest border border-outline-variant/20 rounded-lg px-2 py-1.5 text-[11px] font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 text-right"
+                  className="w-[76px] bg-surface-container-lowest border border-outline-variant/20 rounded-[var(--radius)] px-2 py-1.5 text-[11px] font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 text-right"
                 >
                   {SPACINGS.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
@@ -131,7 +131,7 @@ export const DesignSettings: React.FC<DesignSettingsProps> = ({ projectId }) => 
                 <select 
                   value={settings.paragraphAfter}
                   onChange={(e) => handleChange("paragraphAfter", e.target.value)}
-                  className="w-[76px] bg-surface-container-lowest border border-outline-variant/20 rounded-lg px-2 py-1.5 text-[11px] font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 text-right"
+                  className="w-[76px] bg-surface-container-lowest border border-outline-variant/20 rounded-[var(--radius)] px-2 py-1.5 text-[11px] font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 text-right"
                 >
                   {SPACINGS.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
