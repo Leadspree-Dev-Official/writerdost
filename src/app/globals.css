@@ -507,6 +507,65 @@
     border-bottom-color: var(--color-primary);
   }
 
+  /* ---- Selectable tile -------------------------------------------------
+     A pick-one option that fits several to a row, so a short list does not
+     cost a screen of vertical space.                                       */
+
+  .tile {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    padding: 0.5rem 0.625rem;
+    border: 1px solid var(--hairline-strong);
+    border-radius: var(--radius);
+    background: var(--color-surface-container-lowest);
+    text-align: left;
+    cursor: pointer;
+    min-width: 0;
+    transition: border-color 130ms ease, background-color 130ms ease;
+  }
+  .dark .tile { background: rgb(255 255 255 / 0.025); }
+
+  .tile:hover { border-color: color-mix(in srgb, var(--color-primary) 45%, transparent); }
+
+  .tile[data-selected="true"] {
+    border-color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 7%, transparent);
+  }
+
+  .tile-name {
+    display: flex;
+    align-items: center;
+    gap: 0.3125rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-on-surface);
+    letter-spacing: -0.004em;
+  }
+
+  .tile-desc {
+    font-size: 0.6875rem;
+    line-height: 1.35;
+    color: var(--color-on-surface-variant);
+  }
+
+  /* ---- Read-only value -------------------------------------------------
+     For settings the server decides. Looks like a field, reads as text.   */
+
+  .readonly-value {
+    display: flex;
+    align-items: center;
+    min-height: var(--ctl-lg);
+    padding: 0 0.5625rem;
+    border-radius: var(--radius);
+    border: 1px dashed var(--hairline-strong);
+    background: color-mix(in srgb, var(--color-on-surface) 3%, transparent);
+    font-size: 0.75rem;
+    color: var(--color-on-surface-variant);
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
   /* ---- Settings rail --------------------------------------------------
      One panel divided by hairlines, rather than a stack of floating cards.
      Each section is a labelled group; the rail scrolls with the page and

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { generateAiText } from "@/lib/ai-client";
 import { useAppStore } from "@/lib/app-store";
+import { providerDefaults } from "@/lib/ai-providers";
 
 const modelOptions = {
   openai: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "o1-preview", "o1-mini", "gpt-4o-2024-08-06"],
@@ -95,6 +96,7 @@ export default function SettingsPage() {
   // null = follow the provider default; true/false = the user chose explicitly.
   const [customModelOverride, setCustomModelOverride] = useState<boolean | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<"untested" | "success" | "failed">("untested");
+  const [showKey, setShowKey] = useState(false);
   const [isCustomInput, setIsCustomInput] = useState(
     () =>
       !presetRates.includes(useAppStore.getState().usage.inputTokenRate) ||
@@ -117,6 +119,11 @@ export default function SettingsPage() {
   }, [api.provider, api.model, api.baseUrl, api.apiKey]);
   
   const usesPresetModels = ["openai", "claude", "gemini", "deepseek", "openrouter", "ollama", "ollama_cloud"].includes(api.provider);
+
+  // The server pins these endpoints and ignores whatever the browser sends,
+  // so the field is shown as a fact rather than an editable input.
+  const endpointIsPinned = ["openai", "claude", "gemini", "deepseek", "openrouter"].includes(api.provider);
+  const keyOptional = api.provider === "ollama";
 
   // Providers with presets start on the dropdown; custom providers start in
   // free-text mode. Derived rather than synced in an effect so switching
@@ -207,8 +214,8 @@ export default function SettingsPage() {
               <span className="row-meta">{PROVIDERS.length} available</span>
             </div>
 
-            {/* A pick-one list: name and purpose on one line, selection on the left */}
-            <div role="radiogroup" aria-label="AI provider">
+            {/* Four to a row, so the whole list and the form below fit one screen */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1.5 p-3" role="radiogroup" aria-label="AI provider">
               {PROVIDERS.map((provider) => {
                 const selected = api.provider === provider.key;
                 return (
@@ -216,189 +223,205 @@ export default function SettingsPage() {
                     key={provider.key}
                     role="radio"
                     aria-checked={selected}
-                    className={`row w-full text-left cursor-pointer ${selected ? "bg-primary/[0.06]" : ""}`}
+                    className="tile"
+                    data-selected={selected}
                     onClick={() => updateApiSettings({ provider: provider.key as typeof api.provider })}
                     type="button"
                   >
-                    <span
-                      className={`w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center ${
-                        selected ? "border-primary" : "border-[var(--hairline-strong)]"
-                      }`}
-                    >
-                      {selected && <span className="w-2 h-2 rounded-full bg-primary" />}
+                    <span className="tile-name">
+                      {selected && (
+                        <span className="material-symbols-outlined text-[15px] text-primary">check</span>
+                      )}
+                      {provider.name}
                     </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block row-title">{provider.name}</span>
-                      <span className="block row-meta truncate">{provider.description}</span>
-                    </span>
+                    <span className="tile-desc">{provider.description}</span>
                   </button>
                 );
               })}
             </div>
           </section>
 
-          <section className="panel panel-pad">
-            {/* Header with Title only */}
-            <div className="flex items-center gap-2 mb-6">
-              <span className="material-symbols-outlined text-primary">key</span>
-              <h3 className="section-title">API Credentials</h3>
+          <section className="panel overflow-hidden">
+            <div className="panel-head">
+              <span className="panel-title">Credentials</span>
+              <span className="flex items-center gap-1.5">
+                <span className={`w-1.5 h-1.5 rounded-full ${statusDotClass}`} />
+                <span className={`text-[11px] font-semibold ${statusTextClass}`}>{statusText}</span>
+              </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-[11px] font-semibold text-on-surface-variant block">Provider</label>
-                <select
-                  className="w-full bg-surface-container-lowest border-none rounded-[var(--radius)] py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                  value={api.provider || "openai"}
-                  onChange={(event) => {
-                    const provider = event.target.value as typeof api.provider;
-                    updateApiSettings({ provider });
-                    setCustomModelOverride(!(provider === "openrouter" || provider === "ollama" || provider === "ollama_cloud"));
-                  }}
-                >
-                  <option value="openai">OpenAI</option>
-                  <option value="claude">Claude (Anthropic)</option>
-                  <option value="gemini">Gemini (Google)</option>
-                  <option value="deepseek">DeepSeek</option>
-                  <option value="openrouter">OpenRouter</option>
-                  <option value="ollama">Ollama Local</option>
-                  <option value="ollama_cloud">Ollama Cloud</option>
-                  <option value="custom">Custom</option>
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between gap-3">
-                  <label className="text-[11px] font-semibold text-on-surface-variant block">Model</label>
-                  {usesPresetModels ? (
+            <div className="panel-pad grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
+              <div>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="ap-model" className="label !mb-0">Model</label>
+                  {usesPresetModels && (
                     <button
-                      className="text-xs font-bold text-primary hover:underline"
+                      className="text-[11px] font-semibold text-primary hover:underline"
                       onClick={() => setCustomModelOverride(!isCustomModelEditing)}
                       type="button"
                     >
-                      {isCustomModelEditing ? "Use Dropdown" : "Edit"}
+                      {isCustomModelEditing ? "Pick from list" : "Type a name"}
                     </button>
-                  ) : null}
+                  )}
                 </div>
-                {usesPresetModels && !isCustomModelEditing ? (
-                  <select
-                    className="w-full bg-surface-container-lowest border-none rounded-[var(--radius)] py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                    value={selectedModelValue || ""}
-                    onChange={(event) => updateApiSettings({ model: event.target.value })}
-                  >
-                    {activeModelOptions.map((model) => (
-                      <option key={model} value={model}>
-                        {model}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
+                <div className="mt-1.5">
+                  {usesPresetModels && !isCustomModelEditing ? (
+                    <select
+                      id="ap-model"
+                      className="select"
+                      value={selectedModelValue || ""}
+                      onChange={(event) => updateApiSettings({ model: event.target.value })}
+                    >
+                      {activeModelOptions.map((model) => (
+                        <option key={model} value={model}>{model}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      id="ap-model"
+                      className="input"
+                      placeholder="gpt-4o-mini"
+                      value={api.model || ""}
+                      onChange={(event) => updateApiSettings({ model: event.target.value })}
+                    />
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="ap-key" className="label !mb-0">API key</label>
+                  {api.apiKey && (
+                    <button
+                      className="text-[11px] font-semibold text-primary hover:underline"
+                      onClick={() => setShowKey((v) => !v)}
+                      type="button"
+                    >
+                      {showKey ? "Hide" : "Show"}
+                    </button>
+                  )}
+                </div>
+                <div className="mt-1.5 relative">
                   <input
-                    className="w-full bg-surface-container-lowest border-none rounded-[var(--radius)] py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                    value={api.model || ""}
-                    onChange={(event) => updateApiSettings({ model: event.target.value })}
+                    id="ap-key"
+                    className="input pr-7 font-mono text-[12px]"
+                    placeholder={keyOptional ? "Not required for local Ollama" : "sk-…"}
+                    type={showKey ? "text" : "password"}
+                    autoComplete="off"
+                    spellCheck={false}
+                    value={api.apiKey || ""}
+                    onChange={(event) => updateApiSettings({ apiKey: event.target.value })}
                   />
+                  {api.apiKey && (
+                    <span
+                      className="material-symbols-outlined text-[15px] text-emerald-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
+                      title="Key set"
+                    >
+                      check_circle
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="md:col-span-2">
+                <label htmlFor="ap-url" className="label">Endpoint</label>
+                {endpointIsPinned ? (
+                  <>
+                    <p className="readonly-value" id="ap-url">{providerDefaults[api.provider]?.baseUrl}</p>
+                    <p className="hint">
+                      Fixed for this provider. The server calls its official endpoint and ignores any URL sent
+                      from the browser.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <input
+                      id="ap-url"
+                      className="input font-mono text-[12px]"
+                      placeholder="https://your-host/v1/chat/completions"
+                      value={api.baseUrl || ""}
+                      onChange={(event) => updateApiSettings({ baseUrl: event.target.value })}
+                    />
+                    <p className="hint">
+                      Must be https, or a local address. Hosts on private networks are refused unless allowed
+                      via WRITERDOST_ALLOWED_AI_HOSTS.
+                    </p>
+                  </>
                 )}
               </div>
 
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-[11px] font-semibold text-on-surface-variant block">Base URL</label>
-                <input
-                  className="w-full bg-surface-container-lowest border-none rounded-[var(--radius)] py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                  value={api.baseUrl || ""}
-                  onChange={(event) => updateApiSettings({ baseUrl: event.target.value })}
-                />
-              </div>
-
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-[11px] font-semibold text-on-surface-variant block">API Key</label>
-                <input
-                  className="w-full bg-surface-container-lowest border-none rounded-[var(--radius)] py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                  placeholder={api.provider === "ollama" || api.provider === "ollama_cloud" ? "Optional for Ollama" : "Paste your API key"}
-                  type="password"
-                  value={api.apiKey || ""}
-                  onChange={(event) => updateApiSettings({ apiKey: event.target.value })}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[11px] font-semibold text-on-surface-variant block">App Name</label>
-                <input
-                  className="w-full bg-surface-container-lowest border-none rounded-[var(--radius)] py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                  value={api.appName || ""}
-                  onChange={(event) => updateApiSettings({ appName: event.target.value })}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[11px] font-semibold text-on-surface-variant block">Site URL</label>
-                <input
-                  className="w-full bg-surface-container-lowest border-none rounded-[var(--radius)] py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                  value={api.siteUrl || ""}
-                  onChange={(event) => updateApiSettings({ siteUrl: event.target.value })}
-                />
-              </div>
+              {api.provider === "openrouter" && (
+                <>
+                  <div>
+                    <label htmlFor="ap-app" className="label">App name</label>
+                    <input
+                      id="ap-app"
+                      className="input"
+                      placeholder="Writerdost AI"
+                      value={api.appName || ""}
+                      onChange={(event) => updateApiSettings({ appName: event.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="ap-site" className="label">Site URL</label>
+                    <input
+                      id="ap-site"
+                      className="input"
+                      value={api.siteUrl || ""}
+                      onChange={(event) => updateApiSettings({ siteUrl: event.target.value })}
+                    />
+                  </div>
+                  <p className="hint md:col-span-2 !mt-0">
+                    OpenRouter shows these on your activity dashboard. Other providers ignore them.
+                  </p>
+                </>
+              )}
             </div>
 
-            <div className="mt-8 border-t border-outline-variant/20 pt-6">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <button
-                    className="px-6 py-2.5 bg-on-surface text-surface text-sm font-bold rounded-[var(--radius)] disabled:opacity-60 hover:opacity-90 transition-colors"
-                    disabled={testing || !api.baseUrl || !api.model || (!api.apiKey && api.provider !== "ollama" && api.provider !== "ollama_cloud")}
-                    onClick={async () => {
-                      setTesting(true);
-                      setConnectionStatus("untested");
-                      try {
-                        const timeoutPromise = new Promise((_, reject) =>
-                          setTimeout(() => reject(new Error("Connection timed out (15s)")), 15000)
-                        );
-                        
-                        const testPromise = generateAiText({
-                          api,
-                          systemPrompt: "You are a brief connectivity test for a writing application.",
-                          userPrompt: "Reply with exactly: Connection successful.",
-                          temperature: 0,
-                          topP: 1,
-                        });
+            <div className="panel-pad border-t border-[var(--hairline)] flex flex-wrap items-center gap-3">
+              <button
+                className="btn btn-primary"
+                disabled={testing || !api.model || (!api.apiKey && !keyOptional)}
+                onClick={async () => {
+                  setTesting(true);
+                  setConnectionStatus("untested");
+                  try {
+                    const timeoutPromise = new Promise((_, reject) =>
+                      setTimeout(() => reject(new Error("Connection timed out (15s)")), 15000),
+                    );
+                    const testPromise = generateAiText({
+                      api,
+                      systemPrompt: "You are a brief connectivity test for a writing application.",
+                      userPrompt: "Reply with exactly: Connection successful.",
+                      temperature: 0,
+                      topP: 1,
+                    });
+                    const text = (await Promise.race([testPromise, timeoutPromise])) as string;
+                    setMessage(text);
+                    setConnectionStatus("success");
+                  } catch (error) {
+                    setMessage(`API test failed: ${error instanceof Error ? error.message : "Unknown error."}`);
+                    setConnectionStatus("failed");
+                  } finally {
+                    setTesting(false);
+                  }
+                }}
+                type="button"
+              >
+                {testing ? "Testing…" : "Test connection"}
+              </button>
 
-                        const text = await Promise.race([testPromise, timeoutPromise]) as string;
-                        setMessage(text);
-                        setConnectionStatus("success");
-                      } catch (error) {
-                        setMessage(`API test failed: ${error instanceof Error ? error.message : "Unknown error."}`);
-                        setConnectionStatus("failed");
-                      } finally {
-                        setTesting(false);
-                      }
-                    }}
-                    type="button"
-                  >
-                    {testing ? "Testing..." : "Test Connection"}
-                  </button>
-                  
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 mb-0.5">Status Details</span>
-                    <div className="flex flex-col items-start gap-1">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${statusDotClass}`}></div>
-                        <span className={`text-xs font-bold ${statusTextClass}`}>
-                          {statusText}
-                        </span>
-                      </div>
-                      {message && (message.includes("Connection successful") || message.includes("API test failed")) && (
-                         <span className={`text-[10px] font-medium leading-tight ${message.includes("failed") ? "text-rose-500" : "text-emerald-600"}`}>
-                            {message}
-                         </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium max-w-xs italic leading-tight">
-                  Keys are currently stored in this browser via the app store. Good for local prototyping, not production security.
-                </p>
-              </div>
+              {message && (message.includes("Connection successful") || message.includes("API test failed")) && (
+                <span
+                  className={`text-[12px] ${message.includes("failed") ? "text-error" : "text-emerald-600 dark:text-emerald-400"}`}
+                >
+                  {message}
+                </span>
+              )}
+
+              <p className="hint !mt-0 ml-auto max-w-xs text-right">
+                Keys are held in this browser only. Fine for local use, not for production.
+              </p>
             </div>
           </section>
 
