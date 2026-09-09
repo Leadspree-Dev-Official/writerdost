@@ -43,59 +43,7 @@ export default function BlogGeneratorPage() {
 
   if (!blog || !projects) return null;
 
-  return (
-    <div className="page grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-      <div className="lg:col-span-4 flex flex-col gap-4">
-        <section className="bg-surface-container-low p-4 rounded-[var(--radius)] flex flex-col gap-4">
-          <h2 className="text-xs font-bold text-on-surface-variant uppercase">Context</h2>
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-on-surface/70">Select Project / Ebook</label>
-            <div className="relative">
-              <select
-                className="w-full bg-surface-container-lowest border-none rounded-[var(--radius)] py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 appearance-none outline-none"
-                value={blog.projectId || ""}
-                onChange={(event) => loadBlogFromProject(event.target.value)}
-              >
-                {projects.map((project) => (
-                  <option key={project.id} value={project.id}>
-                    {project.title}
-                  </option>
-                ))}
-              </select>
-              <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">expand_more</span>
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-surface-container-low p-4 rounded-[var(--radius)] flex flex-col gap-4">
-          <h2 className="text-xs font-bold text-on-surface-variant uppercase">Length Setting</h2>
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-on-surface/70">Estimated Words</span>
-              <span className="text-sm font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-md">{targetWords}</span>
-            </div>
-            <input 
-              type="range" 
-              min="500" 
-              max="3000" 
-              step="100" 
-              value={targetWords} 
-              onChange={(e) => updateBlog({ targetWords: parseInt(e.target.value) })}
-              className="w-full h-2 bg-surface-container-lowest rounded-[var(--radius)] appearance-none cursor-pointer accent-primary"
-            />
-            <div className="flex justify-between text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter">
-              <span>500 words</span>
-              <span>3000 words</span>
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-surface-container-low p-4 rounded-[var(--radius)] flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xs font-bold text-on-surface-variant uppercase">AI Title Suggestions</h2>
-            <button
-              className="text-primary text-xs font-bold hover:underline disabled:opacity-60"
-              onClick={async () => {
+  const handleRefreshSuggestions = async () => {
                 if (!selectedProject || !api.baseUrl || !api.model || (!api.apiKey && api.provider !== "ollama")) {
                   regenerateBlogSuggestions();
                   setMessage("Generated local title suggestions. Add API settings for live AI suggestions.");
@@ -129,88 +77,11 @@ export default function BlogGeneratorPage() {
                 } finally {
                   setGeneratingSuggestions(false);
                 }
-              }}
-              disabled={generatingSuggestions}
-              type="button"
-            >
-              {generatingSuggestions ? "Refreshing..." : "Refresh"}
-            </button>
-          </div>
-          <div className="flex flex-col gap-3">
-            {suggestions.map((suggestion) => (
-              <button
-                key={suggestion}
-                className="bg-surface-container-lowest dark:bg-white/[0.03] p-2.5 rounded-[var(--radius)] border border-[var(--hairline-strong)] hover:border-primary hover:bg-primary/[0.05] transition-colors cursor-pointer group text-left"
-                onClick={() => updateBlog({ title: suggestion })}
-                type="button"
-              >
-                <span className="block text-[12.5px] font-medium leading-snug text-on-surface group-hover:text-primary">
-                  {suggestion}
-                </span>
-              </button>
-            ))}
-          </div>
-        </section>
+                };
 
-        <section className="bg-surface-container-low p-4 rounded-[var(--radius)] flex flex-col gap-4">
-          <h2 className="text-xs font-bold text-on-surface-variant uppercase">SEO Strategy</h2>
-          <div className="flex flex-wrap gap-2">
-            {keywords.map((keyword) => (
-              <button
-                key={keyword}
-                className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-semibold hover:bg-primary/20 transition-all"
-                onClick={() => updateBlog({ draft: `${blog.draft || ""}<p><strong>Keyword to emphasize:</strong> ${keyword}</p>` })}
-                type="button"
-              >
-                {keyword}
-              </button>
-            ))}
-          </div>
-          <div className="mt-2">
-            <label className="text-xs font-semibold text-on-surface/50 mb-1 block">Meta Description</label>
-            <textarea
-              className="w-full min-h-24 rounded-[var(--radius)] bg-surface-container-lowest p-4 text-xs outline-none focus:ring-2 focus:ring-primary/20"
-              value={blog.metaDescription || ""}
-              onChange={(event) => updateBlog({ metaDescription: event.target.value })}
-            />
-          </div>
-        </section>
-
-        <section className="bg-surface-container-low p-4 rounded-[var(--radius)] flex flex-col gap-4">
-          <h2 className="text-xs font-bold text-on-surface-variant uppercase">Blog Metrics</h2>
-          <div className="flex flex-col gap-4 bg-surface-container-lowest p-4 rounded-[var(--radius)] border border-outline-variant/10">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-semibold text-slate-400">Drafting Time</span>
-              <span className="text-xs font-bold text-indigo-500">{blogDraftTime !== null ? formatTime(blogDraftTime) : "0m 0s"}</span>
-            </div>
-            <div className="h-px bg-slate-100 dark:bg-white/[0.04] w-full" />
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-semibold text-slate-400">Tokens Used</span>
-              <span className="text-xs font-bold text-slate-900 dark:text-slate-200">{blogTokens.toLocaleString()}</span>
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-slate-900 dark:bg-primary/10 text-white dark:text-on-surface p-4 rounded-[var(--radius)] border border-transparent dark:border-primary/20">
-          <p className="text-xs uppercase text-slate-400 font-bold mb-2">Source Project</p>
-          <h3 className="text-2xl font-semibold">{selectedProject?.title}</h3>
-          <p className="text-sm text-slate-300 mt-3">{selectedProject?.description}</p>
-          <button
-            className="mt-5 rounded-full bg-white/10 px-4 py-2 text-xs font-bold"
-            onClick={() => {
-              if (selectedProject) {
-                setCurrentProject(selectedProject.id);
-              }
-              router.push("/editor");
-            }}
-            type="button"
-          >
-            Open Source Draft
-          </button>
-        </section>
-      </div>
-
-      <div className="lg:col-span-8">
+  return (
+    <div className="page grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_17rem] gap-4 items-start">
+      <div className="min-w-0">
         <AnimatePresence>
           {message && (
             <motion.div 
@@ -224,15 +95,12 @@ export default function BlogGeneratorPage() {
           )}
         </AnimatePresence>
 
-        <div className="bg-white dark:bg-white/[0.03] shadow-sm dark:shadow-none ring-1 ring-black/5 dark:ring-white/[0.06] rounded-[var(--radius-lg)] min-h-[800px] flex flex-col border border-outline-variant/10 dark:border-white/[0.06] overflow-hidden">
-          <div className="px-8 py-2 flex items-center justify-between border-b border-surface-container-low">
-            <div className="flex items-center gap-2 text-on-surface-variant/40">
-              <span className="material-symbols-outlined text-sm">schedule</span>
-              <span className="text-xs font-medium">Last saved: {blog.lastSavedLabel}</span>
-            </div>
-            <div className="flex items-center gap-4">
+        <div className="panel min-h-[calc(100vh-8rem)] flex flex-col overflow-hidden">
+          <div className="panel-head">
+            <span className="row-meta">Saved {blog.lastSavedLabel}</span>
+            <div className="flex items-center gap-1">
               <button
-                className="text-[10px] font-semibold tracking-wider uppercase text-on-surface-variant hover:text-primary transition-colors disabled:opacity-60"
+                className="btn btn-ghost btn-sm"
                 onClick={async () => {
                   if (!selectedProject) return;
                   if (!api.baseUrl || !api.model || (!api.apiKey && api.provider !== "ollama")) {
@@ -327,6 +195,133 @@ export default function BlogGeneratorPage() {
           </div>
         </div>
       </div>
+
+      <aside className="min-w-0 lg:sticky lg:top-[calc(var(--app-header-h)+1rem)]">
+        <div className="panel rail overflow-hidden">
+          <div className="rail-section">
+            <label htmlFor="bg-project" className="label">Source project</label>
+            <select
+              id="bg-project"
+              className="select"
+              value={blog.projectId || ""}
+              onChange={(event) => loadBlogFromProject(event.target.value)}
+            >
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>{project.title}</option>
+              ))}
+            </select>
+            {selectedProject && (
+              <button
+                className="btn btn-ghost btn-sm mt-1.5 -ml-2"
+                onClick={() => {
+                  setCurrentProject(selectedProject.id);
+                  router.push("/editor");
+                }}
+                type="button"
+              >
+                Open source draft
+                <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
+              </button>
+            )}
+          </div>
+
+          <div className="rail-section">
+            <div className="flex items-baseline justify-between">
+              <label htmlFor="bg-length" className="label !mb-0">Target length</label>
+              <span className="text-[12px] font-semibold text-on-surface num">{targetWords} words</span>
+            </div>
+            <input
+              id="bg-length"
+              type="range"
+              min="500"
+              max="3000"
+              step="100"
+              value={targetWords}
+              onChange={(e) => updateBlog({ targetWords: parseInt(e.target.value) })}
+              className="w-full h-1 mt-2 bg-on-surface/12 rounded-full appearance-none cursor-pointer accent-primary"
+            />
+            <div className="flex justify-between text-[11px] text-on-surface-variant mt-1.5">
+              <span>500</span>
+              <span>3,000</span>
+            </div>
+          </div>
+
+          <div className="rail-section">
+            <div className="flex items-center justify-between mb-2">
+              <p className="rail-title !mb-0">Title ideas</p>
+              <button
+                className="btn btn-ghost btn-sm -mr-1.5"
+                onClick={handleRefreshSuggestions}
+                disabled={generatingSuggestions}
+                type="button"
+              >
+                {generatingSuggestions ? "Refreshing…" : "Refresh"}
+              </button>
+            </div>
+            <div className="space-y-1">
+              {suggestions.map((suggestion) => (
+                <button
+                  key={suggestion}
+                  className="w-full text-left p-2 rounded-[var(--radius)] border border-[var(--hairline)] hover:border-primary hover:bg-primary/[0.05] transition-colors cursor-pointer group"
+                  onClick={() => updateBlog({ title: suggestion })}
+                  type="button"
+                >
+                  <span className="block text-[12.5px] leading-snug text-on-surface group-hover:text-primary">
+                    {suggestion}
+                  </span>
+                </button>
+              ))}
+              {suggestions.length === 0 && (
+                <p className="text-[12px] text-on-surface-variant">No suggestions yet.</p>
+              )}
+            </div>
+          </div>
+
+          <div className="rail-section">
+            <p className="rail-title">SEO</p>
+            <div className="flex flex-wrap gap-1 mb-3">
+              {keywords.map((keyword) => (
+                <button
+                  key={keyword}
+                  className="chip bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                  title={`Add "${keyword}" to the draft`}
+                  onClick={() =>
+                    updateBlog({
+                      draft: `${blog.draft || ""}<p><strong>Keyword to emphasize:</strong> ${keyword}</p>`,
+                    })
+                  }
+                  type="button"
+                >
+                  {keyword}
+                </button>
+              ))}
+            </div>
+            <label htmlFor="bg-meta" className="label">Meta description</label>
+            <textarea
+              id="bg-meta"
+              className="textarea min-h-[4.5rem] text-[12px]"
+              value={blog.metaDescription || ""}
+              onChange={(event) => updateBlog({ metaDescription: event.target.value })}
+            />
+          </div>
+
+          {(blogDraftTime !== null || blogTokens > 0) && (
+            <div className="rail-section">
+              <p className="rail-title">Last run</p>
+              <dl className="space-y-0.5">
+                <div className="kv">
+                  <dt>Drafting</dt>
+                  <dd>{blogDraftTime !== null ? formatTime(blogDraftTime) : "—"}</dd>
+                </div>
+                <div className="kv">
+                  <dt>Tokens</dt>
+                  <dd>{blogTokens.toLocaleString()}</dd>
+                </div>
+              </dl>
+            </div>
+          )}
+        </div>
+      </aside>
     </div>
   );
 }

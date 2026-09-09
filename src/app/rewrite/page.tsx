@@ -451,24 +451,23 @@ export default function RewritePage() {
               outline, or a translation.
             </p>
           </div>
-          <div className="flex items-center gap-1 p-0.5 rounded-[var(--radius)] bg-on-surface/[0.05] border border-[var(--hairline)]">
+          <div className="segmented" role="tablist" aria-label="Rewrite mode">
             {[
-              { id: "Simple", label: "Quick Fix", icon: "bolt" },
-              { id: "Deep", label: "Deep Swarm", icon: "account_tree" },
-              { id: "Outline", label: "From Outline", icon: "auto_awesome_motion" },
-              { id: "Translate", label: "Translate", icon: "translate" }
+              { id: "Simple", label: "Quick fix", icon: "bolt" },
+              { id: "Deep", label: "Deep swarm", icon: "account_tree" },
+              { id: "Outline", label: "From outline", icon: "auto_awesome_motion" },
+              { id: "Translate", label: "Translate", icon: "translate" },
             ].map((flow) => (
               <button
                 key={flow.id}
-                className={`px-5 py-2.5 rounded-[var(--radius)] text-xs font-semibold transition-all flex items-center gap-2 ${
-                  rewrite.flow === flow.id
-                    ? "bg-white dark:bg-white/[0.08] shadow-xl shadow-primary/5 dark:shadow-none text-primary dark:text-indigo-300 scale-[1.02]"
-                    : "text-on-surface-variant hover:text-on-surface hover:bg-white/40 dark:hover:bg-white/[0.04]"
-                }`}
+                role="tab"
+                aria-selected={rewrite.flow === flow.id}
+                className="segment"
+                data-active={rewrite.flow === flow.id}
                 onClick={() => updateRewrite({ flow: flow.id as RewriteFlow })}
                 type="button"
               >
-                <span className="material-symbols-outlined text-[18px]">{flow.icon}</span>
+                <span className="material-symbols-outlined text-[15px]">{flow.icon}</span>
                 {flow.label}
               </button>
             ))}
@@ -484,9 +483,9 @@ export default function RewritePage() {
           </div>
         ) : null}
 
-        <div className="grid grid-cols-12 gap-4">
-          {/* Main Workspace */}
-          <div className="col-span-12 lg:col-span-8 space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_17rem] gap-4 items-start">
+          {/* Work surface */}
+          <div className="min-w-0">
             {rewrite.flow === "Outline" ? (
               <div className="space-y-3 animate-in fade-in slide-in-from-bottom-6 duration-700 fill-mode-both">
                 <div className="bg-white/40 dark:bg-white/[0.03] backdrop-blur-xl rounded-[var(--radius-lg)] p-5 border border-white/60 dark:border-white/[0.06] shadow-2xl shadow-primary/5 dark:shadow-none relative overflow-hidden">
@@ -633,290 +632,274 @@ export default function RewritePage() {
                 </div>
               </div>
             ) : (
-              <div className="space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-700 fill-mode-both">
-                <div className="bg-white dark:bg-white/[0.03] rounded-[var(--radius-lg)] p-1.5 shadow-2xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-white/[0.06] overflow-hidden relative">
-                  <div className="absolute -top-24 -left-24 w-64 h-64 bg-primary/5 dark:bg-primary/[0.03] rounded-full blur-3xl pointer-events-none" />
-                  <div className="bg-slate-50/50 dark:bg-transparent backdrop-blur-sm rounded-[2rem] border border-white dark:border-white/[0.04] p-4 md:p-12 relative z-10">
-                    <div className="flex flex-col md:flex-row md:items-start gap-4">
-                      <div className="w-8 h-8 rounded-[var(--radius)] bg-primary/10 flex items-center justify-center shrink-0">
-                        <span className="material-symbols-outlined text-primary text-[18px]">
-                          {rewrite.flow === "Deep" ? "account_tree" : "content_paste_go"}
-                        </span>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
-                          <h3 className="text-[15px] font-semibold tracking-[-0.012em] text-on-surface">
-                            {rewrite.flow === "Deep" ? "Manuscript Core" : "Quick Text Entry"}
-                          </h3>
-                          
-                          <div className="flex items-center gap-2">
-                             <input 
-                                type="file" 
-                                ref={fileInputRef} 
-                                onChange={handleFileUpload} 
-                                className="hidden" 
-                                accept=".pdf,.docx,.txt,.md"
-                             />
-                             <button 
-                                onClick={() => fileInputRef.current?.click()}
-                                disabled={extracting}
-                                className="flex items-center gap-2 px-6 py-3 bg-white/80 dark:bg-white/[0.04] hover:bg-white dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.06] rounded-[var(--radius-lg)] text-[10px] font-semibold text-slate-500 dark:text-slate-400 hover:text-primary transition-all shadow-sm dark:shadow-none active:scale-95 disabled:opacity-50"
-                             >
-                                <span className={extracting ? 'animate-spin' : ''}>
-                                  <span className="material-symbols-outlined text-[16px]">
-                                    {extracting ? 'sync' : 'upload_file'}
-                                  </span>
-                                </span>
-                                {extracting ? 'Extracting Intelligence...' : 'Upload Manuscript'}
-                             </button>
-                          </div>
-                        </div>
-                        <p className="text-on-surface-variant text-sm mb-6 max-w-xl leading-relaxed font-medium">
-                          {rewrite.flow === "Deep" 
-                            ? "Upload a file or provide your full manuscript. Our swarm will deconstruct it into conceptual units before rebuilding it."
-                            : "Upload a draft or paste specific passages to polish rhythm, enhance tone, and improve professional flow."}
-                        </p>
-                        <div className="relative group">
-                          <textarea
-                            className="textarea min-h-[14rem] leading-relaxed"
-                            value={rewrite.manuscript || ""}
-                            onChange={(event) => updateRewrite({ manuscript: event.target.value })}
-                            placeholder={rewrite.flow === "Deep" ? "Drop your full book content here..." : "Paste content to polish..."}
-                          />
-                          <div className="absolute bottom-6 right-6 opacity-40 text-[10px] font-semibold text-slate-400 dark:text-slate-500">
-                             {rewrite.manuscript.split(/\s+/).filter(Boolean).length} Words
-                          </div>
-                        </div>
-                      </div>
+              <div className="panel overflow-hidden flex flex-col">
+                {/* Toolbar: what this is, plus the two ways to fill it */}
+                <div className="panel-head">
+                  <span className="panel-title">
+                    {rewrite.flow === "Deep" ? "Manuscript" : "Source text"}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="row-meta">
+                      {rewrite.manuscript.split(/\s+/).filter(Boolean).length.toLocaleString()} words
+                    </span>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      accept=".pdf,.docx,.txt,.md"
+                    />
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={extracting}
+                      className="btn btn-secondary btn-sm"
+                      type="button"
+                    >
+                      <span
+                        className={`material-symbols-outlined text-[15px] ${extracting ? "animate-spin" : ""}`}
+                      >
+                        {extracting ? "sync" : "upload_file"}
+                      </span>
+                      {extracting ? "Extracting…" : "Upload"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* The work surface fills the column instead of floating in it */}
+                <textarea
+                  aria-label={rewrite.flow === "Deep" ? "Manuscript" : "Source text"}
+                  className="w-full flex-1 min-h-[18rem] lg:min-h-[calc(100vh-14rem)] resize-none bg-transparent border-0 outline-none p-4 text-[13px] leading-[1.65] text-on-surface placeholder:text-on-surface-variant"
+                  value={rewrite.manuscript || ""}
+                  onChange={(event) => updateRewrite({ manuscript: event.target.value })}
+                  placeholder={
+                    rewrite.flow === "Deep"
+                      ? "Paste the full book here, or upload a file. The swarm breaks it into conceptual units before rebuilding it."
+                      : "Paste the passages you want polished, or upload a draft."
+                  }
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Settings rail: one panel, hairline-divided, action pinned last */}
+          <aside className="min-w-0 lg:sticky lg:top-[calc(var(--app-header-h)+1rem)]">
+            <div className="panel rail overflow-hidden">
+              <div className="rail-section">
+                <p className="rail-title">Project</p>
+                <div className="space-y-2.5">
+                  <div>
+                    <label htmlFor="rw-title" className="label">Title</label>
+                    <input
+                      id="rw-title"
+                      className="input"
+                      placeholder={rewrite.flow === "Outline" ? "From the blueprint" : "My rewritten concept"}
+                      type="text"
+                      disabled={rewrite.flow === "Outline"}
+                      value={(rewrite.flow === "Outline" ? outlineGenerator.title : rewrite.title) || ""}
+                      onChange={(e) =>
+                        rewrite.flow === "Outline"
+                          ? updateOutlineGenerator({ title: e.target.value })
+                          : updateRewrite({ title: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="rw-audience" className="label">Audience</label>
+                    <input
+                      id="rw-audience"
+                      className="input"
+                      placeholder="Aspiring developers"
+                      type="text"
+                      disabled={rewrite.flow === "Outline"}
+                      value={(rewrite.flow === "Outline" ? outlineGenerator.audience : rewrite.audience) || ""}
+                      onChange={(e) =>
+                        rewrite.flow === "Outline"
+                          ? updateOutlineGenerator({ audience: e.target.value })
+                          : updateRewrite({ audience: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <div className="flex items-baseline justify-between">
+                      <label htmlFor="rw-length" className="label !mb-0">Target length</label>
+                      <span className="text-[12px] font-semibold text-on-surface num">
+                        {(rewrite.flow === "Outline"
+                          ? outlineGenerator.targetLength || 15000
+                          : rewrite.length || 20000
+                        ).toLocaleString()}
+                      </span>
+                    </div>
+                    <input
+                      id="rw-length"
+                      className="w-full h-1 mt-2 bg-on-surface/12 rounded-full appearance-none cursor-pointer accent-primary"
+                      max="100000"
+                      min="1000"
+                      step="1000"
+                      type="range"
+                      value={
+                        rewrite.flow === "Outline"
+                          ? outlineGenerator.targetLength || 15000
+                          : rewrite.length || 20000
+                      }
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        if (rewrite.flow === "Outline") {
+                          updateOutlineGenerator({ targetLength: val });
+                        } else {
+                          updateRewrite({ length: val });
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="rail-section">
+                <p className="rail-title">Voice</p>
+                <label htmlFor="rw-tone" className="sr-only">Tone</label>
+                <select
+                  id="rw-tone"
+                  className="select"
+                  value={(rewrite.flow === "Outline" ? outlineGenerator.tone : rewrite.tone) || "Professional"}
+                  onChange={(e) =>
+                    rewrite.flow === "Outline"
+                      ? updateOutlineGenerator({ tone: e.target.value })
+                      : updateRewrite({ tone: e.target.value })
+                  }
+                >
+                  {TONES.map((tone) => (
+                    <option key={tone} value={tone}>{tone}</option>
+                  ))}
+                </select>
+              </div>
+
+              {rewrite.flow !== "Outline" && (
+                <div className="rail-section">
+                  <p className="rail-title">Audit</p>
+                  <div className="space-y-1">
+                    <div className="setting">
+                      <span className="setting-label">Humanize</span>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={rewrite.humanize}
+                        aria-label="Humanize"
+                        className="switch"
+                        data-on={rewrite.humanize}
+                        onClick={() => updateRewrite({ humanize: !rewrite.humanize })}
+                      />
+                    </div>
+                    <div className="setting">
+                      <span className="setting-label">Avoid plagiarism</span>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={rewrite.avoidPlagiarism}
+                        aria-label="Avoid plagiarism"
+                        className="switch"
+                        data-on={rewrite.avoidPlagiarism}
+                        onClick={() => updateRewrite({ avoidPlagiarism: !rewrite.avoidPlagiarism })}
+                      />
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
 
-          <div className="col-span-12 lg:col-span-4 space-y-8">
-            <div className="space-y-2">
-              <button
-                className="btn btn-primary btn-lg w-full group relative overflow-hidden"
-                onClick={async () => {
-                  if (rewrite.flow === "Deep") {
-                     handleDeepRewrite();
-                     return;
-                  }
-                  if (rewrite.flow === "Outline") {
-                     handleGenerateFromOutline();
-                     return;
-                  }
+              {(metrics.outlineTime > 0 || metrics.draftingTime > 0 || metrics.tokens > 0) && (
+                <div className="rail-section">
+                  <p className="rail-title">Last run</p>
+                  <dl className="space-y-0.5">
+                    <div className="kv">
+                      <dt>Outline</dt>
+                      <dd>{formatTime(metrics.outlineTime)}</dd>
+                    </div>
+                    <div className="kv">
+                      <dt>Drafting</dt>
+                      <dd>{formatTime(metrics.draftingTime)}</dd>
+                    </div>
+                    <div className="kv">
+                      <dt>Tokens</dt>
+                      <dd>{metrics.tokens.toLocaleString()}</dd>
+                    </div>
+                  </dl>
+                </div>
+              )}
 
-                  if (rewrite.flow === "Translate") {
-                     handleTranslateProject();
-                     return;
-                  }
+              <div className="rail-section">
+                <button
+                  className="btn btn-primary btn-lg w-full"
+                  onClick={async () => {
+                    if (rewrite.flow === "Deep") {
+                      handleDeepRewrite();
+                      return;
+                    }
+                    if (rewrite.flow === "Outline") {
+                      handleGenerateFromOutline();
+                      return;
+                    }
+                    if (rewrite.flow === "Translate") {
+                      handleTranslateProject();
+                      return;
+                    }
 
-                  if (!api.baseUrl || !api.model || (!api.apiKey && api.provider !== "ollama")) {
-                    generateRewritePreview();
-                    setMessage("Rewrite preview generated with local fallback.");
-                    return;
-                  }
+                    if (!api.baseUrl || !api.model || (!api.apiKey && api.provider !== "ollama")) {
+                      generateRewritePreview();
+                      setMessage("Rewrite preview generated with local fallback.");
+                      return;
+                    }
 
-                  setGenerating(true);
-                  const startTime = Date.now();
-                  try {
-                    const text = await generateAiText({
-                      api,
-                      systemPrompt: "You rewrite manuscript passages for professional authors. If the content provided is an existing author's work, you MUST use it as inspiration but completely rebrand and rewrite it to be original while maintaining the winning structure and logical progression. Do not plagiarize phrasing.",
-                      userPrompt: `Rewrite this manuscript in a "${rewrite.tone}" tone.\n\nTarget length for this output: ${rewrite.length || 20000} words.\n\nHumanize: ${rewrite.humanize}.\nAvoid plagiarism: ${rewrite.avoidPlagiarism}.\n\nText:\n${rewrite.manuscript}`,
-                      temperature: settings.temperature,
-                      topP: settings.topP,
-                    });
-                    
-                    const duration = Math.floor((Date.now() - startTime) / 1000);
-                    const estimatedTokens = Math.floor(text.split(/\s+/).length * 1.35);
-                    setMetrics(prev => ({ ...prev, draftingTime: duration, tokens: estimatedTokens }));
+                    setGenerating(true);
+                    const startTime = Date.now();
+                    try {
+                      const text = await generateAiText({
+                        api,
+                        systemPrompt:
+                          "You rewrite manuscript passages for professional authors. If the content provided is an existing author's work, you MUST use it as inspiration but completely rebrand and rewrite it to be original while maintaining the winning structure and logical progression. Do not plagiarize phrasing.",
+                        userPrompt: `Rewrite this manuscript in a "${rewrite.tone}" tone.\n\nTarget length for this output: ${rewrite.length || 20000} words.\n\nHumanize: ${rewrite.humanize}.\nAvoid plagiarism: ${rewrite.avoidPlagiarism}.\n\nText:\n${rewrite.manuscript}`,
+                        temperature: settings.temperature,
+                        topP: settings.topP,
+                      });
 
-                    updateRewrite({ preview: text });
-                    
-                    // Auto-save and redirect
-                    const store = useAppStore.getState();
-                    const project = store.createProjectFromRewrite();
-                    router.push("/editor");
-                  } catch (error) {
-                    generateRewritePreview();
-                    setMessage(`AI request failed. Falling back to local.`);
-                  } finally {
-                    setGenerating(false);
-                  }
-                }}
-                disabled={generating || isGenerating}
-                type="button"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:animate-shimmer duration-1000" />
-                <span className="material-symbols-outlined text-[17px] group-hover:rotate-12 transition-transform">
-                  {rewrite.flow === "Deep" ? "account_tree" : rewrite.flow === "Outline" ? "auto_awesome_motion" : rewrite.flow === "Translate" ? "translate" : "auto_fix_high"}
-                </span>
-                {generating || isGenerating 
-                  ? "Agents Initializing..." 
-                  : rewrite.flow === "Deep" 
-                    ? "Launch Swarm Intelligence" 
-                    : rewrite.flow === "Outline" 
-                      ? "Generate Masterpiece" 
-                      : rewrite.flow === "Translate"
-                        ? "Translate Project"
-                        : "Generate Preview"}
-              </button>
-            </div>
+                      const duration = Math.floor((Date.now() - startTime) / 1000);
+                      const estimatedTokens = Math.floor(text.split(/\s+/).length * 1.35);
+                      setMetrics((prev) => ({ ...prev, draftingTime: duration, tokens: estimatedTokens }));
 
-            {/* PROJECT METADATA CARD (RETURNED TO SIDEBAR) */}
-            <div className="bg-white/60 dark:bg-white/[0.03] backdrop-blur-xl rounded-[2rem] p-4 border border-white dark:border-white/[0.06] shadow-xl dark:shadow-none animate-in slide-in-from-right-4 duration-500">
-               <div className="flex items-center gap-4 mb-4">
-                <div className="w-10 h-10 rounded-[var(--radius)] bg-primary/10 text-primary flex items-center justify-center shadow-lg shadow-primary/5">
-                  <span className="material-symbols-outlined text-[17px]">folder_managed</span>
-                </div>
-                <div className="flex flex-col">
-                  <h4 className="font-semibold text-xs text-on-surface">Project Metadata</h4>
-                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-tighter">Draft Identity</p>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <div>
-                  <label className="text-[9px] font-semibold text-slate-400 dark:text-slate-500 uppercase block mb-2 pl-1">Project Master Title</label>
-                  <input
-                    className="w-full bg-slate-50/50 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] rounded-[var(--radius)] px-4 py-3 text-xs font-bold focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600 shadow-inner dark:shadow-none text-on-surface"
-                    placeholder={rewrite.flow === "Outline" ? "Using Blueprint Title..." : "e.g. My Rewritten Concept"}
-                    type="text"
-                    disabled={rewrite.flow === "Outline"}
-                    value={(rewrite.flow === "Outline" ? outlineGenerator.title : rewrite.title) || ""}
-                    onChange={(e) => rewrite.flow === "Outline" ? updateOutlineGenerator({ title: e.target.value }) : updateRewrite({ title: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="text-[9px] font-semibold text-slate-400 dark:text-slate-500 uppercase block mb-2 pl-1">Primary Audience</label>
-                  <input
-                    className="w-full bg-slate-50/50 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] rounded-[var(--radius)] px-4 py-3 text-xs font-bold focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600 shadow-inner dark:shadow-none text-on-surface"
-                    placeholder="e.g. Aspiring Developers"
-                    type="text"
-                    disabled={rewrite.flow === "Outline"}
-                    value={(rewrite.flow === "Outline" ? outlineGenerator.audience : rewrite.audience) || ""}
-                    onChange={(e) => rewrite.flow === "Outline" ? updateOutlineGenerator({ audience: e.target.value }) : updateRewrite({ audience: e.target.value })}
-                  />
-                </div>
-                
-                <div className="pt-2">
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="text-[9px] font-semibold text-slate-400 dark:text-slate-500 uppercase pl-1">Estimated Words</label>
-                    <span className="text-primary font-bold text-[10px]">
-                      ~{(rewrite.flow === "Outline" ? (outlineGenerator.targetLength || 15000) : (rewrite.length || 20000)).toLocaleString()}
-                    </span>
-                  </div>
-                  <input
-                    className="w-full h-1 bg-slate-100 dark:bg-white/[0.06] rounded-[var(--radius)] appearance-none cursor-pointer accent-primary"
-                    max="100000"
-                    min="1000"
-                    step="1000"
-                    type="range"
-                    value={rewrite.flow === "Outline" ? (outlineGenerator.targetLength || 15000) : (rewrite.length || 20000)}
-                    onChange={(e) => {
-                      const val = Number(e.target.value);
-                      if (rewrite.flow === "Outline") {
-                        updateOutlineGenerator({ targetLength: val });
-                      } else {
-                        updateRewrite({ length: val });
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
+                      updateRewrite({ preview: text });
 
-            {/* CREATIVE VOICE DROPDOWN */}
-            <div className="bg-white/60 dark:bg-white/[0.03] backdrop-blur-xl rounded-[2rem] p-4 border border-white dark:border-white/[0.06] shadow-xl dark:shadow-none">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-10 h-10 rounded-[var(--radius)] bg-slate-900 dark:bg-primary text-white flex items-center justify-center shadow-lg shadow-slate-200 dark:shadow-primary/20">
-                  <span className="material-symbols-outlined text-[17px]">psychology</span>
-                </div>
-                <div className="flex flex-col">
-                  <h4 className="font-semibold text-xs text-on-surface">Creative Voice</h4>
-                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-tighter">Tone Configuration</p>
-                </div>
-              </div>
-              
-              <div className="relative group">
-                <select
-                  className="w-full appearance-none bg-slate-50/50 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] rounded-[var(--radius-lg)] px-6 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none cursor-pointer hover:bg-white dark:hover:bg-white/[0.06] transition-all shadow-sm dark:shadow-none"
-                  value={(rewrite.flow === "Outline" ? outlineGenerator.tone : rewrite.tone) || "Professional"}
-                  onChange={(e) => rewrite.flow === "Outline" ? updateOutlineGenerator({ tone: e.target.value }) : updateRewrite({ tone: e.target.value })}
+                      useAppStore.getState().createProjectFromRewrite();
+                      router.push("/editor");
+                    } catch {
+                      generateRewritePreview();
+                      setMessage("AI request failed. Falling back to local.");
+                    } finally {
+                      setGenerating(false);
+                    }
+                  }}
+                  disabled={generating || isGenerating}
+                  type="button"
                 >
-                  {TONES.map((tone) => (
-                    <option key={tone} value={tone}>
-                      {tone}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-500 group-hover:text-primary transition-colors">
-                  <span className="material-symbols-outlined text-sm">expand_more</span>
-                </div>
+                  <span className="material-symbols-outlined">
+                    {rewrite.flow === "Deep"
+                      ? "account_tree"
+                      : rewrite.flow === "Outline"
+                        ? "auto_awesome_motion"
+                        : rewrite.flow === "Translate"
+                          ? "translate"
+                          : "auto_fix_high"}
+                  </span>
+                  {generating || isGenerating
+                    ? "Working…"
+                    : rewrite.flow === "Deep"
+                      ? "Run deep swarm"
+                      : rewrite.flow === "Outline"
+                        ? "Generate from outline"
+                        : rewrite.flow === "Translate"
+                          ? "Translate project"
+                          : "Rewrite"}
+                </button>
               </div>
             </div>
-
-            {rewrite.flow !== "Outline" && (
-              <div className="bg-white/60 dark:bg-white/[0.03] backdrop-blur-xl rounded-[2rem] p-4 border border-white dark:border-white/[0.06] shadow-xl dark:shadow-none">
-                <div className="flex items-center gap-4 mb-5">
-                  <div className="w-7 h-7 rounded-[var(--radius)] bg-primary text-white flex items-center justify-center shrink-0">
-                    <span className="material-symbols-outlined text-[16px]">verified_user</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <h4 className="font-semibold text-xs text-on-surface">Audit Layers</h4>
-                    <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-tighter">Safety & Style</p>
-                  </div>
-                </div>
-                <div className="space-y-8">
-                  <div className="flex items-center justify-between group">
-                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 group-hover:text-primary transition-colors">Humanize</span>
-                    <button
-                      onClick={() => updateRewrite({ humanize: !rewrite.humanize })}
-                      className={`w-14 h-7 rounded-full transition-all relative p-1 ${rewrite.humanize ? 'bg-primary shadow-lg shadow-primary/20' : 'bg-slate-200 dark:bg-white/[0.06]'}`}
-                      type="button"
-                    >
-                      <div className={`w-5 h-5 bg-white rounded-full transition-all transform ${rewrite.humanize ? 'translate-x-7 shadow-sm' : 'translate-x-0'}`} />
-                    </button>
-                  </div>
-                  <div className="flex items-center justify-between group">
-                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 group-hover:text-primary transition-colors">Zero Plagiarism</span>
-                    <button
-                      onClick={() => updateRewrite({ avoidPlagiarism: !rewrite.avoidPlagiarism })}
-                      className={`w-14 h-7 rounded-full transition-all relative p-1 ${rewrite.avoidPlagiarism ? 'bg-primary shadow-lg shadow-primary/20' : 'bg-slate-200 dark:bg-white/[0.06]'}`}
-                      type="button"
-                    >
-                      <div className={`w-5 h-5 bg-white rounded-full transition-all transform ${rewrite.avoidPlagiarism ? 'translate-x-7 shadow-sm' : 'translate-x-0'}`} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-
-            <div className="bg-white/60 dark:bg-white/[0.03] backdrop-blur-xl rounded-[2rem] p-4 border border-white dark:border-white/[0.06] shadow-xl dark:shadow-none">
-              <h4 className="font-semibold text-xs text-on-surface mb-6">Rewrite Metrics</h4>
-              <div className="space-y-2 bg-slate-50/50 dark:bg-white/[0.03] p-5 rounded-[var(--radius-lg)] border border-slate-100 dark:border-white/[0.06]">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">Outline Time</span>
-                  <span className="text-xs font-bold text-emerald-500">{formatTime(metrics.outlineTime)}</span>
-                </div>
-                <div className="h-px bg-slate-200/50 dark:bg-white/[0.04] w-full" />
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">Drafting Time</span>
-                  <span className="text-xs font-bold text-indigo-500">{formatTime(metrics.draftingTime)}</span>
-                </div>
-                <div className="h-px bg-slate-200/50 dark:bg-white/[0.04] w-full" />
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">Tokens Used</span>
-                  <span className="text-xs font-bold text-slate-900 dark:text-slate-200">{metrics.tokens.toLocaleString()}</span>
-                </div>
-              </div>
-            </div>
-
-          </div>
+          </aside>
         </div>
       </div>
       {/* Smart Import Modal — rendered at top level to avoid backdrop-blur/overflow clipping */}

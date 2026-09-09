@@ -47,67 +47,76 @@ export default function ProfilePage() {
           onChange={(e) => handleImageUpload(e, "avatar")} 
         />
 
-        <div className="h-28 md:h-36 rounded-[var(--radius-lg)] overflow-hidden relative group mb-[-2.5rem]">
-          {profile.coverUrl ? (
-            <img src={profile.coverUrl} alt="Cover" className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-slate-300 via-slate-200 to-slate-100 dark:from-[#1c1c2e] dark:via-[#141420] dark:to-[#0c0c14]" />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-on-surface/40 to-transparent" />
-          <button 
-            onClick={() => coverInputRef.current?.click()}
-            className="absolute bottom-4 right-4 bg-surface-container-lowest/80 backdrop-blur-md px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 hover:bg-white transition-all shadow-lg z-20" 
-            type="button"
-          >
-            <span className="material-symbols-outlined text-sm">photo_camera</span>
-            Change Cover
-          </button>
-        </div>
-
-        <div className="flex flex-col md:flex-row items-end gap-4 px-8 relative z-10 w-full">
-          <div className="relative group">
-            <div className="w-32 h-32 md:w-40 md:h-40 rounded-[var(--radius-lg)] border-4 border-surface overflow-hidden shadow-xl shadow-on-surface/10 bg-surface-container flex items-center justify-center">
-              {profile.avatarUrl ? (
-                <img src={profile.avatarUrl} alt="Profile" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-4xl font-semibold text-slate-500">{profile.fullName.slice(0, 1)}</span>
-              )}
-            </div>
-            <button 
-              onClick={() => avatarInputRef.current?.click()}
-              className="absolute inset-0 bg-on-surface/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-[var(--radius-lg)] cursor-pointer" 
-              type="button"
-            >
-              <span className="material-symbols-outlined text-white text-3xl">upload</span>
-            </button>
-          </div>
-          <div className="flex-1 mb-2">
-            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-on-surface">{profile.fullName}</h1>
-            <p className="text-on-surface-variant font-medium">{profile.tagline}</p>
-          </div>
-          <div className="flex gap-3 mb-2">
-            <button className="px-6 py-2.5 rounded-[var(--radius)] border border-outline-variant/30 text-sm font-bold hover:bg-surface-container-low transition-all" type="button">
-              Preview Profile
-            </button>
+        {/* Identity strip: cover as a thin band, the rest on one row */}
+        <div className="panel overflow-hidden">
+          <div className="h-16 relative group">
+            {profile.coverUrl ? (
+              <img src={profile.coverUrl} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-primary/10 dark:bg-primary/[0.12]" />
+            )}
             <button
-              className="px-6 py-2.5 rounded-[var(--radius)] bg-gradient-to-br from-primary to-primary-container text-on-primary text-sm font-bold shadow-lg shadow-primary/20"
-              onClick={() => setMessage("Profile preferences saved. Future projects will use these defaults.")}
+              onClick={() => coverInputRef.current?.click()}
+              className="btn btn-secondary btn-sm absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
               type="button"
             >
-              Save Changes
+              <span className="material-symbols-outlined text-[15px]">photo_camera</span>
+              Cover
             </button>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 p-3">
+            <div className="relative group shrink-0 -mt-8">
+              <div className="w-14 h-14 rounded-[var(--radius-lg)] border-2 border-surface overflow-hidden bg-surface-container flex items-center justify-center">
+                {profile.avatarUrl ? (
+                  <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-[20px] font-semibold text-on-surface-variant">
+                    {profile.fullName.slice(0, 1)}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => avatarInputRef.current?.click()}
+                aria-label="Change profile photo"
+                className="absolute inset-0 bg-on-surface/50 flex items-center justify-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity rounded-[var(--radius-lg)] cursor-pointer"
+                type="button"
+              >
+                <span className="material-symbols-outlined text-white text-[17px]">upload</span>
+              </button>
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <h1 className="text-[17px] font-semibold tracking-[-0.017em] text-on-surface truncate">
+                {profile.fullName}
+              </h1>
+              <p className="text-[12.5px] text-on-surface-variant truncate">{profile.tagline}</p>
+            </div>
+
+            <div className="flex gap-2 shrink-0">
+              <button className="btn btn-secondary btn-lg" type="button">
+                Preview
+              </button>
+              <button
+                className="btn btn-primary btn-lg"
+                onClick={() => setMessage("Profile preferences saved. Future projects will use these defaults.")}
+                type="button"
+              >
+                Save changes
+              </button>
+            </div>
           </div>
         </div>
       </section>
 
-      {message ? <div className="mb-4 rounded-[var(--radius-lg)] bg-emerald-500/10 border border-emerald-500/20 p-4 text-sm text-emerald-400">{message}</div> : null}
+      {message ? <p role="status" className="mb-4 px-3 py-2 rounded-[var(--radius)] bg-emerald-500/10 border border-emerald-500/25 text-[12.5px] text-emerald-700 dark:text-emerald-400">{message}</p> : null}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start w-full">
-        <div className="lg:col-span-7 space-y-8 w-full">
-          <div className="bg-surface-container-lowest rounded-[2rem] p-4 shadow-sm border border-outline-variant/10">
-            <h2 className="text-sm font-semibold text-on-surface-variant mb-6 flex items-center gap-2">
-              <span className="material-symbols-outlined text-[18px]">history_edu</span>
-              Professional Bio
+        <div className="lg:col-span-7 space-y-3 w-full min-w-0">
+          <div className="panel panel-pad">
+            <h2 className="section-title mb-2.5 flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[16px]">history_edu</span>
+              Bio
             </h2>
             <div className="bg-surface-container-low rounded-[var(--radius)] p-4 border-2 border-transparent focus-within:border-primary/20 transition-all">
               <textarea
@@ -151,13 +160,13 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="lg:col-span-5 space-y-8 w-full">
-          <div className="bg-surface-container-low rounded-[2rem] p-4 border border-outline-variant/20 sticky top-24">
-            <h2 className="text-sm font-semibold text-on-surface mb-6 flex items-center gap-2">
+        <div className="lg:col-span-5 space-y-3 w-full min-w-0">
+          <div className="panel panel-pad lg:sticky lg:top-[calc(var(--app-header-h)+1rem)]">
+            <h2 className="section-title mb-2.5 flex items-center gap-1.5">
               <span className="material-symbols-outlined text-[18px]">settings_suggest</span>
               Ebook Defaults
             </h2>
-            <div className="space-y-8">
+            <div className="space-y-3">
               <div>
                 <label className="text-[11px] font-semibold text-on-surface-variant block mb-4">Default Tone</label>
                 <div className="flex flex-wrap gap-2">
@@ -263,25 +272,9 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <section className="mt-6 bg-surface-container-lowest rounded-[2rem] p-5 shadow-sm border border-outline-variant/10 overflow-hidden relative">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-20 -mt-20" />
-        <div className="relative z-10 flex flex-col items-center text-center max-w-2xl mx-auto">
-          <h3 className="display-sm text-3xl font-semibold tracking-tight text-on-surface mb-4">The Editorial Identity</h3>
-          <p className="text-on-surface-variant font-body leading-relaxed mb-4">
-            This profile now drives your default tone, writing rules, and save behavior throughout the app.
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <div className="flex items-center gap-2 px-4 py-2 bg-surface rounded-full border border-outline-variant/20">
-              <span className="w-2 h-2 rounded-full bg-green-500" />
-              <span className="text-xs font-bold">Public Profile Online</span>
-            </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-surface rounded-full border border-outline-variant/20">
-              <span className="material-symbols-outlined text-[16px] text-primary">verified</span>
-              <span className="text-xs font-bold">Premium Account</span>
-            </div>
-          </div>
-        </div>
-      </section>
+      <p className="mt-4 text-[12.5px] text-on-surface-variant">
+        These preferences drive the default tone, writing rules and save behaviour across the app.
+      </p>
     </div>
   );
 }

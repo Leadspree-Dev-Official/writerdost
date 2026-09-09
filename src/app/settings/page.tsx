@@ -72,6 +72,18 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
+/** The providers this build can talk to. Endpoints are pinned server-side. */
+const PROVIDERS = [
+  { key: "openai", name: "OpenAI", description: "GPT-4o and GPT-4o-mini." },
+  { key: "claude", name: "Claude", description: "Anthropic's latest models." },
+  { key: "gemini", name: "Gemini", description: "Google's Flash and Pro models." },
+  { key: "deepseek", name: "DeepSeek", description: "DeepSeek-Chat and Reasoner." },
+  { key: "openrouter", name: "OpenRouter", description: "Many models through one API." },
+  { key: "ollama", name: "Ollama (local)", description: "Runs privately on this machine." },
+  { key: "ollama_cloud", name: "Ollama Cloud", description: "Ollama's hosted models." },
+  { key: "custom", name: "Custom", description: "Any OpenAI-compatible endpoint." },
+] as const;
+
 export default function SettingsPage() {
   const settings = useAppStore((state) => state.settings);
   const api = useAppStore((state) => state.api);
@@ -187,60 +199,49 @@ export default function SettingsPage() {
         </div>
       ) : null}
 
-      <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-12 lg:col-span-8 space-y-3">
-          <section className="bg-surface-container-low p-4 rounded-[var(--radius)] border border-outline-variant/10">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold text-on-surface flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">cloud_done</span>
-                Model Configuration
-              </h3>
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_17rem] gap-4 items-start">
+        <div className="min-w-0 space-y-3">
+          <section className="panel overflow-hidden">
+            <div className="panel-head">
+              <span className="panel-title">Provider</span>
+              <span className="row-meta">{PROVIDERS.length} available</span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[
-                { key: "openai", name: "OpenAI", icon: "O", description: "Standard for GPT-4o and GPT-4o-mini." },
-                { key: "claude", name: "Claude", icon: "C", description: "Anthropic's latest high-quality models." },
-                { key: "gemini", name: "Gemini", icon: "G", description: "Google's ultra-fast Flash and Pro models." },
-                { key: "deepseek", name: "DeepSeek", icon: "D", description: "DeepSeek-Chat and the new Reasoner model." },
-                { key: "openrouter", name: "OpenRouter", icon: "hub", description: "Access all models through one unified API." },
-                { key: "ollama", name: "Ollama Local", icon: "terminal", description: "Run local models privately and for free." },
-                { key: "ollama_cloud", name: "Ollama Cloud", icon: "cloud", description: "Use Ollama's cloud models." },
-                { key: "custom", name: "Custom", icon: "route", description: "Any OpenAI-compatible completions endpoint." },
-              ].map((provider) => (
-                <button
-                  key={provider.key}
-                  className={`bg-surface-container-lowest p-5 rounded-[var(--radius)] border shadow-sm hover:shadow-md transition-shadow text-left ${
-                    api.provider === provider.key ? "border-primary/30 ring-2 ring-primary/10" : "border-outline-variant/5"
-                  }`}
-                  onClick={() => updateApiSettings({ provider: provider.key as typeof api.provider })}
-                  type="button"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 rounded-[var(--radius)] bg-surface-container flex items-center justify-center font-bold text-on-surface">
-                        {provider.icon.length === 1 ? provider.icon : <span className="material-symbols-outlined">{provider.icon}</span>}
-                      </div>
-                      <div>
-                        <p className="font-bold text-sm">{provider.name}</p>
-                        <p className={`text-[10px] font-bold ${api.provider === provider.key ? "text-emerald-500" : "text-slate-400"}`}>
-                          {api.provider === provider.key ? "Selected" : "Available"}
-                        </p>
-                      </div>
-                    </div>
-                    <span className={`px-4 py-1.5 bg-on-surface text-surface text-xs font-bold rounded-[var(--radius)]`}>{api.provider === provider.key ? "Active" : "Use"}</span>
-                  </div>
-                  <p className="text-[11px] text-on-surface-variant leading-tight">{provider.description}</p>
-                </button>
-              ))}
+            {/* A pick-one list: name and purpose on one line, selection on the left */}
+            <div role="radiogroup" aria-label="AI provider">
+              {PROVIDERS.map((provider) => {
+                const selected = api.provider === provider.key;
+                return (
+                  <button
+                    key={provider.key}
+                    role="radio"
+                    aria-checked={selected}
+                    className={`row w-full text-left cursor-pointer ${selected ? "bg-primary/[0.06]" : ""}`}
+                    onClick={() => updateApiSettings({ provider: provider.key as typeof api.provider })}
+                    type="button"
+                  >
+                    <span
+                      className={`w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center ${
+                        selected ? "border-primary" : "border-[var(--hairline-strong)]"
+                      }`}
+                    >
+                      {selected && <span className="w-2 h-2 rounded-full bg-primary" />}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block row-title">{provider.name}</span>
+                      <span className="block row-meta truncate">{provider.description}</span>
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </section>
 
-          <section className="bg-surface-container-low p-4 rounded-[var(--radius)] border border-outline-variant/10">
+          <section className="panel panel-pad">
             {/* Header with Title only */}
             <div className="flex items-center gap-2 mb-6">
               <span className="material-symbols-outlined text-primary">key</span>
-              <h3 className="text-lg font-bold text-on-surface">API Credentials</h3>
+              <h3 className="section-title">API Credentials</h3>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -401,8 +402,8 @@ export default function SettingsPage() {
             </div>
           </section>
 
-          <section className="bg-surface-container-low p-4 rounded-[var(--radius)]">
-            <h3 className="text-lg font-bold text-on-surface mb-6 flex items-center gap-2">
+          <section className="panel panel-pad">
+            <h3 className="section-title mb-3 flex items-center gap-1.5">
               <span className="material-symbols-outlined text-primary">tune</span>
               Advanced Model Controls
             </h3>
@@ -447,16 +448,14 @@ export default function SettingsPage() {
           </section>
         </div>
 
-        <div className="col-span-12 lg:col-span-4 space-y-3">
-          <div className="bg-slate-900 dark:bg-white/[0.03] text-white dark:text-on-surface p-4 rounded-[var(--radius)] shadow-xl dark:shadow-none space-y-3 relative overflow-hidden group border border-transparent dark:border-white/[0.06]">
-            <div className="absolute -top-12 -right-12 w-32 h-32 bg-indigo-500/20 blur-3xl rounded-full" />
+        <aside className="min-w-0 space-y-3 lg:sticky lg:top-[calc(var(--app-header-h)+1rem)]">
+          <div className="panel panel-pad space-y-3 group">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold flex items-center gap-2">
-                <span className="material-symbols-outlined text-indigo-400">payments</span>
-                Usage & Costs
+              <h3 className="section-title flex items-center gap-1.5">
+                Usage
               </h3>
               <button 
-                className="text-[10px] uppercase font-semibold text-slate-500 hover:text-rose-400 transition-colors opacity-0 group-hover:opacity-100"
+                className="btn btn-ghost btn-sm opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-error"
                 onClick={() => {
                   if (confirm("Reset all usage data?")) {
                     useAppStore.getState().resetUsage();
@@ -469,9 +468,9 @@ export default function SettingsPage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-6 border-b border-slate-800 dark:border-white/[0.06]">
               <div className="space-y-1.5">
-                <label className="text-[10px] text-slate-500 font-bold block">Input / 1M</label>
+                <label className="label">Input / 1M</label>
                 <select 
-                  className="w-full bg-slate-800 dark:bg-white/[0.05] border-none rounded-[var(--radius)] py-1.5 px-2 text-xs font-bold focus:ring-1 focus:ring-indigo-500 outline-none cursor-pointer text-white dark:text-on-surface"
+                  className="select"
                   value={isCustomInput ? "custom" : usage.inputTokenRate}
                   onChange={(e) => {
                     const val = e.target.value;
@@ -491,7 +490,7 @@ export default function SettingsPage() {
 
                 {isCustomInput && (
                   <div className="relative mt-2">
-                    <span className="absolute left-2.5 top-1.5 text-xs text-slate-400">$</span>
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[12px] text-on-surface-variant">$</span>
                     <input
                       type="text"
                       value={customInputRate}
@@ -503,7 +502,7 @@ export default function SettingsPage() {
                           useAppStore.getState().updateUsageRates(parsed, usage.outputTokenRate);
                         }
                       }}
-                      className="w-full bg-slate-850 dark:bg-white/[0.07] border-none rounded-[var(--radius)] py-1.5 pl-5 pr-2 text-xs font-bold focus:ring-1 focus:ring-indigo-500 outline-none text-white dark:text-on-surface"
+                      className="input pl-5"
                       placeholder="0.00"
                     />
                   </div>
@@ -511,9 +510,9 @@ export default function SettingsPage() {
               </div>
               
               <div className="space-y-1.5">
-                <label className="text-[10px] text-slate-500 font-bold block">Output / 1M</label>
+                <label className="label">Output / 1M</label>
                 <select 
-                  className="w-full bg-slate-800 dark:bg-white/[0.05] border-none rounded-[var(--radius)] py-1.5 px-2 text-xs font-bold focus:ring-1 focus:ring-indigo-500 outline-none cursor-pointer text-white dark:text-on-surface"
+                  className="select"
                   value={isCustomInput ? "custom" : usage.outputTokenRate}
                   onChange={(e) => {
                     const val = e.target.value;
@@ -533,7 +532,7 @@ export default function SettingsPage() {
 
                 {isCustomInput && (
                   <div className="relative mt-2">
-                    <span className="absolute left-2.5 top-1.5 text-xs text-slate-400">$</span>
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[12px] text-on-surface-variant">$</span>
                     <input
                       type="text"
                       value={customOutputRate}
@@ -545,7 +544,7 @@ export default function SettingsPage() {
                           useAppStore.getState().updateUsageRates(usage.inputTokenRate, parsed);
                         }
                       }}
-                      className="w-full bg-slate-850 dark:bg-white/[0.07] border-none rounded-[var(--radius)] py-1.5 pl-5 pr-2 text-xs font-bold focus:ring-1 focus:ring-indigo-500 outline-none text-white dark:text-on-surface"
+                      className="input pl-5"
                       placeholder="0.00"
                     />
                   </div>
@@ -553,57 +552,59 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div className="space-y-1">
-              <p className="text-slate-400 text-[10px] font-bold">Est. Cost (Global)</p>
-              <div className="flex items-baseline gap-2">
-                <p className="text-4xl font-semibold">{formatCurrency((usage.totalTokens / 1000000) * ((usage.inputTokenRate + usage.outputTokenRate) / 2))}</p>
-                <span className="text-[10px] text-slate-500 font-bold bg-slate-800 dark:bg-white/[0.05] px-1.5 py-0.5 rounded">
-                  Avg: ${((usage.inputTokenRate + usage.outputTokenRate) / 2).toFixed(3)}
-                </span>
+            <dl className="pt-3 border-t border-[var(--hairline)] space-y-0.5">
+              <div className="kv">
+                <dt>Estimated cost</dt>
+                <dd>
+                  {formatCurrency(
+                    (usage.totalTokens / 1000000) * ((usage.inputTokenRate + usage.outputTokenRate) / 2),
+                  )}
+                </dd>
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-800 dark:border-white/[0.06] text-white dark:text-on-surface">
-              <div>
-                <p className="text-[10px] text-slate-400 font-bold uppercase">Total Tokens</p>
-                <p className="text-sm font-bold text-white dark:text-on-surface">{formatTokens(usage.totalTokens)}</p>
+              <div className="kv">
+                <dt>Total tokens</dt>
+                <dd>{formatTokens(usage.totalTokens)}</dd>
               </div>
-              <div>
-                <p className="text-[10px] text-slate-400 font-bold uppercase">Requests</p>
-                <p className="text-sm font-bold text-white dark:text-on-surface">{usage.totalRequests}</p>
+              <div className="kv">
+                <dt>Requests</dt>
+                <dd>{usage.totalRequests}</dd>
               </div>
-            </div>
+              <div className="kv">
+                <dt>Average rate</dt>
+                <dd>${((usage.inputTokenRate + usage.outputTokenRate) / 2).toFixed(3)} / 1M</dd>
+              </div>
+            </dl>
           </div>
 
-          <div className="bg-surface-container-lowest p-4 rounded-[var(--radius)] border border-outline-variant/10">
-            <h4 className="text-xs font-semibold text-slate-400 dark:text-slate-500 mb-4">Quick Optimizations</h4>
+          <div className="panel panel-pad">
+            <p className="rail-title">Optimize for</p>
             <div className="flex flex-wrap gap-2">
               {[
-                { label: "Lower Token Cost", type: "cost", icon: "auto_fix" },
-                { label: "Fast Response", type: "speed", icon: "speed" },
-                { label: "Better Prose", type: "quality", icon: "history_edu" }
+                { label: "Lower cost", type: "cost", icon: "savings" },
+                { label: "Speed", type: "speed", icon: "speed" },
+                { label: "Prose quality", type: "quality", icon: "history_edu" }
               ].map((item) => (
                 <button 
                   key={item.label} 
-                  className="bg-primary/10 text-primary px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 cursor-pointer hover:bg-primary/20 transition-all active:scale-95" 
+                  className="btn btn-secondary btn-sm" 
                   type="button"
                   onClick={() => {
                     useAppStore.getState().applyOptimization(item.type as "cost" | "speed" | "quality");
                     setMessage(`Optimization applied: ${item.label}. API settings and model parameters have been updated.`);
                   }}
                 >
-                  <span className="material-symbols-outlined text-sm">{item.icon}</span>
+                  <span className="material-symbols-outlined text-[15px]">{item.icon}</span>
                   {item.label}
                 </button>
               ))}
             </div>
           </div>
-        </div>
+        </aside>
       </div>
 
-      <div className="flex justify-end items-center gap-4 py-8 border-t border-outline-variant/20">
+      <div className="flex justify-end items-center gap-2 mt-5 pt-4 border-t border-[var(--hairline)]">
         <button
-          className="px-6 py-2.5 rounded-[var(--radius)] font-bold text-sm text-on-surface-variant hover:bg-surface-container-low transition-all"
+          className="btn btn-ghost btn-lg"
           onClick={() =>
             updateSettings({
               defaultModel: "GPT-4o (OpenAI)",
@@ -615,14 +616,14 @@ export default function SettingsPage() {
           }
           type="button"
         >
-          Reset to Defaults
+          Reset to defaults
         </button>
         <button
-          className="px-8 py-2.5 bg-gradient-to-br from-primary to-primary-container text-white rounded-[var(--radius)] font-bold text-sm shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 active:translate-y-0"
+          className="btn btn-primary btn-lg"
           onClick={() => setMessage("Settings saved. API credentials and generation defaults are ready to use.")}
           type="button"
         >
-          Save Changes
+          Save changes
         </button>
       </div>
     </div>

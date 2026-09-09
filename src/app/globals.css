@@ -507,6 +507,126 @@
     border-bottom-color: var(--color-primary);
   }
 
+  /* ---- Settings rail --------------------------------------------------
+     One panel divided by hairlines, rather than a stack of floating cards.
+     Each section is a labelled group; the rail scrolls with the page and
+     pins its primary action at the bottom.                               */
+
+  .rail { display: flex; flex-direction: column; }
+
+  .rail-section {
+    padding: var(--sp-4);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .rail-section:last-child { border-bottom: 0; }
+
+  .rail-title {
+    font-size: 0.6875rem;
+    font-weight: 650;
+    letter-spacing: 0.01em;
+    color: var(--color-on-surface-variant);
+    margin-bottom: var(--sp-3);
+  }
+
+  /* A label and its value on one line — the densest way to show a setting. */
+  .setting {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-4);
+    min-height: 1.75rem;
+  }
+
+  .setting-label {
+    font-size: 0.8125rem;
+    color: var(--color-on-surface);
+  }
+
+  /* ---- Switch ---------------------------------------------------------- */
+
+  .switch {
+    position: relative;
+    width: 1.875rem;
+    height: 1.0625rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-on-surface) 20%, transparent);
+    transition: background-color 140ms ease;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .switch[data-on="true"] { background: var(--color-primary); }
+
+  .switch::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 0.8125rem;
+    height: 0.8125rem;
+    border-radius: 999px;
+    background: #fff;
+    transition: transform 140ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .switch[data-on="true"]::after { transform: translateX(0.8125rem); }
+
+  /* ---- Key/value list -------------------------------------------------- */
+
+  .kv {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-4);
+    padding-block: 0.1875rem;
+    font-size: 0.75rem;
+  }
+  .kv dt { color: var(--color-on-surface-variant); }
+  .kv dd { color: var(--color-on-surface); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  /* ---- Segmented control ----------------------------------------------- */
+
+  /* Scrolls inside itself on narrow screens so the page never scrolls sideways. */
+  .segmented {
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    padding: 2px;
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--color-on-surface) 6%, transparent);
+    border: 1px solid var(--hairline);
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .segmented::-webkit-scrollbar { display: none; }
+
+  .segment { flex-shrink: 0; }
+
+  .segment {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3125rem;
+    height: 1.625rem;
+    padding-inline: 0.5rem;
+    border-radius: calc(var(--radius) - 1px);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-on-surface-variant);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 130ms ease, color 130ms ease;
+  }
+  .segment:hover { color: var(--color-on-surface); }
+  .segment[data-active="true"] {
+    background: var(--color-surface-container-lowest);
+    color: var(--color-on-surface);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+  }
+  .dark .segment[data-active="true"] {
+    background: rgb(255 255 255 / 0.1);
+    color: #fff;
+    box-shadow: none;
+  }
+
   /* ---- Misc ------------------------------------------------------------ */
 
   .divider { height: 1px; background: var(--hairline); border: 0; }

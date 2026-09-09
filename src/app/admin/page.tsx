@@ -237,37 +237,35 @@ export default function AdminDashboard() {
       </section>
 
       {/* Tabs Selector */}
-      <section className="flex border-b border-outline-variant/10 mb-6 gap-4">
+      <div className="tabs" role="tablist" aria-label="Admin sections">
         <button
           onClick={() => { setActiveTab("users"); setShowAddForm(false); }}
-          className={`pb-3 font-bold text-sm tracking-wider uppercase border-b-2 transition-all ${
-            activeTab === "users" && !showAddForm
-              ? "border-primary text-primary"
-              : "border-transparent text-slate-500 hover:text-slate-400"
-          }`}
+          className="tab"
+          data-active={activeTab === "users" && !showAddForm}
+          role="tab"
+          type="button"
         >
-          User Accounts ({totalUsers})
+          Users ({totalUsers})
         </button>
         <button
           onClick={() => { setActiveTab("requests"); setShowAddForm(false); }}
-          className={`pb-3 font-bold text-sm tracking-wider uppercase border-b-2 transition-all flex items-center gap-2 ${
-            activeTab === "requests"
-              ? "border-primary text-primary"
-              : "border-transparent text-slate-500 hover:text-slate-400"
-          }`}
+          className="tab"
+          data-active={activeTab === "requests"}
+          role="tab"
+          type="button"
         >
-          Upgrade Requests
+          Upgrade requests
           {upgradeRequests.filter(r => r.status === 'pending').length > 0 && (
             <span className="bg-amber-500 text-amber-950 font-semibold text-[10px] w-5 h-5 rounded-full flex items-center justify-center">
               {upgradeRequests.filter(r => r.status === 'pending').length}
             </span>
           )}
         </button>
-      </section>
+      </div>
 
       {/* Conditional View: Add User Form, Requests Table, or Users Table */}
       {showAddForm ? (
-        <section className="max-w-xl bg-surface-container-low border border-outline-variant/15 rounded-[var(--radius-lg)] p-4 shadow-sm">
+        <section className="panel panel-pad max-w-xl">
           <h3 className="text-lg font-semibold text-on-surface mb-6">Create New User Account</h3>
           
           {formError && (
@@ -343,7 +341,7 @@ export default function AdminDashboard() {
         </section>
       ) : activeTab === "requests" ? (
         /* Upgrade Requests Tracker Dashboard */
-        <section className="bg-surface-container-low border border-outline-variant/10 rounded-[var(--radius-lg)] overflow-hidden shadow-sm">
+        <section className="panel overflow-hidden">
           <div className="p-4 border-b border-outline-variant/10">
             <h3 className="text-base font-semibold text-on-surface">Feature Access Requests</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
@@ -354,7 +352,7 @@ export default function AdminDashboard() {
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-left">
               <thead>
-                <tr className="border-b border-outline-variant/10 text-slate-500 dark:text-slate-400 text-[10px] font-bold bg-surface-container-high/30">
+                <tr className="border-b border-[var(--hairline)] text-on-surface-variant text-[11px] font-semibold bg-on-surface/[0.02]">
                   <th className="py-2 px-6">Author Profile</th>
                   <th className="py-2 px-6">Requested Module</th>
                   <th className="py-2 px-6">Request Date</th>
@@ -389,7 +387,7 @@ export default function AdminDashboard() {
                           {formatDate(req.timestamp)}
                         </td>
                         <td className="py-2 px-6">
-                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border ${
+                          <span className={`chip border ${
                             req.status === "pending"
                               ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
                               : "bg-slate-500/10 text-slate-400 border-slate-500/20"
@@ -434,7 +432,7 @@ export default function AdminDashboard() {
         </section>
       ) : (
         /* Users Table Dashboard */
-        <section className="bg-surface-container-low border border-outline-variant/10 rounded-[var(--radius-lg)] overflow-hidden shadow-sm">
+        <section className="panel overflow-hidden">
           {/* Table Controls (Search & Filters) */}
           <div className="p-4 border-b border-outline-variant/10 flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="relative w-full md:w-80">
@@ -444,32 +442,32 @@ export default function AdminDashboard() {
                 placeholder="Search users by name or email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-surface border border-outline-variant/20 rounded-[var(--radius)] py-2.5 pl-10 pr-4 text-on-surface text-xs font-semibold outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+                className="input pl-8"
               />
             </div>
 
             <div className="flex items-center gap-3 w-full md:w-auto self-end md:self-auto">
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Role</span>
                 <select
+                  aria-label="Filter by role"
                   value={roleFilter}
                   onChange={(e) => setRoleFilter(e.target.value as "all" | "user" | "admin")}
-                  className="bg-surface border border-outline-variant/20 rounded-[var(--radius)] py-1.5 px-3 text-on-surface text-xs font-semibold outline-none"
+                  className="select w-auto min-w-[8rem]"
                 >
-                  <option value="all">All Roles</option>
+                  <option value="all">All roles</option>
                   <option value="user">User</option>
                   <option value="admin">Admin</option>
                 </select>
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Status</span>
                 <select
+                  aria-label="Filter by status"
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "suspended")}
-                  className="bg-surface border border-outline-variant/20 rounded-[var(--radius)] py-1.5 px-3 text-on-surface text-xs font-semibold outline-none"
+                  className="select w-auto min-w-[8rem]"
                 >
-                  <option value="all">All Statuses</option>
+                  <option value="all">All statuses</option>
                   <option value="active">Active</option>
                   <option value="suspended">Suspended</option>
                 </select>
@@ -481,7 +479,7 @@ export default function AdminDashboard() {
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-left">
               <thead>
-                <tr className="border-b border-outline-variant/10 text-slate-500 dark:text-slate-400 text-[10px] font-bold bg-surface-container-high/30">
+                <tr className="border-b border-[var(--hairline)] text-on-surface-variant text-[11px] font-semibold bg-on-surface/[0.02]">
                   <th className="py-2 px-6">User Profile</th>
                   <th className="py-2 px-6">Registered Date</th>
                   <th className="py-2 px-6">Access Role</th>
@@ -511,7 +509,7 @@ export default function AdminDashboard() {
                           {formatDate(user.registeredAt)}
                         </td>
                         <td className="py-2 px-6">
-                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border ${
+                          <span className={`chip border ${
                             user.role === "admin"
                               ? "bg-indigo-500/10 text-indigo-500 border-indigo-500/20"
                               : "bg-slate-500/10 text-slate-400 border-slate-500/20"
@@ -520,7 +518,7 @@ export default function AdminDashboard() {
                           </span>
                         </td>
                         <td className="py-2 px-6">
-                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border ${
+                          <span className={`chip border ${
                             user.plan === "Enterprise"
                               ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
                               : user.plan === "Pro"
@@ -533,7 +531,7 @@ export default function AdminDashboard() {
                           </span>
                         </td>
                         <td className="py-2 px-6">
-                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border ${
+                          <span className={`chip border ${
                             user.status === "active"
                               ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
                               : "bg-red-500/10 text-red-500 border-red-500/20"
