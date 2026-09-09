@@ -192,6 +192,30 @@ export default function SettingsPage() {
             Your provider, model and generation controls. These persist across the whole workspace.
           </p>
         </div>
+        <div className="flex items-center gap-2">
+          <button
+            className="btn btn-ghost btn-lg"
+            onClick={() =>
+              updateSettings({
+                defaultModel: "GPT-4o (OpenAI)",
+                creativeMode: true,
+                longFormFocus: false,
+                temperature: 0.75,
+                topP: 0.9,
+              })
+            }
+            type="button"
+          >
+            Reset to defaults
+          </button>
+          <button
+            className="btn btn-primary btn-lg"
+            onClick={() => setMessage("Settings saved. API credentials and generation defaults are ready to use.")}
+            type="button"
+          >
+            Save changes
+          </button>
+        </div>
       </div>
 
       {message && !message.includes("API test failed") && !message.includes("Connection successful") ? (
@@ -625,30 +649,6 @@ export default function SettingsPage() {
         </aside>
       </div>
 
-      <div className="flex justify-end items-center gap-2 mt-5 pt-4 border-t border-[var(--hairline)]">
-        <button
-          className="btn btn-ghost btn-lg"
-          onClick={() =>
-            updateSettings({
-              defaultModel: "GPT-4o (OpenAI)",
-              creativeMode: true,
-              longFormFocus: false,
-              temperature: 0.75,
-              topP: 0.9,
-            })
-          }
-          type="button"
-        >
-          Reset to defaults
-        </button>
-        <button
-          className="btn btn-primary btn-lg"
-          onClick={() => setMessage("Settings saved. API credentials and generation defaults are ready to use.")}
-          type="button"
-        >
-          Save changes
-        </button>
-      </div>
     </div>
   );
 }
