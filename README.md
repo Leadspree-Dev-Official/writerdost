@@ -1,36 +1,90 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Writerdost AI
 
-## Getting Started
+Writerdost AI is a localhost-first Next.js testing build for AI-assisted ebook generation, rewriting, blog generation, and editing.
 
-First, run the development server:
+## What works now
+
+- Dashboard, projects, profile, settings, help
+- Rich text chapter editor with AI assist
+- Rewrite flow with live AI or fallback local generation
+- Blog title and draft generation with live AI or fallback local generation
+- Multi-agent-style ebook generation from the Create page
+- Local persistence using Zustand in the browser
+
+## Local setup
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Start the app:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. Open:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```text
+http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Configure AI
 
-## Learn More
+Open `/settings` and fill in:
 
-To learn more about Next.js, take a look at the following resources:
+- Provider: `OpenAI`, `OpenRouter`, `Ollama`, or `Custom`
+- Model
+- Base URL
+- API key
+- Optional app name and site URL
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Then click `Test Connection`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Common local examples
 
-## Deploy on Vercel
+OpenAI:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Provider: `OpenAI`
+- Model: `gpt-4o-mini`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+OpenRouter:
+
+- Provider: `OpenRouter`
+- Model: `openai/gpt-4o-mini`
+
+Ollama:
+
+- Provider: `Ollama`
+- Model: `llama3.1:8b`
+- Make sure Ollama is running locally on `http://localhost:11434`
+
+## Create flow
+
+The `Create Ebook` page supports two modes:
+
+- `Quick Draft`: creates a local project immediately from form input
+- `Generate With AI Agents`: runs a localhost orchestration pipeline:
+  - Research agent
+  - Planning agent
+  - Chapter planning agent
+  - Parallel chapter writing agents
+
+If no live API is configured, the route falls back to a local generated structure so the UI is still testable.
+
+## Current limitations
+
+- API keys are stored in browser state for localhost testing only
+- No WordPress backend integration yet
+- No user auth, credit system, export engine, or async queue workers yet
+- No server-side encrypted secrets yet
+
+## Next planned backend phase
+
+- Headless WordPress for users, projects, and chapters
+- Custom plugin for AI orchestration and credit tracking
+- JWT auth
+- Encrypted key storage
+- Background jobs for long-running chapter generation
