@@ -119,3 +119,201 @@ export function htmlToText(html: string): string {
     .replace(/[ \t]{2,}/g, " ")
     .trim();
 }
+
+/* --------------------------------------------------------------------------
+ * HTML -> Markdown
+ *
+ * The inverse of `mdToHtml`, used by the .md export. This walks the DOM
+ * instead of running regexes over the markup: chapter HTML comes from Tiptap
+ * and from model output, so nesting (lists inside lists, formatting inside
+ * headings) is common and regexes lose it.
+ * ----------------------------------------------------------------------- */
+
+/** Inline markdown characters that would otherwise be read as formatting. */
+function escapeInline(text: string): string {
+  return text.replace(/([\\`*_[\]])/g, "\\$1");
+}
+
+/** Escapes characters that only take on meaning at the start of a line. */
+function escapeBlockStart(text: string): string {
+  return (
+    text
+      .replace(/^(\s*)([#>+-])(\s)/, "$1\\$2$3")
+      // A backslash only escapes punctuation, so "5." is neutralised on the
+      // period ("5\.") — "\5" would render the backslash literally.
+      .replace(/^(\s*)(\d+)\.(\s)/, "$1$2\\.$3")
+  );
+}
+
+const INLINE_WRAPPERS: Record<string, string> = {
+  strong: "**",
+  b: "**",
+  em: "_",
+  i: "_",
+  s: "~~",
+  del: "~~",
+  strike: "~~",
+};
+
+/** Renders the inline content of an element to a single line of markdown. */
+function renderInline(node: Node): string {
+  let out = "";
+
+  node.childNodes.forEach((child) => {
+    if (child.nodeType === Node.TEXT_NODE) {
+      // Collapse the whitespace HTML would have collapsed anyway.
+      out += escapeInline((child.textContent || "").replace(/\s+/g, " "));
+      return;
+    }
+    if (child.nodeType !== Node.ELEMENT_NODE) return;
+
+    const el = child as HTMLElement;
+    const tag = el.tagName.toLowerCase();
+
+    if (tag === "br") {
+      // Two trailing spaces is the portable hard line break.
+      out += "  \n";
+    } else if (tag === "code") {
+      out += `\`${el.textContent || ""}\``;
+    } else if (tag === "img") {
+      const alt = el.getAttribute("alt") || "";
+      const src = el.getAttribute("src") || "";
+      out += `![${alt}](${src})`;
+    } else if (tag === "a") {
+      const href = el.getAttribute("href");
+      const label = renderInline(el);
+      out += href ? `[${label}](${href})` : label;
+    } else if (tag === "u") {
+      // Markdown has no underline; inline HTML is the portable fallback.
+      out += `<u>${renderInline(el)}</u>`;
+    } else if (INLINE_WRAPPERS[tag]) {
+      const inner = renderInline(el).trim();
+      out += inner ? `${INLINE_WRAPPERS[tag]}${inner}${INLINE_WRAPPERS[tag]}` : "";
+    } else {
+      out += renderInline(el);
+    }
+  });
+
+  return out;
+}
+
+/** Renders one list, indenting nested levels by two spaces per level. */
+function renderList(el: HTMLElement, ordered: boolean, depth: number): string[] {
+  const lines: string[] = [];
+  const pad = "  ".repeat(depth);
+  let index = 1;
+
+  Array.from(el.children).forEach((child) => {
+    if (child.tagName.toLowerCase() !== "li") return;
+
+    const li = child as HTMLElement;
+    const marker = ordered ? `${index++}. ` : "- ";
+
+    // Split the item's own text from any list nested inside it.
+    const ownText = renderInline(
+      (() => {
+        const clone = li.cloneNode(true) as HTMLElement;
+        clone.querySelectorAll("ul, ol").forEach((n) => n.remove());
+        return clone;
+      })(),
+    ).trim();
+
+    lines.push(`${pad}${marker}${ownText}`);
+
+    li.querySelectorAll(":scope > ul, :scope > ol").forEach((nested) => {
+      lines.push(...renderList(nested as HTMLElement, nested.tagName.toLowerCase() === "ol", depth + 1));
+    });
+  });
+
+  return lines;
+}
+
+/** Renders a table as a GitHub-flavoured markdown table. */
+function renderTable(el: HTMLElement): string[] {
+  const rows = Array.from(el.querySelectorAll("tr"));
+  if (rows.length === 0) return [];
+
+  const cellsOf = (row: Element) =>
+    Array.from(row.querySelectorAll("th, td")).map((c) => renderInline(c).trim().replace(/\|/g, "\\|"));
+
+  const header = cellsOf(rows[0]);
+  const lines = [`| ${header.join(" | ")} |`, `| ${header.map(() => "---").join(" | ")} |`];
+
+  rows.slice(1).forEach((row) => {
+    const cells = cellsOf(row);
+    while (cells.length < header.length) cells.push("");
+    lines.push(`| ${cells.join(" | ")} |`);
+  });
+
+  return lines;
+}
+
+/** Renders block-level children, returning the blocks as separate strings. */
+function renderBlocks(node: Node): string[] {
+  const blocks: string[] = [];
+
+  node.childNodes.forEach((child) => {
+    if (child.nodeType === Node.TEXT_NODE) {
+      const text = (child.textContent || "").trim();
+      if (text) blocks.push(escapeBlockStart(escapeInline(text)));
+      return;
+    }
+    if (child.nodeType !== Node.ELEMENT_NODE) return;
+
+    const el = child as HTMLElement;
+    const tag = el.tagName.toLowerCase();
+
+    if (/^h[1-6]$/.test(tag)) {
+      const level = Number(tag[1]);
+      const text = renderInline(el).trim();
+      if (text) blocks.push(`${"#".repeat(level)} ${text}`);
+    } else if (tag === "p") {
+      const text = renderInline(el).trim();
+      if (text) blocks.push(escapeBlockStart(text));
+    } else if (tag === "ul" || tag === "ol") {
+      const lines = renderList(el, tag === "ol", 0);
+      if (lines.length) blocks.push(lines.join("\n"));
+    } else if (tag === "blockquote") {
+      const inner = renderBlocks(el).join("\n\n");
+      if (inner.trim()) {
+        blocks.push(
+          inner
+            .split("\n")
+            .map((line) => (line ? `> ${line}` : ">"))
+            .join("\n"),
+        );
+      }
+    } else if (tag === "pre") {
+      blocks.push(`\`\`\`\n${el.textContent || ""}\n\`\`\``);
+    } else if (tag === "hr") {
+      blocks.push("---");
+    } else if (tag === "table") {
+      const lines = renderTable(el);
+      if (lines.length) blocks.push(lines.join("\n"));
+    } else if (tag === "script" || tag === "style") {
+      // Never carry executable content into the export.
+    } else if (tag === "div" || tag === "section" || tag === "article" || tag === "figure") {
+      blocks.push(...renderBlocks(el));
+    } else {
+      const text = renderInline(el).trim();
+      if (text) blocks.push(escapeBlockStart(text));
+    }
+  });
+
+  return blocks;
+}
+
+/**
+ * Converts a fragment of chapter HTML into markdown. The fragment is parsed
+ * with the HTML parser first, so unclosed tags are repaired before the walk.
+ */
+export function htmlToMarkdown(html: string): string {
+  if (!html) return "";
+
+  const doc = new DOMParser().parseFromString(`<body>${html}</body>`, "text/html");
+  return renderBlocks(doc.body)
+    .filter((block) => block.trim())
+    .join("\n\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}

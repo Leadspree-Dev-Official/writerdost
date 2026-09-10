@@ -5,7 +5,7 @@ import { useAppStore } from "@/lib/app-store";
 import { useState, useEffect, useRef } from "react";
 import { calculateProjectWords } from "@/lib/app-utils";
 import { AnimatePresence, motion } from "framer-motion";
-import { downloadTxt, generateProjectText, triggerPdfExport, downloadDocx, downloadEpub } from "@/lib/export-utils";
+import { downloadTxt, generateProjectText, triggerPdfExport, downloadDocx, downloadEpub, downloadMarkdown } from "@/lib/export-utils";
 
 const SECTION_LABELS: Record<string, string> = {
   "/": "Dashboard",
@@ -13,8 +13,9 @@ const SECTION_LABELS: Record<string, string> = {
   "/create": "New ebook",
   "/rewrite": "Rewrite",
   "/blog-generator": "Blog draft",
+  "/automations": "Automation",
   "/editor": "Editor",
-  "/settings": "AI settings",
+  "/settings": "Settings",
   "/profile": "Profile",
   "/admin": "Admin",
   "/help": "Help",
@@ -108,6 +109,15 @@ export default function Header() {
           return;
         }
         triggerPdfExport();
+      },
+    },
+    {
+      label: "Markdown (.md)",
+      icon: "markdown",
+      run: () => {
+        if (!currentProject) return;
+        downloadMarkdown(currentProject, profile.penName || profile.fullName || undefined);
+        showNotification("Markdown file downloaded", "success");
       },
     },
     {
