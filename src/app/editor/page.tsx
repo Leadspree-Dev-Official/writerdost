@@ -1,6 +1,7 @@
 "use client";
 
 import Editor from "@/components/ui/Editor";
+import { CoverSettings } from "@/components/CoverSettings";
 import { DesignSettings } from "@/components/DesignSettings";
 import { generateAiText } from "@/lib/ai-client";
 import { useAppStore, type ProjectChapter } from "@/lib/app-store";
@@ -34,10 +35,13 @@ export default function EditorPage() {
   const isEditorSidebarCollapsed = useAppStore((state) => state.isEditorSidebarCollapsed);
   const toggleEditorSidebar = useAppStore((state) => state.toggleEditorSidebar);
   const isGenerating = useAppStore((state) => state.generationStatus.isGenerating);
+  // Lives in the store, not local state: the header's PDF export switches the
+  // editor into full view so the export is the whole book, not one chapter.
+  const fullView = useAppStore((state) => state.isManuscriptFullView);
+  const setFullView = useAppStore((state) => state.setManuscriptFullView);
   
   const [aiAssistLoading, setAiAssistLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [fullView, setFullView] = useState(false);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -320,6 +324,25 @@ export default function EditorPage() {
 
         {/* Pages */}
         <div className="py-10 flex flex-col items-center gap-10">
+          {/* Cover art. Page one of the book and of the exported PDF. */}
+          {project.coverImage && (
+            <div
+              className="bg-white shadow-2xl shadow-black/10 relative overflow-hidden cover-page"
+              style={{
+                width: "816px",
+                height: "1056px",
+                boxSizing: "border-box",
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={project.coverImage}
+                alt={`${project.title} cover`}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+
           {/* Auto Title Page (if no custom title page exists) */}
           {!project.chapters.find(ch => ch.id === 'front-title-page') && (
             <div 
@@ -484,14 +507,14 @@ export default function EditorPage() {
             {(project.status === "Planning" || project.status === "Drafting" || project.status === "Editing") && (
                <button
                  className={clsx(
-                   "bg-emerald-600 text-white rounded-[var(--radius-lg)] shadow-xl shadow-emerald-600/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center",
-                   isEditorSidebarCollapsed ? "w-12 h-12" : "w-full py-3 text-sm font-bold gap-2"
+                   "btn btn-primary",
+                   isEditorSidebarCollapsed ? "btn-icon" : "btn-lg w-full"
                  )}
                  onClick={handleDraftContent}
                  title={isEditorSidebarCollapsed ? "Approve & Draft Chapters" : undefined}
                  type="button"
                >
-                 <span className="material-symbols-outlined text-base">edit_document</span>
+                 <span className="material-symbols-outlined">edit_document</span>
                  {!isEditorSidebarCollapsed && "Approve & Draft Chapters"}
                </button>
             )}
@@ -501,21 +524,21 @@ export default function EditorPage() {
                  {!project.chapters.find(c => c.id === 'front-title-page') && (
                     <button
                       className={clsx(
-                        "bg-indigo-500 text-white rounded-[var(--radius-lg)] shadow-xl shadow-indigo-500/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center",
-                        isEditorSidebarCollapsed ? "w-12 h-12" : "w-full py-3 text-sm font-bold gap-2"
+                        "btn btn-secondary",
+                        isEditorSidebarCollapsed ? "btn-icon" : "btn-lg w-full"
                       )}
                       onClick={handleGenerateWrappers}
                       title={isEditorSidebarCollapsed ? "Generate eBook Wrappers" : undefined}
                       type="button"
                     >
-                      <span className="material-symbols-outlined text-base">format_paint</span>
+                      <span className="material-symbols-outlined">format_paint</span>
                       {!isEditorSidebarCollapsed && "Generate eBook Wrappers"}
                     </button>
                  )}
                 <button
                   className={clsx(
-                    "bg-primary text-white rounded-[var(--radius-lg)] shadow-xl shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center",
-                    isEditorSidebarCollapsed ? "w-12 h-12" : "w-full py-3 text-sm font-bold gap-2"
+                    "btn btn-secondary",
+                    isEditorSidebarCollapsed ? "btn-icon" : "btn-lg w-full"
                   )}
                   onClick={() => {
                     if (isGenerating) {
@@ -528,7 +551,7 @@ export default function EditorPage() {
                   title={isEditorSidebarCollapsed ? "Finish & Proofread" : undefined}
                   type="button"
                 >
-                  <span className="material-symbols-outlined text-base">verified</span>
+                  <span className="material-symbols-outlined">verified</span>
                   {!isEditorSidebarCollapsed && "Finish & Proofread"}
                 </button>
               </>
@@ -537,8 +560,8 @@ export default function EditorPage() {
             {project.status === "Ready" && (
                 <button
                   className={clsx(
-                    "bg-amber-500 text-white rounded-[var(--radius-lg)] shadow-xl shadow-amber-500/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center",
-                    isEditorSidebarCollapsed ? "w-12 h-12" : "w-full py-3 text-sm font-bold gap-2"
+                    "btn btn-secondary",
+                    isEditorSidebarCollapsed ? "btn-icon" : "btn-lg w-full"
                   )}
                   onClick={() => {
                     unfinalizeProject(project.id);
@@ -547,7 +570,7 @@ export default function EditorPage() {
                   title={isEditorSidebarCollapsed ? "Return to Drafting" : undefined}
                   type="button"
                 >
-                  <span className="material-symbols-outlined text-base">undo</span>
+                  <span className="material-symbols-outlined">undo</span>
                   {!isEditorSidebarCollapsed && "Return to Drafting"}
                 </button>
             )}
@@ -555,23 +578,24 @@ export default function EditorPage() {
 
           {!isEditorSidebarCollapsed && (
             <div className="space-y-3 pt-3">
+              <CoverSettings projectId={project.id} />
               <DesignSettings projectId={project.id} />
               <div className="w-full">
-                <label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 mb-3 block">Project Metrics</label>
-                <div className="bg-surface-container-low p-4 rounded-[var(--radius)] border border-outline-variant/10 space-y-3">
-                  <div className="flex items-center justify-between">
-                     <span className="text-[10px] font-semibold text-slate-400">Outline Time</span>
-                     <span className="text-xs font-bold text-emerald-500">{project.outlineDuration !== undefined ? `${Math.floor(project.outlineDuration / 60)}m ${project.outlineDuration % 60}s` : "0m 0s"}</span>
+                <p className="rail-title">Project Metrics</p>
+                <dl className="panel panel-pad">
+                  <div className="kv">
+                    <dt>Outline time</dt>
+                    <dd className="num">{project.outlineDuration !== undefined ? `${Math.floor(project.outlineDuration / 60)}m ${project.outlineDuration % 60}s` : "0m 0s"}</dd>
                   </div>
-                  <div className="flex items-center justify-between">
-                     <span className="text-[10px] font-semibold text-slate-400">Drafting Time</span>
-                     <span className="text-xs font-bold text-indigo-500">{project.draftDuration !== undefined ? `${Math.floor(project.draftDuration / 60)}m ${project.draftDuration % 60}s` : "0m 0s"}</span>
+                  <div className="kv">
+                    <dt>Drafting time</dt>
+                    <dd className="num">{project.draftDuration !== undefined ? `${Math.floor(project.draftDuration / 60)}m ${project.draftDuration % 60}s` : "0m 0s"}</dd>
                   </div>
-                  <div className="flex items-center justify-between border-t border-outline-variant/10 pt-3">
-                     <span className="text-[10px] font-semibold text-slate-400">Tokens Used</span>
-                     <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{project.tokensUsed?.toLocaleString() || "0"}</span>
+                  <div className="kv">
+                    <dt>Tokens used</dt>
+                    <dd className="num">{project.tokensUsed?.toLocaleString() || "0"}</dd>
                   </div>
-                </div>
+                </dl>
               </div>
             </div>
           )}

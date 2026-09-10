@@ -866,6 +866,32 @@ body {
     padding: 0 !important;
   }
 
+  /* Cover art owns page one on its own. Sized to the printable area so the
+     art is never split across two sheets. */
+  .cover-page {
+    page-break-before: avoid !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+  }
+
+  .cover-page img {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    /* 2cm of body padding top and bottom comes off the printable height. */
+    max-height: calc(100vh - 4cm) !important;
+    object-fit: contain !important;
+    margin-inline: auto !important;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
   .chapter-page {
     page-break-before: always !important;
     padding-top: 3rem !important;
@@ -874,6 +900,13 @@ body {
   .chapter-page:first-child,
   section.flex-1 > div:first-child {
     page-break-before: avoid !important;
+    padding-top: 0 !important;
+  }
+
+  /* ...unless the cover took page one, in which case what follows starts a
+     new sheet. */
+  .cover-page + * {
+    page-break-before: always !important;
     padding-top: 0 !important;
   }
 

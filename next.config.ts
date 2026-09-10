@@ -26,6 +26,10 @@ const nextConfig: NextConfig = {
     root: __dirname,
   },
 
+  // Hide the on-screen dev route indicator. Build and runtime errors are still
+  // surfaced; this only removes the floating badge from the corner.
+  devIndicators: false,
+
   // Do not advertise the framework version to attackers.
   poweredByHeader: false,
 

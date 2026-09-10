@@ -66,6 +66,8 @@ export type Project = {
   updatedLabel: string;
   manuscript: string;
   coverAccent: string;
+  /** Data URL for the cover art. Rendered as page one of the manuscript. */
+  coverImage?: string;
   chapters: ProjectChapter[];
   blogTitle: string;
   blogDraft: string;
@@ -181,6 +183,7 @@ type AppStore = {
   isDarkMode: boolean;
   isGlobalSidebarCollapsed: boolean;
   isEditorSidebarCollapsed: boolean;
+  isManuscriptFullView: boolean;
   outlineGenerator: OutlineGeneratorState;
   setCurrentProject: (projectId: string) => void;
   setActiveChapter: (chapterId: string) => void;
@@ -203,6 +206,7 @@ type AppStore = {
   recordTiming: (outlineSecs: number, draftSecs: number, wordCount: number) => void;
   updateChapterContentById: (projectId: string, chapterId: string, content: string) => void;
   updateProjectDesign: (projectId: string, settings: ProjectDesignSettings) => void;
+  setProjectCover: (projectId: string, dataUrl?: string) => void;
   deleteChapter: (projectId: string, chapterId: string) => void;
   addChapter: (projectId: string, title: string) => void;
   updateProfile: (payload: Partial<ProfileState>) => void;
@@ -233,6 +237,7 @@ type AppStore = {
   setCancelGeneration: (fn: () => void) => void;
   toggleGlobalSidebar: () => void;
   toggleEditorSidebar: () => void;
+  setManuscriptFullView: (open: boolean) => void;
 
   // Authentication & Admin State
   users: User[];
@@ -396,11 +401,11 @@ const defaultOutlineGenerator: OutlineGeneratorState = {
   audience: "",
   tone: "Professional",
   targetLength: 15000,
-  chapters: [
-    { id: "ch-1", title: "Chapter 1: The Foundation", topics: "Core concepts, problem statement, and goals." },
-    { id: "ch-2", title: "Chapter 2: Strategy", topics: "Frameworks, execution steps, and case studies." },
-  ],
+  chapters: [],
 };
+
+/** The placeholder chapters older builds seeded, cleared once on migration. */
+const SEEDED_OUTLINE_TITLES = ["Chapter 1: The Foundation", "Chapter 2: Strategy"];
 
 const defaultProfile: ProfileState = {
   fullName: "Aniruddha Das",
@@ -520,6 +525,7 @@ export const useAppStore = create<AppStore>()(
       isDarkMode: false,
       isGlobalSidebarCollapsed: false,
       isEditorSidebarCollapsed: false,
+      isManuscriptFullView: false,
       outlineGenerator: defaultOutlineGenerator,
       users: [
         {
@@ -565,6 +571,7 @@ export const useAppStore = create<AppStore>()(
       toggleDarkMode: () => set((state) => ({ isDarkMode: !state.isDarkMode })),
       toggleGlobalSidebar: () => set((state) => ({ isGlobalSidebarCollapsed: !state.isGlobalSidebarCollapsed })),
       toggleEditorSidebar: () => set((state) => ({ isEditorSidebarCollapsed: !state.isEditorSidebarCollapsed })),
+      setManuscriptFullView: (open) => set({ isManuscriptFullView: open }),
       setCurrentProject: (projectId) => {
         const project = get().projects.find((entry) => entry.id === projectId);
         set({
@@ -830,7 +837,7 @@ export const useAppStore = create<AppStore>()(
             ...outlineGenerator,
             chapters: [
               ...outlineGenerator.chapters,
-              { id: newId, title: "Next Chapter Title", topics: "Explain key concepts for this section..." },
+              { id: newId, title: "", topics: "" },
             ],
           },
         });
@@ -1133,6 +1140,16 @@ export const useAppStore = create<AppStore>()(
         set((state) => ({
           projects: state.projects.map((p) =>
             p.id === projectId ? { ...p, designSettings: settings } : p
+          ),
+        })),
+      // `undefined` clears the cover. The value is a data URL, so the caller is
+      // responsible for keeping it small enough to survive the storage quota.
+      setProjectCover: (projectId, dataUrl) =>
+        set((state) => ({
+          projects: state.projects.map((p) =>
+            p.id === projectId
+              ? { ...p, coverImage: dataUrl, updatedLabel: "just now" }
+              : p
           ),
         })),
       updateProfile: (payload) =>
@@ -1494,8 +1511,29 @@ export const useAppStore = create<AppStore>()(
     }),
     {
       name: "writerdost-app-store",
+      version: 1,
+      migrate: (persisted, fromVersion) => {
+        const state = persisted as Partial<AppStore> | undefined;
+        if (!state) return persisted as AppStore;
+
+        // v0 seeded two placeholder chapters into every new outline. Drop them
+        // if they are still untouched; keep anything the author edited or added.
+        if (fromVersion < 1 && state.outlineGenerator?.chapters?.length) {
+          const chapters = state.outlineGenerator.chapters;
+          const isUntouchedSeed =
+            chapters.length === SEEDED_OUTLINE_TITLES.length &&
+            chapters.every((ch: OutlineChapter, i: number) => ch.title === SEEDED_OUTLINE_TITLES[i]);
+          if (isUntouchedSeed) {
+            state.outlineGenerator = { ...state.outlineGenerator, chapters: [] };
+          }
+        }
+
+        return state as AppStore;
+      },
       partialize: (state) => {
-        const { generationStatus, cancelGeneration, ...rest } = state;
+        // isManuscriptFullView is a transient view mode; reloading should land
+        // the author back in the chapter editor.
+        const { generationStatus, cancelGeneration, isManuscriptFullView, ...rest } = state;
         return rest;
       },
       storage: createJSONStorage(() => ({

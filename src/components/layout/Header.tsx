@@ -5,7 +5,7 @@ import { useAppStore } from "@/lib/app-store";
 import { useState, useEffect, useRef } from "react";
 import { calculateProjectWords } from "@/lib/app-utils";
 import { AnimatePresence, motion } from "framer-motion";
-import { downloadTxt, generateProjectText, triggerPdfExport, downloadDocx } from "@/lib/export-utils";
+import { downloadTxt, generateProjectText, triggerPdfExport, downloadDocx, downloadEpub } from "@/lib/export-utils";
 
 const SECTION_LABELS: Record<string, string> = {
   "/": "Dashboard",
@@ -25,10 +25,12 @@ export default function Header() {
   const projects = useAppStore((state) => state.projects);
   const currentProjectId = useAppStore((state) => state.currentProjectId);
   const currentProject = projects.find((item) => item.id === currentProjectId) ?? projects[0];
+  const profile = useAppStore((state) => state.profile);
   const isDarkMode = useAppStore((state) => state.isDarkMode);
   const toggleDarkMode = useAppStore((state) => state.toggleDarkMode);
   const collapsed = useAppStore((state) => state.isGlobalSidebarCollapsed);
   const toggleSidebar = useAppStore((state) => state.toggleGlobalSidebar);
+  const setManuscriptFullView = useAppStore((state) => state.setManuscriptFullView);
 
   const [notification, setNotification] = useState<{ message: string; type: "success" | "info" } | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
@@ -74,7 +76,40 @@ export default function Header() {
         showNotification("Word document downloaded", "success");
       },
     },
-    { label: "PDF", icon: "picture_as_pdf", run: () => triggerPdfExport() },
+    {
+      label: "EPUB (.epub)",
+      icon: "menu_book",
+      run: async () => {
+        if (!currentProject) return;
+        showNotification("Building EPUB\u2026", "info");
+        try {
+          await downloadEpub(currentProject, profile.penName || profile.fullName || "Writerdost AI");
+          showNotification("EPUB downloaded", "success");
+        } catch (error) {
+          console.error("EPUB export failed", error);
+          showNotification("Could not build the EPUB", "info");
+        }
+      },
+    },
+    {
+      label: "PDF",
+      icon: "picture_as_pdf",
+      run: () => {
+        // PDF export prints whatever is on screen. In the editor that would be
+        // the open chapter alone, so switch to the full manuscript first —
+        // that view is the one that renders the cover and every chapter.
+        if (pathname === "/editor") {
+          setManuscriptFullView(true);
+          // Two frames plus a beat: React commits the manuscript, then the
+          // browser has a chance to decode the cover image before printing.
+          requestAnimationFrame(() =>
+            requestAnimationFrame(() => setTimeout(triggerPdfExport, 120)),
+          );
+          return;
+        }
+        triggerPdfExport();
+      },
+    },
     {
       label: "Plain text (.txt)",
       icon: "notes",

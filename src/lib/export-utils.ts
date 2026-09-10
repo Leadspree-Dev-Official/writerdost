@@ -247,3 +247,9 @@ export function triggerPdfExport() {
     window.print();
   }
 }
+
+/**
+ * EPUB generation lives in its own module (it is a fair amount of XML), but is
+ * re-exported here so every export format has one import site.
+ */
+export { downloadEpub, buildEpubBlob } from "./epub-utils";

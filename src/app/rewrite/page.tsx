@@ -245,7 +245,12 @@ export default function RewritePage() {
     let interval: ReturnType<typeof setInterval> | undefined;
 
     if (!outlineGenerator.title.trim()) {
-      setMessage("Please provide a project title.");
+      setMessage("Add a project title first.");
+      return;
+    }
+
+    if (outlineGenerator.chapters.length === 0) {
+      setMessage("Add at least one chapter, or use Smart import to build the outline from text.");
       return;
     }
 
@@ -487,97 +492,115 @@ export default function RewritePage() {
           {/* Work surface */}
           <div className="min-w-0">
             {rewrite.flow === "Outline" ? (
-              <div className="space-y-3 animate-in fade-in slide-in-from-bottom-6 duration-700 fill-mode-both">
-                <div className="bg-white/40 dark:bg-white/[0.03] backdrop-blur-xl rounded-[var(--radius-lg)] p-5 border border-white/60 dark:border-white/[0.06] shadow-2xl shadow-primary/5 dark:shadow-none relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-4 opacity-[0.03] pointer-events-none">
-                    <span className="material-symbols-outlined text-[120px]">architecture</span>
-                  </div>
-                  
-                  <h3 className="text-[15px] font-semibold mb-3 flex items-center gap-2">
-                    <span className="w-10 h-10 rounded-[var(--radius)] bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/20">
-                      <span className="material-symbols-outlined text-[17px]">architecture</span>
-                    </span>
-                    Creative Blueprints
-                  </h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
-                    <div className="group">
-                      <label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase block mb-3 pl-1">Ebook Master Title</label>
+              <div className="space-y-3">
+                <div className="panel panel-pad">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 mb-4">
+                    <div>
+                      <label htmlFor="ol-title" className="label">Ebook title</label>
                       <input
-                        className="w-full bg-white/80 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] rounded-[var(--radius-lg)] px-5 py-2 text-sm font-bold focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600 text-on-surface"
-                        placeholder="e.g. The Architecture of Tomorrow"
+                        id="ol-title"
+                        className="input"
+                        placeholder="The Architecture of Tomorrow"
                         type="text"
                         value={outlineGenerator.title || ""}
                         onChange={(e) => updateOutlineGenerator({ title: e.target.value })}
                       />
                     </div>
-                    <div className="group">
-                      <label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase block mb-3 pl-1">Primary Audience</label>
+                    <div>
+                      <label htmlFor="ol-audience" className="label">Audience</label>
                       <input
-                        className="w-full bg-white/80 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] rounded-[var(--radius-lg)] px-5 py-2 text-sm font-bold focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600 text-on-surface"
-                        placeholder="e.g. Tech Visionaries & Architects"
+                        id="ol-audience"
+                        className="input"
+                        placeholder="Tech visionaries and architects"
                         type="text"
                         value={outlineGenerator.audience || ""}
                         onChange={(e) => updateOutlineGenerator({ audience: e.target.value })}
                       />
                     </div>
                   </div>
-                  
+
                   <div className="space-y-3">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-2 mb-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                      <span className="section-title">
+                        Chapters
+                        {outlineGenerator.chapters.length > 0 && (
+                          <span className="row-meta font-normal ml-1.5">
+                            ({outlineGenerator.chapters.length})
+                          </span>
+                        )}
+                      </span>
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em]">Curriculum Staging</span>
-                        <span className="px-2 py-0.5 bg-slate-900 dark:bg-primary text-white rounded text-[9px] font-semibold">{outlineGenerator.chapters.length} Units</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <button 
-                          onClick={() => setShowSmartImport(true)} 
-                          className="h-10 px-5 rounded-[var(--radius)] border-2 border-slate-900 dark:border-primary text-slate-900 dark:text-primary text-[10px] font-semibold flex items-center gap-2 hover:bg-slate-900 dark:hover:bg-primary hover:text-white transition-all active:scale-95 shadow-sm dark:shadow-none"
-                        >
-                          <span className="material-symbols-outlined text-sm">text_fields</span> Smart Import
+                        <button onClick={() => setShowSmartImport(true)} className="btn btn-secondary" type="button">
+                          <span className="material-symbols-outlined">text_fields</span>
+                          Smart import
                         </button>
-                        <button 
-                          onClick={addOutlineChapter} 
-                          className="h-10 px-5 rounded-[var(--radius)] bg-slate-900 dark:bg-primary text-white text-[10px] font-semibold flex items-center gap-2 hover:bg-primary dark:hover:bg-indigo-400 transition-all hover:shadow-lg hover:shadow-primary/20 active:scale-95 shadow-sm"
-                        >
-                          <span className="material-symbols-outlined text-sm">add_circle</span> New Chapter
+                        <button onClick={addOutlineChapter} className="btn btn-secondary" type="button">
+                          <span className="material-symbols-outlined">add</span>
+                          Add chapter
                         </button>
                       </div>
                     </div>
 
 
                     
-                    <div className="grid grid-cols-1 gap-4">
-                      {outlineGenerator.chapters.map((ch, idx) => (
-                        <div key={ch.id} className="bg-white/60 dark:bg-white/[0.03] backdrop-blur-sm rounded-[var(--radius-lg)] p-4 border border-white dark:border-white/[0.06] shadow-sm dark:shadow-none group hover:shadow-md transition-all hover:border-primary/10 dark:hover:border-primary/20">
-                          <div className="flex items-center gap-5 mb-4">
-                            <span className="w-10 h-10 bg-slate-100 dark:bg-white/[0.06] rounded-[var(--radius-lg)] flex items-center justify-center text-xs font-semibold text-slate-500 dark:text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                              {String(idx + 1).padStart(2, '0')}
-                            </span>
-                            <div className="flex-1">
+                    {outlineGenerator.chapters.length === 0 ? (
+                      <div className="panel py-8 px-4 text-center">
+                        <p className="text-[13px] font-medium text-on-surface">No chapters yet</p>
+                        <p className="text-[12.5px] text-on-surface-variant mt-1 max-w-sm mx-auto">
+                          Add chapters one at a time, or paste an existing outline and let Smart import
+                          build them for you.
+                        </p>
+                        <div className="flex items-center justify-center gap-2 mt-3">
+                          <button onClick={addOutlineChapter} className="btn btn-primary" type="button">
+                            <span className="material-symbols-outlined">add</span>
+                            Add chapter
+                          </button>
+                          <button
+                            onClick={() => setShowSmartImport(true)}
+                            className="btn btn-secondary"
+                            type="button"
+                          >
+                            Smart import
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="panel overflow-hidden">
+                        {outlineGenerator.chapters.map((ch, idx) => (
+                          <div
+                            key={ch.id}
+                            className="group p-3 border-b border-[var(--hairline)] last:border-b-0"
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <span className="w-5 shrink-0 row-meta text-center">{idx + 1}</span>
                               <input
-                                className="bg-transparent border-0 font-semibold text-base w-full focus:ring-0 outline-none text-on-surface"
-                                placeholder={`Chapter ${idx + 1} Title`}
+                                className="flex-1 min-w-0 bg-transparent border-0 outline-none text-[13px] font-semibold text-on-surface placeholder:text-on-surface-variant placeholder:font-normal"
+                                placeholder={`Chapter ${idx + 1} title`}
+                                aria-label={`Chapter ${idx + 1} title`}
                                 value={ch.title || ""}
                                 onChange={(e) => updateOutlineChapter(ch.id, { title: e.target.value })}
                               />
+                              <button
+                                onClick={() => removeOutlineChapter(ch.id)}
+                                aria-label={`Remove chapter ${idx + 1}`}
+                                className="btn btn-ghost btn-icon btn-sm shrink-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-error"
+                                type="button"
+                              >
+                                <span className="material-symbols-outlined text-[16px]">delete</span>
+                              </button>
                             </div>
-                            <button 
-                              onClick={() => removeOutlineChapter(ch.id)} 
-                              className="btn btn-ghost btn-icon hover:text-error"
-                            >
-                               <span className="material-symbols-outlined text-lg">delete_outline</span>
-                            </button>
+                            <textarea
+                              className="w-full mt-1.5 ml-7 pr-7 bg-transparent border-0 outline-none resize-none text-[12.5px] leading-relaxed text-on-surface-variant placeholder:text-on-surface-variant/70 min-h-[2.5rem]"
+                              style={{ width: "calc(100% - 1.75rem)" }}
+                              placeholder="What this chapter covers"
+                              aria-label={`Chapter ${idx + 1} topics`}
+                              value={ch.topics || ""}
+                              onChange={(e) => updateOutlineChapter(ch.id, { topics: e.target.value })}
+                            />
                           </div>
-                          <textarea
-                            className="w-full bg-slate-50/50 dark:bg-white/[0.03] rounded-[var(--radius-lg)] p-5 text-xs text-on-surface-variant font-medium min-h-24 resize-none focus:ring-4 focus:ring-primary/5 focus:bg-white dark:focus:bg-white/[0.06] outline-none border border-transparent focus:border-primary/10 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
-                            placeholder="Briefly list the key insights and topics for this chapter..."
-                            value={ch.topics || ""}
-                            onChange={(e) => updateOutlineChapter(ch.id, { topics: e.target.value })}
-                          />
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
