@@ -155,6 +155,14 @@ export type PublishState = {
  * ----------------------------------------------------------------------- */
 
 export type AutomationSourceKind = "topic" | "rss" | "sitemap" | "url";
+/** How often a campaign runs. "custom" hands control back to raw cron. */
+export type AutomationFrequency =
+  | "once"
+  | "daily"
+  | "weekly"
+  | "biweekly"
+  | "monthly"
+  | "custom";
 export type AutomationPublishMode = "draft" | "publish" | "gated";
 export type AutomationDestinationKind =
   | "wordpress"
@@ -194,6 +202,7 @@ export type BlogAutomation = {
   };
   destinationId: string | null;
   publish: AutomationPublishMode;
+  frequency: AutomationFrequency;
   scheduleCron: string;
   timezone: string;
   createdAt: string;

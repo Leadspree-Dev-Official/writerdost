@@ -26,12 +26,13 @@ const NAV_GROUPS: Array<{
       { name: "New ebook", href: "/create", icon: "auto_awesome", feature: "createEbook" },
       { name: "Rewrite", href: "/rewrite", icon: "book_5", feature: "rewriteEbook" },
       { name: "Blog draft", href: "/blog-generator", icon: "edit_note", feature: "blogGenerator" },
+      { name: "Automation", href: "/automations", icon: "schedule_send", feature: "blogGenerator" },
     ],
   },
   {
     label: "Account",
     items: [
-      { name: "AI settings", href: "/settings", icon: "settings", feature: "advancedModels" },
+      { name: "Settings", href: "/settings", icon: "settings", feature: "advancedModels" },
       { name: "Profile", href: "/profile", icon: "account_circle" },
     ],
   },

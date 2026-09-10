@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { cronForFrequency } from "./automation/schedule";
 import { providerDefaults } from "@/lib/ai-providers";
 import { MARKETPLACE, generateApiToken } from "@/lib/marketplace";
 import type {
@@ -1638,7 +1639,7 @@ export const useAppStore = create<AppStore>()(
       createAutomation: (name) => {
         const automation: BlogAutomation = {
           id: `auto-${Date.now().toString(36)}`,
-          name: name.trim() || "Untitled automation",
+          name: name.trim() || "Untitled campaign",
           enabled: false,
           sourceKind: "topic",
           sourceConfig: { topics: [], maxPerRun: 1, minWords: 150 },
@@ -1653,6 +1654,7 @@ export const useAppStore = create<AppStore>()(
           destinationId: null,
           // Draft is the safe default: nothing reaches a live site unreviewed.
           publish: "draft",
+          frequency: "daily",
           scheduleCron: "0 9 * * *",
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
           createdAt: new Date().toISOString(),
@@ -1663,7 +1665,14 @@ export const useAppStore = create<AppStore>()(
 
       updateAutomation: (id, payload) =>
         set((state) => ({
-          automations: state.automations.map((a) => (a.id === id ? { ...a, ...payload } : a)),
+          automations: state.automations.map((a) => {
+            if (a.id !== id) return a;
+            const next = { ...a, ...payload };
+            if (payload.frequency && payload.frequency !== "custom") {
+              next.scheduleCron = cronForFrequency(payload.frequency, a.scheduleCron);
+            }
+            return next;
+          }),
         })),
 
       deleteAutomation: (id) =>
