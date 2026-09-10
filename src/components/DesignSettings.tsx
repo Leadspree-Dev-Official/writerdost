@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useAppStore, ProjectDesignSettings } from "@/lib/app-store";
+import { FONTS_BY_CATEGORY, findFont, DEFAULT_BODY_FONT, DEFAULT_HEADING_FONT } from "@/lib/fonts";
 
 interface DesignSettingsProps {
   projectId: string;
@@ -29,7 +30,19 @@ const FONT_FIELDS: { key: keyof ProjectDesignSettings; label: string; tag: strin
   { key: "pSize", label: "Body Text", tag: "P" },
 ];
 
+const TYPEFACE_FIELDS: {
+  key: "bodyFont" | "headingFont";
+  label: string;
+  icon: string;
+  fallback: string;
+}[] = [
+  { key: "bodyFont", label: "Body text", icon: "format_align_left", fallback: DEFAULT_BODY_FONT },
+  { key: "headingFont", label: "Headings", icon: "title", fallback: DEFAULT_HEADING_FONT },
+];
+
 const DEFAULTS: ProjectDesignSettings = {
+  bodyFont: DEFAULT_BODY_FONT,
+  headingFont: DEFAULT_HEADING_FONT,
   h1Size: "48px",
   h2Size: "32px",
   h3Size: "24px",
@@ -72,8 +85,59 @@ export const DesignSettings: React.FC<DesignSettingsProps> = ({ projectId }) => 
       {/* Collapsible Body */}
       {isOpen && (
         <div className="px-4 py-2 space-y-5 bg-surface-container-highest/10">
-          {/* Font Sizes Section */}
+          {/* Typeface Section */}
           <div>
+            <p className="text-[9px] font-semibold text-slate-500 mb-3">Typeface</p>
+            <div className="space-y-3">
+              {TYPEFACE_FIELDS.map(({ key, label, icon, fallback }) => {
+                const selected = findFont(settings[key], fallback);
+                return (
+                  <div key={key}>
+                    <label className="text-[10px] font-bold text-slate-400 mb-1.5 flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[12px] text-slate-500">{icon}</span>
+                      {label}
+                    </label>
+                    <select
+                      value={selected.id}
+                      title={selected.note}
+                      onChange={(e) => handleChange(key, e.target.value)}
+                      className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-[var(--radius)] px-2 py-1.5 text-[11px] font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      style={{ fontFamily: selected.stack }}
+                    >
+                      {FONTS_BY_CATEGORY.map(({ category, fonts }) => (
+                        <optgroup key={category} label={category}>
+                          {fonts.map((font) => (
+                            <option key={font.id} value={font.id} style={{ fontFamily: font.stack }}>
+                              {font.label}
+                            </option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </select>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Live specimen, so the choice is judged on the shape of the words. */}
+            <div className="mt-3 rounded-[var(--radius)] border border-outline-variant/10 bg-surface-container-lowest px-3 py-2.5">
+              <p
+                className="text-[13px] leading-tight text-on-surface"
+                style={{ fontFamily: findFont(settings.headingFont, DEFAULT_HEADING_FONT).stack }}
+              >
+                Chapter One
+              </p>
+              <p
+                className="mt-1 text-[11px] leading-snug text-on-surface-variant"
+                style={{ fontFamily: findFont(settings.bodyFont, DEFAULT_BODY_FONT).stack }}
+              >
+                She had read the same page twice, and still the sentence would not sit still.
+              </p>
+            </div>
+          </div>
+
+          {/* Font Sizes Section */}
+          <div className="border-t border-outline-variant/10 pt-4">
             <p className="text-[9px] font-semibold text-slate-500 mb-3">Font Sizes</p>
             <div className="space-y-2.5">
               {FONT_FIELDS.map(({ key, label, tag }) => (

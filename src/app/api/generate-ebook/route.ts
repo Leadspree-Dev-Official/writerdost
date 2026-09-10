@@ -22,18 +22,6 @@ type RequestPayload = {
   };
 };
 
-type ChatResponse = {
-  choices?: Array<{
-    message?: {
-      content?: string;
-    };
-  }>;
-  error?: {
-    message?: string;
-  };
-};
-
-
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 
@@ -101,7 +89,6 @@ export async function POST(request: Request) {
   if (blocked) return blocked;
 
   let draftForFallback: RequestPayload["draft"] | null = null;
-  const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -175,7 +162,12 @@ ${bibliography}
             "blogTitle": "A catchy blog post title promoting the book",
             "blogDraft": "A short 1-2 paragraph description for a promotional blog post"
           }`,
-          userPrompt: sharedPrompt + `\n\nCRITICAL: If I provided an explicit list of chapters/curriculum in my Vision, your 'chapters' array MUST map directly to my provided structure, but you MUST rebrand and rename every chapter title and focus to be 100% original.`,
+          userPrompt:
+            sharedPrompt +
+            (researchNotes
+              ? `\n\nRESEARCH NOTES (from the Research Agent — build the blueprint on these):\n${researchNotes}`
+              : "") +
+            `\n\nCRITICAL: If I provided an explicit list of chapters/curriculum in my Vision, your 'chapters' array MUST map directly to my provided structure, but you MUST rebrand and rename every chapter title and focus to be 100% original.`,
           temperature: settings.temperature,
           topP: settings.topP,
         });

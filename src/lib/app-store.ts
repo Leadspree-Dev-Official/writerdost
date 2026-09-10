@@ -6,6 +6,8 @@ import { providerDefaults } from "@/lib/ai-providers";
 import { MARKETPLACE, generateApiToken } from "@/lib/marketplace";
 import type {
   ApiScope,
+  BlogAutomation,
+  AutomationDestination,
   ApiSettings,
   ApiToken,
   GeneratedProjectPayload,
@@ -253,6 +255,14 @@ type AppStore = {
   recordUsage: (tokens: number, provider: string, model: string) => void;
   updateUsageRates: (inputRate: number, outputRate: number) => void;
   resetUsage: () => void;
+
+  automations: BlogAutomation[];
+  automationDestinations: AutomationDestination[];
+  createAutomation: (name: string) => BlogAutomation;
+  updateAutomation: (id: string, payload: Partial<BlogAutomation>) => void;
+  deleteAutomation: (id: string) => void;
+  saveAutomationDestination: (destination: AutomationDestination) => void;
+  deleteAutomationDestination: (id: string) => void;
   addResearchSource: (source: Omit<ResearchSource, "id">) => void;
   removeResearchSource: (id: string) => void;
   toggleDarkMode: () => void;
@@ -538,12 +548,6 @@ const buildRewrite = (text: string, tone: string, humanize: boolean, avoidPlagia
 const contentToWordCount = (content: string) =>
   Math.max(0, content.replace(/<[^>]+>/g, " ").trim().split(/\s+/).filter(Boolean).length);
 
-const calculateProjectTotalWords = (project: Partial<Project>) => {
-  const chapterWords = (project.chapters || []).reduce((sum, ch) => sum + (ch.wordCount || 0), 0);
-  const blogWords = project.blogDraft ? project.blogDraft.split(/\s+/).filter(Boolean).length : 0;
-  return chapterWords + blogWords;
-};
-
 export const useAppStore = create<AppStore>()(
   persist(
     (set, get) => ({
@@ -712,8 +716,6 @@ export const useAppStore = create<AppStore>()(
           wordCount: chapter.wordCount || contentToWordCount(chapter.content),
           content: chapter.content,
         }));
-
-        const totalWordCount = mappedChapters.reduce((sum, ch) => sum + ch.wordCount, 0);
 
         const project: Project = {
           id: createProjectId(title),
@@ -1127,10 +1129,7 @@ export const useAppStore = create<AppStore>()(
         set({
           projects: projects.map((project) => {
             if (project.id === currentProjectId) {
-              const chapterToUpdate = project.chapters.find(ch => ch.id === activeChapterId);
-              const oldChapterCount = chapterToUpdate ? chapterToUpdate.wordCount || 0 : 0;
               const newChapterCount = contentToWordCount(content);
-              const delta = newChapterCount - oldChapterCount;
 
               const newProject = {
                 ...project,
@@ -1159,10 +1158,7 @@ export const useAppStore = create<AppStore>()(
         set({
           projects: projects.map((project) => {
             if (project.id === projectId) {
-              const chapterToUpdate = project.chapters.find(ch => ch.id === chapterId);
-              const oldChapterCount = chapterToUpdate ? chapterToUpdate.wordCount || 0 : 0;
               const newChapterCount = contentToWordCount(content);
-              const delta = newChapterCount - oldChapterCount;
 
               const newProject = {
                 ...project,
@@ -1635,6 +1631,61 @@ export const useAppStore = create<AppStore>()(
           },
         })),
       resetUsage: () => set({ usage: { ...defaultUsage, timingHistory: [] } }),
+
+      automations: [],
+      automationDestinations: [],
+
+      createAutomation: (name) => {
+        const automation: BlogAutomation = {
+          id: `auto-${Date.now().toString(36)}`,
+          name: name.trim() || "Untitled automation",
+          enabled: false,
+          sourceKind: "topic",
+          sourceConfig: { topics: [], maxPerRun: 1, minWords: 150 },
+          contentConfig: {
+            tone: "Professional",
+            audience: "",
+            targetWords: 1000,
+            language: "English",
+            keywords: [],
+            citeSource: true,
+          },
+          destinationId: null,
+          // Draft is the safe default: nothing reaches a live site unreviewed.
+          publish: "draft",
+          scheduleCron: "0 9 * * *",
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+          createdAt: new Date().toISOString(),
+        };
+        set((state) => ({ automations: [automation, ...state.automations] }));
+        return automation;
+      },
+
+      updateAutomation: (id, payload) =>
+        set((state) => ({
+          automations: state.automations.map((a) => (a.id === id ? { ...a, ...payload } : a)),
+        })),
+
+      deleteAutomation: (id) =>
+        set((state) => ({ automations: state.automations.filter((a) => a.id !== id) })),
+
+      saveAutomationDestination: (destination) =>
+        set((state) => {
+          const exists = state.automationDestinations.some((d) => d.id === destination.id);
+          return {
+            automationDestinations: exists
+              ? state.automationDestinations.map((d) => (d.id === destination.id ? destination : d))
+              : [...state.automationDestinations, destination],
+          };
+        }),
+
+      deleteAutomationDestination: (id) =>
+        set((state) => ({
+          automationDestinations: state.automationDestinations.filter((d) => d.id !== id),
+          automations: state.automations.map((a) =>
+            a.destinationId === id ? { ...a, destinationId: null } : a,
+          ),
+        })),
     }),
     {
       name: "writerdost-app-store",
@@ -1671,6 +1722,7 @@ export const useAppStore = create<AppStore>()(
       partialize: (state) => {
         // isManuscriptFullView is a transient view mode; reloading should land
         // the author back in the chapter editor.
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars -- omit-by-destructuring
         const { generationStatus, cancelGeneration, isManuscriptFullView, ...rest } = state;
         return rest;
       },

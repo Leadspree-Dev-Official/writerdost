@@ -24,39 +24,37 @@ export function GenerationOverlay({
   const isMinimized = useAppStore((state) => state.generationStatus.isMinimized);
   const sessionTokens = useAppStore((state) => state.generationStatus.sessionTokens);
   const setMinimized = useAppStore((state) => state.setMinimized);
-  const usage = useAppStore((state) => state.usage);
 
   const title = pipelineTitle || propTitle || "Generation Pipeline";
   const subtitle = pipelineSubtitle || propSubtitle || "AI agents collaborating in real-time.";
   
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [elapsed, setElapsed] = useState("00:00");
-  const [localFinished, setLocalFinished] = useState(false);
+  // "Finished while minimised" is fully derived: dismissing the pill clears
+  // isMinimized, which is what made this true in the first place.
+  const localFinished = !isGenerating && isMinimized;
+
+  // Only the interval reads the clock, so render stays pure. The run's start
+  // is stored alongside the count: when a new run begins, the previous count
+  // no longer matches and the label falls back to zero without a state write.
+  const [ticker, setTicker] = useState({ start: 0, seconds: 0 });
 
   useEffect(() => {
-    if (isGenerating) {
-      setLocalFinished(false);
-    } else if (!isGenerating && isMinimized) {
-      setLocalFinished(true);
-    }
-  }, [isGenerating, isMinimized]);
+    if (!isGenerating || !startTime) return;
+    const begin = Number(startTime);
+    const update = () =>
+      setTicker({ start: begin, seconds: Math.max(0, Math.floor((Date.now() - begin) / 1000)) });
 
-  useEffect(() => {
-    if (!isGenerating || !startTime) {
-      setElapsed("00:00");
-      return;
-    }
-
-    const interval = setInterval(() => {
-      const now = Date.now();
-      const diff = Math.floor((now - Number(startTime || 0)) / 1000);
-      const mins = Math.floor(Math.max(0, diff) / 60).toString().padStart(2, "0");
-      const secs = (Math.max(0, diff) % 60).toString().padStart(2, "0");
-      setElapsed(`${mins}:${secs}`);
-    }, 1000);
-
+    const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
   }, [isGenerating, startTime]);
+
+  const seconds = ticker.start === Number(startTime) ? ticker.seconds : 0;
+  const elapsed =
+    !isGenerating || !startTime
+      ? "00:00"
+      : `${Math.floor(seconds / 60).toString().padStart(2, "0")}:${(seconds % 60)
+          .toString()
+          .padStart(2, "0")}`;
 
   useEffect(() => {
     if (scrollRef.current && !isMinimized) {
@@ -86,10 +84,7 @@ export function GenerationOverlay({
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, scale: 0.9 }}
           className="fixed bottom-6 right-6 z-[100] bg-emerald-500 text-white px-6 py-2 rounded-[var(--radius-lg)] shadow-2xl flex items-center gap-4 cursor-pointer hover:bg-emerald-600 transition-colors border border-emerald-400"
-          onClick={() => {
-             setLocalFinished(false);
-             setMinimized(false);
-          }}
+          onClick={() => setMinimized(false)}
         >
           <span className="material-symbols-outlined text-3xl animate-pulse">task_alt</span>
           <div>

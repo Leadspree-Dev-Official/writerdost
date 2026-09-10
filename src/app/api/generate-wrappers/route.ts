@@ -37,7 +37,8 @@ export async function POST(req: NextRequest) {
           Focus on providing value and encouraging the reader to engage further with the author.
           Avoid generic fluff. Use the book's title and audience as context.`,
           userPrompt: `Book Title: ${ebookTitle}\nAudience: ${project.audience}\n\nGenerate the content for the final page of the book. Include placeholders for links.`,
-          temperature: 0.7,
+          temperature: settings?.temperature ?? 0.7,
+          topP: settings?.topP ?? 0.9,
         });
 
         // 2. Assemble Frontend structure

@@ -4,7 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAppStore } from "@/lib/app-store";
-import { statusChipClasses, calculateProjectWords } from "@/lib/app-utils";
+import {
+  statusChipClasses,
+  calculateProjectWords,
+  publishChipClasses,
+  publishChipLabels,
+} from "@/lib/app-utils";
+import { PublishDialog } from "@/components/PublishDialog";
+import { MARKETPLACE, marketplaceBlocker } from "@/lib/marketplace";
 import type { Project } from "@/lib/app-store";
 
 export default function ProjectsPage() {
@@ -13,9 +20,15 @@ export default function ProjectsPage() {
   const setCurrentProject = useAppStore((state) => state.setCurrentProject);
   const deleteProject = useAppStore((state) => state.deleteProject);
 
+  const platform = useAppStore((state) => state.platform);
+
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+  const [projectToPublish, setProjectToPublish] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [notice, setNotice] = useState("");
+
+  const apiBlocker = marketplaceBlocker(platform);
 
   const formatSecs = (s: number) => {
     if (!s) return "—";
@@ -35,6 +48,7 @@ export default function ProjectsPage() {
   });
 
   const totalWords = projects.reduce((sum, p) => sum + calculateProjectWords(p), 0);
+  const listedCount = projects.filter((p) => p.publish?.status === "published").length;
 
   const open = (id: string) => {
     setCurrentProject(id);
@@ -48,7 +62,10 @@ export default function ProjectsPage() {
           <h1 className="page-title">Projects</h1>
           <p className="page-sub">
             {projects.length} project{projects.length === 1 ? "" : "s"} ·{" "}
-            {totalWords.toLocaleString()} words total
+            {totalWords.toLocaleString()} words total ·{" "}
+            {listedCount === 0
+              ? `none on ${MARKETPLACE.shortName} yet`
+              : `${listedCount} on ${MARKETPLACE.shortName}`}
           </p>
         </div>
         <Link href="/create" className="btn btn-primary btn-lg">
@@ -56,6 +73,15 @@ export default function ProjectsPage() {
           New ebook
         </Link>
       </div>
+
+      {notice && (
+        <p
+          role="status"
+          className="mb-3 px-3 py-2 rounded-[var(--radius)] bg-emerald-500/10 border border-emerald-500/25 text-[12.5px] text-emerald-700 dark:text-emerald-400"
+        >
+          {notice}
+        </p>
+      )}
 
       {/* Filters sit on the page, above the table, not in a card */}
       <div className="flex items-center gap-2 mb-3 flex-wrap">
@@ -96,12 +122,13 @@ export default function ProjectsPage() {
         <div className="hidden md:flex items-center gap-4 h-8 px-3 border-b border-[var(--hairline)] bg-on-surface/[0.02] text-[11px] font-semibold text-on-surface-variant">
           <span className="flex-1 min-w-0">Project</span>
           <span className="w-20">Status</span>
+          <span className="w-20">Listing</span>
           <span className="w-20 text-right">Words</span>
           <span className="w-16 text-right">Tokens</span>
           <span className="w-16 text-right">Outline</span>
           <span className="w-16 text-right">Draft</span>
           <span className="w-28">Progress</span>
-          <span className="w-7" />
+          <span className="w-14" />
         </div>
 
         {visible.length === 0 ? (
@@ -137,6 +164,14 @@ export default function ProjectsPage() {
                   {project.status}
                 </span>
               </span>
+              <span className="w-20 shrink-0 hidden md:block">
+                <span
+                  className={`chip ${publishChipClasses[project.publish?.status ?? "unpublished"]}`}
+                  title={project.publish?.listingId ? `Listing ${project.publish.listingId}` : undefined}
+                >
+                  {publishChipLabels[project.publish?.status ?? "unpublished"]}
+                </span>
+              </span>
               <span className="w-20 shrink-0 row-meta text-right hidden md:block">
                 {calculateProjectWords(project).toLocaleString()}
               </span>
@@ -160,15 +195,37 @@ export default function ProjectsPage() {
                 <span className="row-meta w-8 text-right">{project.progress}%</span>
               </span>
 
-              <button
-                type="button"
-                onClick={() => setProjectToDelete(project)}
-                title={`Delete ${project.title}`}
-                aria-label={`Delete ${project.title}`}
-                className="btn btn-ghost btn-icon btn-sm shrink-0 hover:text-error"
-              >
-                <span className="material-symbols-outlined text-[16px]">delete</span>
-              </button>
+              <span className="flex items-center shrink-0 w-14 justify-end gap-0.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (apiBlocker) {
+                      router.push("/settings?tab=api");
+                      return;
+                    }
+                    setProjectToPublish(project.id);
+                  }}
+                  title={
+                    apiBlocker ??
+                    (project.publish?.status === "published"
+                      ? `Update the ${MARKETPLACE.shortName} listing`
+                      : `Publish ${project.title} to ${MARKETPLACE.shortName}`)
+                  }
+                  aria-label={`Publish ${project.title}`}
+                  className="btn btn-ghost btn-icon btn-sm hover:text-primary"
+                >
+                  <span className="material-symbols-outlined text-[16px]">storefront</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setProjectToDelete(project)}
+                  title={`Delete ${project.title}`}
+                  aria-label={`Delete ${project.title}`}
+                  className="btn btn-ghost btn-icon btn-sm hover:text-error"
+                >
+                  <span className="material-symbols-outlined text-[16px]">delete</span>
+                </button>
+              </span>
             </div>
           ))
         )}
@@ -209,6 +266,14 @@ export default function ProjectsPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {projectToPublish && (
+        <PublishDialog
+          projectId={projectToPublish}
+          onClose={() => setProjectToPublish(null)}
+          onDone={setNotice}
+        />
       )}
     </div>
   );

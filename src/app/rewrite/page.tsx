@@ -7,31 +7,14 @@ import { useAppStore, type RewriteFlow } from "@/lib/app-store";
 import { STREAM_DELIMITER, robustParseJson } from "@/lib/app-utils";
 import { TONES } from "@/lib/tone-standards";
 
-const recentManuscripts = [
-  {
-    label: "The Future of AI.epub",
-    summary: "A technology manuscript on trust, product design, and AI systems.",
-  },
-  {
-    label: "Marketing 101.docx",
-    summary: "A practical guide for modern growth teams looking to sharpen copy and messaging.",
-  },
-  {
-    label: "Nature Ethics.pdf",
-    summary: "An essay collection focused on stewardship, ecology, and moral imagination.",
-  },
-];
-
 export default function RewritePage() {
   const router = useRouter();
   const rewrite = useAppStore((state) => state.rewrite);
   const api = useAppStore((state) => state.api);
   const settings = useAppStore((state) => state.settings);
   const projects = useAppStore((state) => state.projects);
-  const currentProjectId = useAppStore((state) => state.currentProjectId);
   const updateRewrite = useAppStore((state) => state.updateRewrite);
   const generateRewritePreview = useAppStore((state) => state.generateRewritePreview);
-  const applyRewriteToCurrentProject = useAppStore((state) => state.applyRewriteToCurrentProject);
   
   const outlineGenerator = useAppStore((state) => state.outlineGenerator);
   const updateOutlineGenerator = useAppStore((state) => state.updateOutlineGenerator);
@@ -60,7 +43,6 @@ export default function RewritePage() {
   const setActiveAgent = useAppStore((state) => state.setActiveAgent);
   const isGenerating = useAppStore((state) => state.generationStatus.isGenerating);
 
-  const currentProject = projects.find((project) => project.id === currentProjectId) ?? projects[0];
 
   const formatTime = (seconds: number) => {
     if (!seconds) return "0s";

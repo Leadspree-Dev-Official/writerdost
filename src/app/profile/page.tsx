@@ -1,11 +1,13 @@
+/* eslint-disable @next/next/no-img-element -- avatar and cover are data:
+   URIs produced by FileReader; next/image cannot optimise those and would
+   need `unoptimized`, which is just a heavier <img>. */
 "use client";
 
 import { useState, useRef } from "react";
+import Link from "next/link";
 import { useAppStore } from "@/lib/app-store";
 
 import { TONES, TONE_GUIDE } from "@/lib/tone-standards";
-
-const tones = TONES;
 
 export default function ProfilePage() {
   const profile = useAppStore((state) => state.profile);
@@ -249,74 +251,13 @@ export default function ProfilePage() {
 
             <div className="rail-section">
               <p className="rail-title">Editorial rules</p>
-              <div className="space-y-2">
-                <div className="setting">
-                  <label htmlFor="pf-lang" className="setting-label">Language</label>
-                  <select
-                    id="pf-lang"
-                    className="select w-auto max-w-[10rem]"
-                    value={profile.language || "English (India)"}
-                    onChange={(event) => updateProfile({ language: event.target.value })}
-                  >
-                    <optgroup label="India">
-                      <option value="English (India)">English (India)</option>
-                      <option value="Hindi">Hindi</option>
-                      <option value="Bengali">Bengali</option>
-                      <option value="Telugu">Telugu</option>
-                      <option value="Marathi">Marathi</option>
-                      <option value="Tamil">Tamil</option>
-                      <option value="Gujarati">Gujarati</option>
-                      <option value="Urdu">Urdu</option>
-                      <option value="Kannada">Kannada</option>
-                      <option value="Odia">Odia</option>
-                      <option value="Malayalam">Malayalam</option>
-                      <option value="Punjabi">Punjabi</option>
-                      <option value="Assamese">Assamese</option>
-                    </optgroup>
-                    <optgroup label="International">
-                      <option value="American English">American English</option>
-                      <option value="British English">British English</option>
-                      <option value="Spanish">Spanish</option>
-                      <option value="French">French</option>
-                      <option value="German">German</option>
-                      <option value="Italian">Italian</option>
-                      <option value="Portuguese">Portuguese</option>
-                      <option value="Russian">Russian</option>
-                      <option value="Chinese (Simplified)">Chinese (Simplified)</option>
-                      <option value="Japanese">Japanese</option>
-                      <option value="Korean">Korean</option>
-                      <option value="Arabic">Arabic</option>
-                      <option value="Turkish">Turkish</option>
-                    </optgroup>
-                  </select>
-                </div>
-
-                <div className="setting">
-                  <span className="setting-label">AI auto-punctuation</span>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={profile.autoPunctuation}
-                    aria-label="AI auto-punctuation"
-                    className="switch"
-                    data-on={profile.autoPunctuation}
-                    onClick={() => updateProfile({ autoPunctuation: !profile.autoPunctuation })}
-                  />
-                </div>
-
-                <div className="setting">
-                  <span className="setting-label">Chapter auto-save</span>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={profile.autoSave}
-                    aria-label="Chapter auto-save"
-                    className="switch"
-                    data-on={profile.autoSave}
-                    onClick={() => updateProfile({ autoSave: !profile.autoSave })}
-                  />
-                </div>
-              </div>
+              <p className="text-[12px] text-on-surface-variant">
+                Writing language, auto-save and auto-punctuation are workspace-wide, so they moved to{" "}
+                <Link href="/settings?tab=application" className="text-primary font-semibold hover:underline">
+                  Settings → Application
+                </Link>
+                .
+              </p>
             </div>
           </section>
         </div>

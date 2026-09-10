@@ -13,6 +13,21 @@ export const statusChipClasses: Record<string, string> = {
   Ready: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-400",
 };
 
+/** Marketplace listing state, as a chip. Keyed by PublishState.status. */
+export const publishChipClasses: Record<string, string> = {
+  unpublished: "chip-neutral",
+  publishing: "bg-sky-500/12 text-sky-700 dark:text-sky-400",
+  published: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-400",
+  failed: "bg-rose-500/12 text-rose-700 dark:text-rose-400",
+};
+
+export const publishChipLabels: Record<string, string> = {
+  unpublished: "Unlisted",
+  publishing: "Publishing",
+  published: "Listed",
+  failed: "Failed",
+};
+
 export function slugify(input: string) {
   return input
     .toLowerCase()
@@ -49,7 +64,7 @@ export function robustParseJson(text: string) {
 
   try {
     return JSON.parse(processed);
-  } catch (e) {
+  } catch {
     // Attempt lazy fixes
     try {
       return JSON.parse(applyLazyFixes(processed));

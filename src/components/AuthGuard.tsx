@@ -1,22 +1,25 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { useAppStore } from "@/lib/app-store";
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const currentUser = useAppStore((state) => state.currentUser);
-  const [isHydrated, setIsHydrated] = useState(false);
 
-  // Wait for store hydration to avoid premature redirects
+  // Wait for store hydration to avoid premature redirects.
   // Zustand's persist middleware fills the store on the client only. Until
   // that has happened `currentUser` is null everywhere, so redirecting before
   // this flips would bounce a signed-in user to /login on every refresh.
-  useEffect(() => {
-    setIsHydrated(true);
-  }, []);
+  // Subscribing to the real hydration event is more accurate than "an effect
+  // has run", and keeps the server snapshot false so SSR matches first paint.
+  const isHydrated = useSyncExternalStore(
+    (onChange) => useAppStore.persist.onFinishHydration(onChange),
+    () => useAppStore.persist.hasHydrated(),
+    () => false,
+  );
 
   useEffect(() => {
     if (!isHydrated) return;

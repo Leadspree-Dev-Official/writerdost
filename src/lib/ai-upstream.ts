@@ -9,6 +9,7 @@
  */
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
+import { isPrivateIpv4, isPrivateIpv6, isLoopbackAddress } from "@/lib/net-guard";
 import { providerDefaults } from "@/lib/ai-providers";
 import type { ApiSettings } from "@/lib/store-types";
 
@@ -35,31 +36,6 @@ function deny(message: string): never {
   throw new UpstreamNotAllowedError(message);
 }
 
-function isPrivateIpv4(ip: string): boolean {
-  const [a, b] = ip.split(".").map(Number);
-  if (a === 10 || a === 127 || a === 0) return true;
-  if (a === 172 && b >= 16 && b <= 31) return true;
-  if (a === 192 && b === 168) return true;
-  if (a === 169 && b === 254) return true; // link-local / cloud metadata
-  if (a === 100 && b >= 64 && b <= 127) return true; // CGNAT
-  return a >= 224; // multicast + reserved
-}
-
-function isPrivateIpv6(ip: string): boolean {
-  const addr = ip.toLowerCase();
-  if (addr === "::1" || addr === "::") return true;
-  if (addr.startsWith("fc") || addr.startsWith("fd")) return true; // unique-local
-  if (addr.startsWith("fe80")) return true; // link-local
-  // IPv4-mapped (::ffff:10.0.0.1) — unwrap and re-check.
-  const mapped = addr.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
-  if (mapped) return isPrivateIpv4(mapped[1]);
-  return false;
-}
-
-function isLoopback(ip: string): boolean {
-  return ip === "::1" || ip.startsWith("127.");
-}
-
 /**
  * Resolves the hostname and rejects any address that lands inside the
  * network the server itself sits on. Resolving here (rather than trusting the
@@ -81,7 +57,7 @@ async function assertPublicHost(hostname: string): Promise<void> {
   for (const { address } of addresses) {
     const priv = isIP(address) === 6 ? isPrivateIpv6(address) : isPrivateIpv4(address);
     if (!priv) continue;
-    if (isLoopback(address) && allowLoopback) continue;
+    if (isLoopbackAddress(address) && allowLoopback) continue;
     deny(
       `The AI endpoint "${hostname}" resolves to a private network address. ` +
         `Use a public provider endpoint, or add the host to WRITERDOST_ALLOWED_AI_HOSTS.`,
@@ -143,7 +119,7 @@ export async function resolveUpstream(api: ApiSettings): Promise<ApiSettings> {
   const explicitlyAllowed = envAllowedHosts.includes(host);
 
   // Plain http is only acceptable for a local model server.
-  if (url.protocol === "http:" && !isLoopback(host) && host !== "localhost" && !explicitlyAllowed) {
+  if (url.protocol === "http:" && !isLoopbackAddress(host) && host !== "localhost" && !explicitlyAllowed) {
     deny("Remote AI endpoints must use https.");
   }
 

@@ -2,12 +2,17 @@
 
 import Editor from "@/components/ui/Editor";
 import { CoverSettings } from "@/components/CoverSettings";
+import { StageBar } from "@/components/StageBar";
+import { fontStack, DEFAULT_BODY_FONT, DEFAULT_HEADING_FONT } from "@/lib/fonts";
 import { DesignSettings } from "@/components/DesignSettings";
 import { generateAiText } from "@/lib/ai-client";
 import { useAppStore, type ProjectChapter } from "@/lib/app-store";
 import { findChapterById, findProjectById, calculateProjectWords, robustParseJson, STREAM_DELIMITER } from "@/lib/app-utils";
 import { htmlToText, mdToHtml } from "@/lib/markdown-utils";
+import { PublishDialog } from "@/components/PublishDialog";
+import { MARKETPLACE, isMarketplaceReady, marketplaceBlocker, publishToMarketplace } from "@/lib/marketplace";
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import clsx from "clsx";
 
 
@@ -40,8 +45,13 @@ export default function EditorPage() {
   const fullView = useAppStore((state) => state.isManuscriptFullView);
   const setFullView = useAppStore((state) => state.setManuscriptFullView);
   
+  const platform = useAppStore((state) => state.platform);
+  const setProjectPublishState = useAppStore((state) => state.setProjectPublishState);
+
+  const router = useRouter();
   const [aiAssistLoading, setAiAssistLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [publishOpen, setPublishOpen] = useState(false);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -73,6 +83,7 @@ export default function EditorPage() {
     setActiveAgent("Writing Agent");
 
     try {
+      // eslint-disable-next-line react-hooks/purity -- runs in a click handler, not during render
       const draftStartTime = Date.now();
       const controller = new AbortController();
       setAbortController(controller);
@@ -139,6 +150,7 @@ export default function EditorPage() {
               const draftedWordCount = calculateProjectWords(event.project);
               
               // Record timing in the global history with word count
+              // eslint-disable-next-line react-hooks/purity -- runs in a click handler, not during render
               const sessionDuration = Math.round((Date.now() - draftStartTime) / 1000);
               const sessionTokens = useAppStore.getState().generationStatus.sessionTokens || 0;
               
@@ -181,6 +193,7 @@ export default function EditorPage() {
     setActiveAgent("Manuscript Agent");
 
     try {
+      // eslint-disable-next-line react-hooks/purity -- runs in a click handler, not during render
       const wrapperStartTime = Date.now();
       const controller = new AbortController();
       setAbortController(controller);
@@ -256,6 +269,7 @@ export default function EditorPage() {
                 }
               });
 
+              // eslint-disable-next-line react-hooks/purity -- runs in a click handler, not during render
               const sessionDuration = Math.round((Date.now() - wrapperStartTime) / 1000);
               const sessionTokens = useAppStore.getState().generationStatus.sessionTokens || 0;
 
@@ -288,19 +302,91 @@ export default function EditorPage() {
     if (abortController) abortController.abort();
   };
 
+  /**
+   * Runs when the author marks a project Ready and Settings → API has
+   * auto-publish on. No dialog: it uses the saved listing defaults.
+   */
+  const handleAutoPublish = async () => {
+    if (!project) return;
+    setProjectPublishState(project.id, { status: "publishing", error: undefined });
+    try {
+      const result = await publishToMarketplace(
+        project,
+        platform,
+        {
+          price: platform.defaultPrice,
+          currency: platform.currency,
+          category: platform.defaultCategory,
+          license: platform.defaultLicense,
+          formats: platform.defaultFormats,
+          visibility: platform.defaultVisibility,
+          summary: project.description,
+          keywords: project.seoKeywords,
+        },
+        project.publish?.revision ?? 0,
+      );
+      setProjectPublishState(project.id, {
+        status: "published",
+        listingId: result.listingId,
+        listingUrl: result.listingUrl,
+        publishedAt: result.publishedAt,
+        revision: result.revision,
+        price: platform.defaultPrice,
+        currency: platform.currency,
+        category: platform.defaultCategory,
+        license: platform.defaultLicense,
+        formats: platform.defaultFormats,
+        visibility: result.visibility,
+        error: undefined,
+      });
+      setMessage(`Published to ${MARKETPLACE.shortName} as ${result.listingId}.`);
+    } catch (error) {
+      const text = error instanceof Error ? error.message : "Publishing failed.";
+      setProjectPublishState(project.id, { status: "failed", error: text });
+      setMessage(`Auto-publish failed: ${text}`);
+    }
+  };
+
   const project = findProjectById(projects, currentProjectId ?? "");
   const chapter = findChapterById(project, activeChapterId ?? "");
   const chapterIndex = project?.chapters.findIndex((item) => item.id === chapter?.id) ?? 0;
+  const listed = project?.publish?.status === "published";
  
   if (!project || !chapter) {
     return <div className="p-8">No project loaded.</div>;
   }
+
+  const handleFinish = () => {
+    if (isGenerating) {
+      handleCancelGeneration();
+      finishGeneration();
+    }
+    finalizeProject(project.id);
+    setMessage("Project marked as 'Ready'. You can now export the manuscript from the header.");
+    if (platform.autoPublishOnReady && isMarketplaceReady(platform)) {
+      void handleAutoPublish();
+    }
+  };
+
+  const handleReopen = () => {
+    unfinalizeProject(project.id);
+    setMessage("Project re-opened for generation and editing.");
+  };
+
+  const publishBlocker = marketplaceBlocker(platform);
+  const publishLabel = publishBlocker
+    ? "Set up publishing"
+    : listed
+      ? "Update listing"
+      : `Publish to ${MARKETPLACE.shortName}`;
  
   if (fullView) {
     return (
       <div 
         className="flex-1 bg-slate-200 dark:bg-[#2a2a2a] overflow-y-auto manuscript-container custom-typography-container"
         style={{
+          "--body-font": fontStack(project.designSettings?.bodyFont, DEFAULT_BODY_FONT),
+          "--heading-font": fontStack(project.designSettings?.headingFont, DEFAULT_HEADING_FONT),
           "--h1-size": project.designSettings?.h1Size || "48px",
           "--h2-size": project.designSettings?.h2Size || "32px",
           "--h3-size": project.designSettings?.h3Size || "24px",
@@ -380,7 +466,7 @@ export default function EditorPage() {
                 className="prose max-w-none text-slate-800 prose-headings:text-slate-900 prose-headings:font-bold"
                 style={{ 
                   color: "#1e293b",
-                  fontFamily: "'Inter', 'Georgia', serif",
+                  fontFamily: "var(--body-font)",
                 }}
                 dangerouslySetInnerHTML={{ __html: ch.content }}
               />
@@ -498,84 +584,11 @@ export default function EditorPage() {
           </div>
         </div>
 
-        {/* Fixed Bottom: Buttons + Typography + Metrics */}
+        {/* Fixed Bottom: Cover, Typography + Metrics */}
         <div className={clsx(
           "shrink-0 border-t border-outline-variant/10 overflow-y-auto",
           isEditorSidebarCollapsed ? "w-full px-2 py-3 max-h-[40%]" : "px-6 py-4 space-y-3 max-h-[50%]"
         )}>
-          <div className={clsx(isEditorSidebarCollapsed ? "flex flex-col items-center space-y-3" : "space-y-3")}>
-            {(project.status === "Planning" || project.status === "Drafting" || project.status === "Editing") && (
-               <button
-                 className={clsx(
-                   "btn btn-primary",
-                   isEditorSidebarCollapsed ? "btn-icon" : "btn-lg w-full"
-                 )}
-                 onClick={handleDraftContent}
-                 title={isEditorSidebarCollapsed ? "Approve & Draft Chapters" : undefined}
-                 type="button"
-               >
-                 <span className="material-symbols-outlined">edit_document</span>
-                 {!isEditorSidebarCollapsed && "Approve & Draft Chapters"}
-               </button>
-            )}
-
-            {project.status !== "Ready" && (
-              <>
-                 {!project.chapters.find(c => c.id === 'front-title-page') && (
-                    <button
-                      className={clsx(
-                        "btn btn-secondary",
-                        isEditorSidebarCollapsed ? "btn-icon" : "btn-lg w-full"
-                      )}
-                      onClick={handleGenerateWrappers}
-                      title={isEditorSidebarCollapsed ? "Generate eBook Wrappers" : undefined}
-                      type="button"
-                    >
-                      <span className="material-symbols-outlined">format_paint</span>
-                      {!isEditorSidebarCollapsed && "Generate eBook Wrappers"}
-                    </button>
-                 )}
-                <button
-                  className={clsx(
-                    "btn btn-secondary",
-                    isEditorSidebarCollapsed ? "btn-icon" : "btn-lg w-full"
-                  )}
-                  onClick={() => {
-                    if (isGenerating) {
-                      handleCancelGeneration();
-                      finishGeneration();
-                    }
-                    finalizeProject(project.id);
-                    setMessage("Project marked as 'Ready'. You can now export the manuscript from the header.");
-                  }}
-                  title={isEditorSidebarCollapsed ? "Finish & Proofread" : undefined}
-                  type="button"
-                >
-                  <span className="material-symbols-outlined">verified</span>
-                  {!isEditorSidebarCollapsed && "Finish & Proofread"}
-                </button>
-              </>
-            )}
-
-            {project.status === "Ready" && (
-                <button
-                  className={clsx(
-                    "btn btn-secondary",
-                    isEditorSidebarCollapsed ? "btn-icon" : "btn-lg w-full"
-                  )}
-                  onClick={() => {
-                    unfinalizeProject(project.id);
-                    setMessage("Project re-opened for generation and editing.");
-                  }}
-                  title={isEditorSidebarCollapsed ? "Return to Drafting" : undefined}
-                  type="button"
-                >
-                  <span className="material-symbols-outlined">undo</span>
-                  {!isEditorSidebarCollapsed && "Return to Drafting"}
-                </button>
-            )}
-          </div>
-
           {!isEditorSidebarCollapsed && (
             <div className="space-y-3 pt-3">
               <CoverSettings projectId={project.id} />
@@ -605,6 +618,8 @@ export default function EditorPage() {
       <main 
         className="flex-1 flex flex-col h-full bg-surface-container-lowest relative"
         style={{
+          "--body-font": fontStack(project.designSettings?.bodyFont, DEFAULT_BODY_FONT),
+          "--heading-font": fontStack(project.designSettings?.headingFont, DEFAULT_HEADING_FONT),
           "--h1-size": project.designSettings?.h1Size || "48px",
           "--h2-size": project.designSettings?.h2Size || "32px",
           "--h3-size": project.designSettings?.h3Size || "24px",
@@ -615,6 +630,44 @@ export default function EditorPage() {
           "--p-margin-after": project.designSettings?.paragraphAfter || "12px",
         } as React.CSSProperties}
       >
+        <StageBar
+          project={project}
+          isGenerating={isGenerating}
+          actions={{
+            draft: { onClick: handleDraftContent },
+            wrappers: { onClick: handleGenerateWrappers },
+            finish: { onClick: handleFinish },
+            preview: { onClick: () => setFullView(true) },
+            reopen: { onClick: handleReopen },
+            publish: {
+              label: publishLabel,
+              title:
+                publishBlocker ??
+                (listed
+                  ? `Update the ${MARKETPLACE.shortName} listing`
+                  : `Publish to ${MARKETPLACE.shortName}`),
+              onClick: () => {
+                if (publishBlocker) {
+                  router.push("/settings?tab=api");
+                  return;
+                }
+                setPublishOpen(true);
+              },
+            },
+          }}
+          statusNote={
+            listed && project.publish?.listingId ? (
+              <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                Listed as {project.publish.listingId} · rev {project.publish.revision}
+              </p>
+            ) : project.publish?.status === "failed" ? (
+              <p className="text-[11px] text-error font-semibold">
+                Last publish failed: {project.publish.error}
+              </p>
+            ) : null
+          }
+        />
+
         <div className="flex-1 overflow-y-auto px-4 md:px-8 py-6 scroll-smooth custom-typography-container">
           <div className="w-full max-w-[46rem] mx-auto">
             <div className="flex items-baseline justify-between gap-4 mb-4 no-print">
@@ -765,6 +818,14 @@ export default function EditorPage() {
         </div>
       </div>
     </main>
+
+    {publishOpen && (
+      <PublishDialog
+        projectId={project.id}
+        onClose={() => setPublishOpen(false)}
+        onDone={setMessage}
+      />
+    )}
   </div>
 );
 }

@@ -30,7 +30,6 @@ export async function POST(request: Request) {
   const blocked = guardRequest(request, { limit: 6 });
   if (blocked) return blocked;
 
-  const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
     async start(controller) {

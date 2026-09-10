@@ -162,6 +162,10 @@
   --radius: 0.375rem;
   --radius-lg: 0.5rem;
 
+  /* Manuscript typefaces. Overridden per project on the editor containers. */
+  --body-font: var(--font-inter), "Helvetica Neue", Arial, sans-serif;
+  --heading-font: var(--font-inter), "Helvetica Neue", Arial, sans-serif;
+
   --hairline: color-mix(in srgb, var(--color-outline-variant) 65%, transparent);
   --hairline-strong: color-mix(in srgb, var(--color-outline-variant) 100%, transparent);
 }
@@ -405,6 +409,19 @@
     padding: 0;
   }
 
+  /* Full-width action in a narrow rail. `.btn` is nowrap on a fixed height,
+     which clips long labels, so this one grows to fit instead. */
+  .btn-block {
+    width: 100%;
+    height: auto;
+    min-height: var(--ctl-lg);
+    padding-block: 0.375rem;
+    white-space: normal;
+    text-wrap: balance;
+    line-height: 1.3;
+  }
+  .btn-block .material-symbols-outlined { flex-shrink: 0; }
+
   /* ---- Forms ----------------------------------------------------------- */
 
   .field { display: block; margin-bottom: var(--sp-4); }
@@ -628,6 +645,60 @@
   }
   .switch[data-on="true"]::after { transform: translateX(0.8125rem); }
 
+  /* ---- Stage strip ------------------------------------------------------ */
+
+  /* The editor's "where am I" indicator: four steps, the current one filled. */
+  .stage-strip {
+    display: flex;
+    align-items: center;
+    gap: 0.125rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    flex-shrink: 0;
+  }
+
+  .stage {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    height: 1.5rem;
+    padding-inline: 0.5rem;
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    font-weight: 650;
+    letter-spacing: 0.005em;
+    white-space: nowrap;
+    color: var(--color-on-surface-variant);
+  }
+
+  .stage-dot {
+    width: 0.4375rem;
+    height: 0.4375rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-on-surface) 20%, transparent);
+    flex-shrink: 0;
+  }
+
+  .stage[data-state="done"] { color: var(--color-on-surface); }
+  .stage[data-state="done"] .stage-dot {
+    background: color-mix(in srgb, var(--color-primary) 55%, transparent);
+  }
+
+  .stage[data-state="current"] {
+    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+    color: var(--color-primary);
+  }
+  .stage[data-state="current"] .stage-dot { background: var(--color-primary); }
+  .dark .stage[data-state="current"] { color: var(--color-on-surface); }
+
+  .stage-sep {
+    width: 0.625rem;
+    height: 1px;
+    background: var(--hairline-strong);
+    flex-shrink: 0;
+  }
+
   /* ---- Key/value list -------------------------------------------------- */
 
   .kv {
@@ -792,6 +863,20 @@ body {
 }
 
 /* Custom Typography Overrides */
+.custom-typography-container .prose,
+.custom-typography-container .prose p,
+.custom-typography-container .prose li,
+.custom-typography-container .prose blockquote {
+  font-family: var(--body-font) !important;
+}
+.custom-typography-container .prose h1,
+.custom-typography-container .prose h2,
+.custom-typography-container .prose h3,
+.custom-typography-container .prose h4,
+.custom-typography-container .prose h5,
+.custom-typography-container .prose h6 {
+  font-family: var(--heading-font) !important;
+}
 .custom-typography-container .prose h1 { font-size: var(--h1-size) !important; }
 .custom-typography-container .prose h2 { font-size: var(--h2-size) !important; }
 .custom-typography-container .prose h3 { font-size: var(--h3-size) !important; }
