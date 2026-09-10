@@ -8,7 +8,8 @@ import Placeholder from "@tiptap/extension-placeholder";
 import TiptapImage from "@tiptap/extension-image";
 import TextAlign from "@tiptap/extension-text-align";
 import { Extension } from '@tiptap/core';
-import { TextStyle, FontSize } from '@tiptap/extension-text-style';
+import { TextStyle, FontSize, FontFamily } from '@tiptap/extension-text-style';
+import { FONTS_BY_CATEGORY, FONT_OPTIONS } from "@/lib/fonts";
 import { Plugin, PluginKey } from "prosemirror-state";
 import { Decoration, DecorationSet } from "prosemirror-view";
 import clsx from "clsx";
@@ -75,6 +76,7 @@ export default function Editor({
       AiSelectionHandler,
       TextStyle,
       FontSize,
+      FontFamily,
       TiptapImage.configure({
         inline: false,
         allowBase64: true,
@@ -127,6 +129,26 @@ export default function Editor({
     },
     immediatelyRender: false,
   });
+
+  /**
+   * The font id currently under the cursor or selection. TipTap stores the
+   * resolved CSS stack, so match on that rather than on the label.
+   */
+  const activeFontId = (() => {
+    const stack = editor?.getAttributes("textStyle").fontFamily;
+    if (!stack) return "default";
+    return FONT_OPTIONS.find((font) => font.stack === stack)?.id ?? "default";
+  })();
+
+  const applyFont = (id: string) => {
+    if (!editor) return;
+    if (id === "default") {
+      editor.chain().focus().unsetFontFamily().run();
+      return;
+    }
+    const font = FONT_OPTIONS.find((f) => f.id === id);
+    if (font) editor.chain().focus().setFontFamily(font.stack).run();
+  };
 
   useEffect(() => {
     if (!editor) return;
@@ -465,7 +487,26 @@ export default function Editor({
           </button>
           <div className="w-px h-4 bg-slate-200 dark:bg-white/10 mx-2"></div>
           <select
-            className="bg-surface-container-low border border-outline-variant/10 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none hover:border-primary/30 transition-colors"
+            aria-label="Font"
+            title="Font for the selected text"
+            className="select w-auto max-w-[9rem] !h-7 !text-[12px]"
+            onChange={(e) => applyFont(e.target.value)}
+            value={activeFontId}
+          >
+            <option value="default">Font</option>
+            {FONTS_BY_CATEGORY.map((group) => (
+              <optgroup key={group.category} label={group.category}>
+                {group.fonts.map((font) => (
+                  <option key={font.id} value={font.id} title={font.note}>
+                    {font.label}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+          <select
+            aria-label="Font size"
+            className="bg-surface-container-low border border-outline-variant/10 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none hover:border-primary/30 transition-colors ml-1.5"
             onChange={(e) => {
               if (editor) {
                 if (e.target.value === "default") {
@@ -547,6 +588,25 @@ export default function Editor({
             </button>
             <div className="w-px h-4 bg-white/20 mx-1"></div>
             <select
+              aria-label="Font"
+              title="Font for the selected text"
+              className="bg-transparent border-none px-1 py-1.5 text-[11px] font-bold text-white outline-none hover:text-primary transition-colors cursor-pointer appearance-none text-center max-w-[6.5rem]"
+              onChange={(e) => applyFont(e.target.value)}
+              value={activeFontId}
+            >
+              <option value="default" className="bg-slate-900 text-white">Font</option>
+              {FONTS_BY_CATEGORY.map((group) => (
+                <optgroup key={group.category} label={group.category} className="bg-slate-900 text-white">
+                  {group.fonts.map((font) => (
+                    <option key={font.id} value={font.id} className="bg-slate-900 text-white">
+                      {font.label}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+            <select
+              aria-label="Font size"
               className="bg-transparent border-none px-1 py-1.5 text-[11px] font-bold text-white outline-none hover:text-primary transition-colors cursor-pointer appearance-none text-center min-w-[45px]"
               onChange={(e) => {
                 if (editor) {

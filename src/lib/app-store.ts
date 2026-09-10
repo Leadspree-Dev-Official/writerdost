@@ -3,7 +3,19 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { providerDefaults } from "@/lib/ai-providers";
-import type { ApiSettings, GeneratedProjectPayload, User, UpgradeRequest, UserPlan, UserFeatures } from "@/lib/store-types";
+import { MARKETPLACE, generateApiToken } from "@/lib/marketplace";
+import type {
+  ApiScope,
+  ApiSettings,
+  ApiToken,
+  GeneratedProjectPayload,
+  PlatformApiSettings,
+  PublishState,
+  User,
+  UpgradeRequest,
+  UserPlan,
+  UserFeatures,
+} from "@/lib/store-types";
 
 export type ProjectStatus = "Planning" | "Drafting" | "Editing" | "Ready";
 
@@ -44,6 +56,9 @@ export type GenerationStatus = {
 };
 
 export type ProjectDesignSettings = {
+  /** Font ids from src/lib/fonts.ts. */
+  bodyFont: string;
+  headingFont: string;
   h1Size: string;
   h2Size: string;
   h3Size: string;
@@ -79,6 +94,8 @@ export type Project = {
   draftDuration?: number;
   tokensUsed?: number;
   designSettings?: ProjectDesignSettings;
+  /** Marketplace listing state. Absent until the project is first published. */
+  publish?: PublishState;
 };
 
 type CreateDraft = {
@@ -174,6 +191,7 @@ type AppStore = {
   activeChapterId: string | null;
   blog: BlogComposer;
   api: ApiSettings;
+  platform: PlatformApiSettings;
   settings: SettingsState;
   profile: ProfileState;
   createDraft: CreateDraft;
@@ -212,6 +230,12 @@ type AppStore = {
   updateProfile: (payload: Partial<ProfileState>) => void;
   updateSettings: (payload: Partial<SettingsState>) => void;
   updateApiSettings: (payload: Partial<ApiSettings>) => void;
+  updatePlatformApi: (payload: Partial<PlatformApiSettings>) => void;
+  disconnectMarketplace: () => void;
+  createApiToken: (label: string, scopes: ApiScope[]) => ApiToken;
+  revokeApiToken: (tokenId: string) => void;
+  deleteApiToken: (tokenId: string) => void;
+  setProjectPublishState: (projectId: string, payload: Partial<PublishState>) => void;
   applyOptimization: (type: "cost" | "speed" | "quality") => void;
   addGeneratedProject: (payload: GeneratedProjectPayload) => Project;
   applyDraftToProject: (projectId: string, draftedProject: Partial<Project>) => void;
@@ -441,6 +465,27 @@ const defaultApiSettings: ApiSettings = {
   siteUrl: "", // Initialize empty, will be set on client to avoid hydration/port mismatch
 };
 
+const defaultPlatformApi: PlatformApiSettings = {
+  marketplaceEnabled: false,
+  marketplaceBaseUrl: MARKETPLACE.defaultBaseUrl,
+  marketplaceApiKey: "",
+  sellerId: "",
+  connectionState: "disconnected",
+  connectionMessage: "",
+  lastCheckedAt: null,
+  seller: null,
+  defaultPrice: 9.99,
+  currency: "USD",
+  defaultCategory: "Business & Money",
+  defaultLicense: "standard",
+  defaultFormats: ["epub", "pdf"],
+  defaultVisibility: "draft",
+  autoPublishOnReady: false,
+  tokens: [],
+  webhookUrl: "",
+  webhookSecret: "",
+};
+
 const defaultGenerationStatus: GenerationStatus = {
   isGenerating: false,
   progress: 0,
@@ -520,6 +565,7 @@ export const useAppStore = create<AppStore>()(
       profile: defaultProfile,
       settings: defaultSettings,
       api: defaultApiSettings,
+      platform: defaultPlatformApi,
       generationStatus: defaultGenerationStatus,
       usage: defaultUsage,
       isDarkMode: false,
@@ -631,6 +677,8 @@ export const useAppStore = create<AppStore>()(
           seoKeywords: [title, createDraft.tone, "ebook writing"],
           researchSources: [...(createDraft.researchSources || [])],
           designSettings: {
+            bodyFont: "inter",
+            headingFont: "inter",
             h1Size: "48px",
             h2Size: "32px",
             h3Size: "24px",
@@ -687,6 +735,8 @@ export const useAppStore = create<AppStore>()(
           seoKeywords: [title, "AI writing"],
           researchSources: [],
           designSettings: {
+            bodyFont: "inter",
+            headingFont: "inter",
             h1Size: "48px",
             h2Size: "32px",
             h3Size: "24px",
@@ -1349,6 +1399,83 @@ export const useAppStore = create<AppStore>()(
               : {}),
           },
         })),
+      updatePlatformApi: (payload) =>
+        set((state) => {
+          // Any credential change invalidates the last verified connection, so
+          // the publish button cannot stay enabled against a stale check.
+          const touchesCredentials =
+            ("marketplaceApiKey" in payload && payload.marketplaceApiKey !== state.platform.marketplaceApiKey) ||
+            ("sellerId" in payload && payload.sellerId !== state.platform.sellerId) ||
+            ("marketplaceBaseUrl" in payload && payload.marketplaceBaseUrl !== state.platform.marketplaceBaseUrl);
+
+          return {
+            platform: {
+              ...state.platform,
+              ...payload,
+              ...(touchesCredentials && payload.connectionState === undefined
+                ? { connectionState: "disconnected" as const, connectionMessage: "", seller: null, lastCheckedAt: null }
+                : {}),
+            },
+          };
+        }),
+      disconnectMarketplace: () =>
+        set((state) => ({
+          platform: {
+            ...state.platform,
+            marketplaceApiKey: "",
+            sellerId: "",
+            connectionState: "disconnected",
+            connectionMessage: "",
+            seller: null,
+            lastCheckedAt: null,
+            marketplaceEnabled: false,
+          },
+        })),
+      createApiToken: (label, scopes) => {
+        const token: ApiToken = {
+          id: `tok-${Date.now().toString(36)}`,
+          label: label.trim() || "Untitled token",
+          token: generateApiToken(),
+          scopes,
+          createdAt: new Date().toISOString(),
+          lastUsedAt: null,
+          revoked: false,
+        };
+        set((state) => ({ platform: { ...state.platform, tokens: [token, ...state.platform.tokens] } }));
+        return token;
+      },
+      revokeApiToken: (tokenId) =>
+        set((state) => ({
+          platform: {
+            ...state.platform,
+            tokens: state.platform.tokens.map((item) =>
+              item.id === tokenId ? { ...item, revoked: true } : item,
+            ),
+          },
+        })),
+      deleteApiToken: (tokenId) =>
+        set((state) => ({
+          platform: {
+            ...state.platform,
+            tokens: state.platform.tokens.filter((item) => item.id !== tokenId),
+          },
+        })),
+      setProjectPublishState: (projectId, payload) =>
+        set((state) => ({
+          projects: state.projects.map((project) =>
+            project.id === projectId
+              ? {
+                  ...project,
+                  publish: {
+                    status: "unpublished",
+                    revision: 0,
+                    ...project.publish,
+                    ...payload,
+                  },
+                }
+              : project,
+          ),
+        })),
       applyOptimization: (type) => {
         const { api, settings } = get();
         const newApi = { ...api };
@@ -1511,14 +1638,18 @@ export const useAppStore = create<AppStore>()(
     }),
     {
       name: "writerdost-app-store",
-      version: 1,
+      version: 2,
       migrate: (persisted, fromVersion) => {
         const state = persisted as Partial<AppStore> | undefined;
         if (!state) return persisted as AppStore;
 
+        // A hand-edited or partially written save can arrive with no version at
+        // all, and `undefined < n` is false, which would skip every step below.
+        const from = typeof fromVersion === "number" ? fromVersion : 0;
+
         // v0 seeded two placeholder chapters into every new outline. Drop them
         // if they are still untouched; keep anything the author edited or added.
-        if (fromVersion < 1 && state.outlineGenerator?.chapters?.length) {
+        if (from < 1 && state.outlineGenerator?.chapters?.length) {
           const chapters = state.outlineGenerator.chapters;
           const isUntouchedSeed =
             chapters.length === SEEDED_OUTLINE_TITLES.length &&
@@ -1526,6 +1657,13 @@ export const useAppStore = create<AppStore>()(
           if (isUntouchedSeed) {
             state.outlineGenerator = { ...state.outlineGenerator, chapters: [] };
           }
+        }
+
+        // v2 added the platform API block. An older save has no `platform` at
+        // all, and a save written mid-development may be missing newer fields,
+        // so fill from defaults either way rather than trusting the shape.
+        if (from < 2) {
+          state.platform = { ...defaultPlatformApi, ...(state.platform ?? {}) };
         }
 
         return state as AppStore;

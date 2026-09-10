@@ -1,5 +1,6 @@
 import { Project } from "./app-store";
-import { htmlToText } from "./markdown-utils";
+import { htmlToText, htmlToMarkdown } from "./markdown-utils";
+import { findFont, FONT_OPTIONS, DEFAULT_BODY_FONT, DEFAULT_HEADING_FONT } from "./fonts";
 import { Document, Packer, Paragraph, HeadingLevel, AlignmentType, TextRun, PageBreak } from "docx";
 
 /** A node in the docx body we assemble while walking the chapter HTML. */
@@ -13,7 +14,23 @@ type RunStyles = {
   underline?: Record<string, never>;
   color?: string;
   size?: number;
+  /** Real family name — Word resolves fonts by name, not by CSS stack. */
+  font?: string;
 };
+
+/**
+ * Maps an inline `font-family` back to the family name Word needs. The editor
+ * stores the full CSS stack, so match on that and fall back to the first
+ * quoted or bare family if the stack came from somewhere else.
+ */
+function familyFromCss(cssValue: string): string | undefined {
+  const stack = cssValue.trim();
+  if (!stack) return undefined;
+  const known = FONT_OPTIONS.find((font) => font.stack === stack);
+  if (known) return known.family;
+  const first = stack.split(",")[0]?.trim().replace(/^["']|["']$/g, "");
+  return first && !first.startsWith("var(") ? first : undefined;
+}
 
 /** Block formatting inherited from the enclosing element. */
 type BlockStyles = {
@@ -36,11 +53,66 @@ export function generateProjectText(project: Project): string {
   return header + content;
 }
 
+/** Quotes a value for a YAML frontmatter scalar. */
+function yamlString(value: string): string {
+  return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+}
+
+/**
+ * Renders the whole project as a single markdown document.
+ *
+ * YAML frontmatter is included so the file drops straight into a static site
+ * generator or Pandoc without further editing. Chapters are separated by a
+ * rule rather than a page break, since markdown has no pagination.
+ */
+export function generateProjectMarkdown(project: Project, author?: string): string {
+  const frontmatter = [
+    "---",
+    `title: ${yamlString(project.title)}`,
+    ...(author ? [`author: ${yamlString(author)}`] : []),
+    ...(project.description ? [`description: ${yamlString(project.description)}`] : []),
+    ...(project.audience ? [`audience: ${yamlString(project.audience)}`] : []),
+    ...(project.tone ? [`tone: ${yamlString(project.tone)}`] : []),
+    ...((project.seoKeywords || []).filter(Boolean).length
+      ? ["keywords:", ...project.seoKeywords.filter(Boolean).map((k) => `  - ${yamlString(k)}`)]
+      : []),
+    `date: ${new Date().toISOString().slice(0, 10)}`,
+    "---",
+  ].join("\n");
+
+  const body = (project.chapters || [])
+    .map((chapter) => {
+      const content = htmlToMarkdown(chapter.content);
+      // A chapter whose HTML already opens with its own heading must not get
+      // a duplicate one prepended.
+      const hasOwnHeading = new RegExp(
+        `^#{1,6}\\s+${chapter.title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*$`,
+        "m",
+      ).test(content.split("\n")[0] || "");
+
+      const heading = hasOwnHeading ? "" : `## ${chapter.title}\n\n`;
+      return `${heading}${content}`.trim();
+    })
+    .filter(Boolean)
+    .join("\n\n---\n\n");
+
+  return `${frontmatter}\n\n# ${project.title}\n\n${body}\n`;
+}
+
+/** Generates the markdown document and triggers a browser download. */
+export function downloadMarkdown(project: Project, author?: string) {
+  downloadTxt(
+    `${project.title.replace(/\s+/g, "_")}.md`,
+    generateProjectMarkdown(project, author),
+    "text/markdown",
+  );
+}
+
 /**
  * Triggers a browser download of a text file.
  */
-export function downloadTxt(filename: string, text: string) {
-  const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+export function downloadTxt(filename: string, text: string, mimeType = "text/plain") {
+  const blob = new Blob([text], { type: `${mimeType};charset=utf-8` });
   const url = URL.createObjectURL(blob);
   const element = document.createElement("a");
   
@@ -60,7 +132,23 @@ export function downloadTxt(filename: string, text: string) {
  * Generates and downloads a .docx file for the project.
  */
 export async function downloadDocx(project: Project) {
+  // Word resolves fonts by family name, and the docx package does not embed
+  // font files — a reader without the family installed sees Word's
+  // substitute. Georgia is the safe pick for that reason.
+  const bodyFamily = findFont(project.designSettings?.bodyFont, DEFAULT_BODY_FONT).family;
+  const headingFamily = findFont(project.designSettings?.headingFont, DEFAULT_HEADING_FONT).family;
+
   const doc = new Document({
+    styles: {
+      default: {
+        document: { run: { font: bodyFamily } },
+        title: { run: { font: headingFamily } },
+        heading1: { run: { font: headingFamily } },
+        heading2: { run: { font: headingFamily } },
+        heading3: { run: { font: headingFamily } },
+        heading4: { run: { font: headingFamily } },
+      },
+    },
     sections: [
       {
         properties: {
@@ -187,7 +275,25 @@ export async function downloadDocx(project: Project) {
                   } else if (tagName === "br") {
                     nodes.push(new TextRun({ break: 1 }));
                   } else if (tagName === "span") {
-                    nodes.push(...walk(el, { ...styles, color }, { alignment }));
+                    // The editor writes font choices as inline styles on spans;
+                    // without this they were dropped on export.
+                    const spanFont = familyFromCss(el.style.fontFamily || "");
+                    const spanPx = parseFloat(el.style.fontSize || "");
+                    nodes.push(
+                      ...walk(
+                        el,
+                        {
+                          ...styles,
+                          color,
+                          ...(spanFont ? { font: spanFont } : {}),
+                          // docx sizes are in half-points.
+                          ...(Number.isFinite(spanPx) && spanPx > 0
+                            ? { size: Math.round(spanPx * 1.5) }
+                            : {}),
+                        },
+                        { alignment },
+                      ),
+                    );
                   } else {
                     nodes.push(...walk(el, { ...styles, color }, { alignment }));
                   }
