@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { generateAiText } from "@/lib/ai-client";
@@ -17,23 +17,34 @@ export default function BlogGeneratorPage() {
   const regenerateBlogSuggestions = useAppStore((state) => state.regenerateBlogSuggestions);
   const updateBlog = useAppStore((state) => state.updateBlog);
   const loadBlogFromProject = useAppStore((state) => state.loadBlogFromProject);
+  const startBlankBlog = useAppStore((state) => state.startBlankBlog);
+  const startBlogFromTopic = useAppStore((state) => state.startBlogFromTopic);
+  const resetBlogSource = useAppStore((state) => state.resetBlogSource);
   const setCurrentProject = useAppStore((state) => state.setCurrentProject);
   const [message, setMessage] = useState("");
   const [generatingSuggestions, setGeneratingSuggestions] = useState(false);
   const [generatingDraft, setGeneratingDraft] = useState(false);
   const [blogDraftTime, setBlogDraftTime] = useState<number | null>(null);
   const [blogTokens, setBlogTokens] = useState<number>(0);
+  const [pickerProjectId, setPickerProjectId] = useState(projects[0]?.id ?? "");
+  const [pickerTopic, setPickerTopic] = useState("");
 
-  const selectedProject = projects.find((project) => project.id === blog.projectId) ?? projects[0];
+  // No fallback to projects[0]: a draft only has a source project when the
+  // writer chose one, otherwise the composer runs on its own subject.
+  const selectedProject = projects.find((project) => project.id === blog.projectId) ?? null;
+  const source = blog.source ?? "none";
+  /** What this post is about, whichever way it was started. */
+  const subject = selectedProject?.title || blog.topic || blog.title || "this post";
   const suggestions = blog?.suggestions || [];
   const keywords = blog?.keywords || [];
   const targetWords = blog?.targetWords || 1000;
 
-  useEffect(() => {
-    if (projects.length > 0 && (!blog.projectId || !projects.find(p => p.id === blog.projectId))) {
-      loadBlogFromProject(projects[0].id);
-    }
-  }, [projects, blog.projectId, loadBlogFromProject]);
+
+  const handleChangeSource = () => {
+    const hasWork = Boolean(blog.title?.trim() || blog.draft?.trim());
+    if (hasWork && !window.confirm("Start a different post? This draft will be cleared.")) return;
+    resetBlogSource();
+  };
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -43,8 +54,107 @@ export default function BlogGeneratorPage() {
 
   if (!blog || !projects) return null;
 
+  // Nothing chosen yet: ask how this post should start rather than silently
+  // opening whichever project happened to be first.
+  if (source === "none") {
+    return (
+      <div className="page">
+        <div className="page-head">
+          <div>
+            <h1 className="page-title">New blog post</h1>
+            <p className="page-sub">
+              Start from scratch, build on one of your ebooks, or write about a topic.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-start">
+          {/* 1. Blank */}
+          <div className="panel panel-pad flex flex-col gap-2.5 h-full">
+            <span className="material-symbols-outlined text-primary">edit_note</span>
+            <div>
+              <p className="tile-name">Blank post</p>
+              <p className="tile-desc">An empty editor. You bring the subject.</p>
+            </div>
+            <button
+              className="btn btn-primary btn-sm w-full mt-auto"
+              onClick={() => startBlankBlog()}
+              type="button"
+            >
+              Start writing
+            </button>
+          </div>
+
+          {/* 2. From an existing project */}
+          <div className="panel panel-pad flex flex-col gap-2.5 h-full">
+            <span className="material-symbols-outlined text-primary">menu_book</span>
+            <div>
+              <p className="tile-name">From a project</p>
+              <p className="tile-desc">
+                Reuse an ebook&rsquo;s audience, tone and keywords as the brief.
+              </p>
+            </div>
+            {projects.length > 1 ? (
+              <select
+                className="select"
+                value={pickerProjectId}
+                onChange={(event) => setPickerProjectId(event.target.value)}
+                aria-label="Project to write from"
+              >
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>{project.title}</option>
+                ))}
+              </select>
+            ) : (
+              /* One project (or none) is not a choice, so it reads as a value
+                 rather than a control that does nothing when clicked. */
+              <p className="readonly-value">
+                {projects[0]?.title ?? "No projects yet"}
+              </p>
+            )}
+            <button
+              className="btn btn-primary btn-sm w-full mt-auto"
+              onClick={() => pickerProjectId && loadBlogFromProject(pickerProjectId)}
+              disabled={!pickerProjectId || projects.length === 0}
+              type="button"
+            >
+              {projects.length === 0 ? "No projects yet" : "Use this project"}
+            </button>
+          </div>
+
+          {/* 3. From a topic */}
+          <div className="panel panel-pad flex flex-col gap-2.5 h-full">
+            <span className="material-symbols-outlined text-primary">lightbulb</span>
+            <div>
+              <p className="tile-name">From a topic</p>
+              <p className="tile-desc">Name the subject and get title ideas to start from.</p>
+            </div>
+            <input
+              className="input"
+              placeholder="e.g. Self-publishing on a deadline"
+              value={pickerTopic}
+              onChange={(event) => setPickerTopic(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && pickerTopic.trim()) startBlogFromTopic(pickerTopic);
+              }}
+              aria-label="Blog topic"
+            />
+            <button
+              className="btn btn-primary btn-sm w-full mt-auto"
+              onClick={() => startBlogFromTopic(pickerTopic)}
+              disabled={!pickerTopic.trim()}
+              type="button"
+            >
+              Write about this
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const handleRefreshSuggestions = async () => {
-                if (!selectedProject || !api.baseUrl || !api.model || (!api.apiKey && api.provider !== "ollama")) {
+                if (!api.baseUrl || !api.model || (!api.apiKey && api.provider !== "ollama")) {
                   regenerateBlogSuggestions();
                   setMessage("Generated local title suggestions. Add API settings for live AI suggestions.");
                   return;
@@ -56,7 +166,9 @@ export default function BlogGeneratorPage() {
                     api,
                     systemPrompt:
                       "You create blog headline options for authors turning ebook concepts into content marketing. Return exactly three distinct titles, one per line.",
-                    userPrompt: `Project title: ${selectedProject.title}\nAudience: ${selectedProject.audience}\nTone: ${selectedProject.tone}\nDescription: ${selectedProject.description}`,
+                    userPrompt: selectedProject
+                      ? `Project title: ${selectedProject.title}\nAudience: ${selectedProject.audience}\nTone: ${selectedProject.tone}\nDescription: ${selectedProject.description}`
+                      : `Blog topic: ${subject}`,
                     temperature: settings.temperature,
                     topP: settings.topP,
                   });
@@ -97,12 +209,25 @@ export default function BlogGeneratorPage() {
 
         <div className="panel min-h-[calc(100vh-8rem)] flex flex-col overflow-hidden">
           <div className="panel-head">
-            <span className="row-meta">Saved {blog.lastSavedLabel}</span>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5 min-w-0">
               <button
-                className="btn btn-ghost btn-sm"
+                className="btn btn-ghost btn-sm -ml-1"
+                onClick={handleChangeSource}
+                title="Back to the start options"
+                type="button"
+              >
+                <span className="material-symbols-outlined">arrow_back</span>
+                Back
+              </button>
+              {blog.lastSavedLabel ? (
+                <span className="row-meta truncate">Saved {blog.lastSavedLabel}</span>
+              ) : null}
+            </div>
+            <div className="flex items-center gap-1.5">
+              <button
+                className="btn btn-primary btn-sm"
                 onClick={async () => {
-                  if (!selectedProject) return;
+
                   if (!api.baseUrl || !api.model || (!api.apiKey && api.provider !== "ollama")) {
                     setMessage("Add API settings first to generate a live AI draft.");
                     return;
@@ -115,7 +240,9 @@ export default function BlogGeneratorPage() {
                       api,
                       systemPrompt:
                         "You write polished blog drafts that repurpose ebook concepts into clear, engaging articles. Return only the draft body. Use Markdown for formatting.",
-                      userPrompt: `Write a blog post based on this source project.\n\nTitle: ${blog.title}\nProject: ${selectedProject.title}\nAudience: ${selectedProject.audience}\nTone: ${selectedProject.tone}\nDescription: ${selectedProject.description}\nKeywords: ${keywords.join(", ")}\nMeta description: ${blog.metaDescription}\n\nTarget length: about ${targetWords} words.`,
+                      userPrompt: selectedProject
+                        ? `Write a blog post based on this source project.\n\nTitle: ${blog.title}\nProject: ${selectedProject.title}\nAudience: ${selectedProject.audience}\nTone: ${selectedProject.tone}\nDescription: ${selectedProject.description}\nKeywords: ${keywords.join(", ")}\nMeta description: ${blog.metaDescription}\n\nTarget length: about ${targetWords} words.`
+                        : `Write a blog post on this topic.\n\nTopic: ${subject}\nTitle: ${blog.title || "(choose a fitting title)"}\nKeywords: ${keywords.join(", ")}\nMeta description: ${blog.metaDescription}\n\nTarget length: about ${targetWords} words.`,
                       temperature: 0.7,
                       topP: 1,
                     });
@@ -137,10 +264,13 @@ export default function BlogGeneratorPage() {
                 disabled={generatingDraft}
                 type="button"
               >
-                {generatingDraft ? "Drafting..." : "Draft With AI"}
+                <span className="material-symbols-outlined">
+                  {generatingDraft ? "progress_activity" : "auto_awesome"}
+                </span>
+                {generatingDraft ? "Drafting…" : "Draft With AI"}
               </button>
               <button
-                className="text-[10px] font-semibold tracking-wider uppercase text-on-surface-variant hover:text-primary transition-colors"
+                className="btn btn-secondary btn-sm"
                 onClick={() => {
                   if (typeof window === "undefined") return;
                   const blob = new Blob([`${blog.title}\n\n${blog.draft}`], { type: "text/plain" });
@@ -153,10 +283,11 @@ export default function BlogGeneratorPage() {
                 }}
                 type="button"
               >
+                <span className="material-symbols-outlined">download</span>
                 Export
               </button>
               <button
-                className="text-[10px] font-semibold tracking-wider uppercase text-on-surface-variant hover:text-rose-500 transition-colors"
+                className="btn btn-ghost btn-sm btn-danger"
                 onClick={() => {
                   if (window.confirm("Are you sure you want to clear the entire blog canvas? This cannot be undone.")) {
                     updateBlog({ title: "", draft: "" });
@@ -165,6 +296,7 @@ export default function BlogGeneratorPage() {
                 }}
                 type="button"
               >
+                <span className="material-symbols-outlined">restart_alt</span>
                 Reset
               </button>
             </div>
@@ -186,7 +318,7 @@ export default function BlogGeneratorPage() {
               ))}
             </div>
             
-            <div className="mt-2 border-t border-surface-container-low pt-4">
+            <div className="mt-1 border-t border-surface-container-low pt-3">
               <Editor 
                 content={blog.draft || ""}
                 onChange={(content) => updateBlog({ draft: content })}
@@ -199,29 +331,49 @@ export default function BlogGeneratorPage() {
       <aside className="min-w-0 lg:sticky lg:top-[calc(var(--app-header-h)+1rem)]">
         <div className="panel rail overflow-hidden">
           <div className="rail-section">
-            <label htmlFor="bg-project" className="label">Source project</label>
-            <select
-              id="bg-project"
-              className="select"
-              value={blog.projectId || ""}
-              onChange={(event) => loadBlogFromProject(event.target.value)}
-            >
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>{project.title}</option>
-              ))}
-            </select>
-            {selectedProject && (
+            <div className="flex items-baseline justify-between mb-1.5">
+              <span className="label !mb-0">
+                {source === "project" ? "Source project" : source === "topic" ? "Topic" : "Source"}
+              </span>
               <button
-                className="btn btn-ghost btn-sm mt-1.5 -ml-2"
-                onClick={() => {
-                  setCurrentProject(selectedProject.id);
-                  router.push("/editor");
-                }}
+                className="btn btn-ghost btn-sm -mr-2"
+                onClick={handleChangeSource}
                 type="button"
               >
-                Open source draft
-                <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
+                Change
               </button>
+            </div>
+
+            {source === "project" ? (
+              <>
+                <select
+                  id="bg-project"
+                  className="select"
+                  value={blog.projectId || ""}
+                  onChange={(event) => loadBlogFromProject(event.target.value)}
+                >
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>{project.title}</option>
+                  ))}
+                </select>
+                {selectedProject && (
+                  <button
+                    className="btn btn-ghost btn-sm mt-1.5 -ml-2"
+                    onClick={() => {
+                      setCurrentProject(selectedProject.id);
+                      router.push("/editor");
+                    }}
+                    type="button"
+                  >
+                    Open source draft
+                    <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
+                  </button>
+                )}
+              </>
+            ) : (
+              <p className="text-[12.5px] text-on-surface">
+                {source === "topic" ? blog.topic : "Blank post — no source."}
+              </p>
             )}
           </div>
 
@@ -299,7 +451,8 @@ export default function BlogGeneratorPage() {
             <label htmlFor="bg-meta" className="label">Meta description</label>
             <textarea
               id="bg-meta"
-              className="textarea min-h-[4.5rem] text-[12px]"
+              className="textarea min-h-[6.5rem] text-[13px] p-2.5"
+              placeholder="A concise summary of the article for search engine results and social previews..."
               value={blog.metaDescription || ""}
               onChange={(event) => updateBlog({ metaDescription: event.target.value })}
             />

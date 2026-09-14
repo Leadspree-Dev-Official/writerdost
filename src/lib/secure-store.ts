@@ -2,9 +2,9 @@
  * Server-side credential encryption.
  *
  * Destination tokens (WordPress application passwords, Ghost admin keys) and
- * the AI key an automation spends are stored in Postgres. They are encrypted
- * here with AES-256-GCM so a database dump — or a stray `select *` — does not
- * hand over the user's publishing credentials.
+ * the AI key an automation spends are stored in Appwrite. They are encrypted
+ * here with AES-256-GCM so a database export — or anyone with read access to a
+ * table — does not hand over the user's publishing credentials.
  *
  * The key comes from WRITERDOST_ENCRYPTION_KEY (32 bytes, base64 or hex).
  * Generate one with:  openssl rand -base64 32

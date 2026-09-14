@@ -1,7 +1,7 @@
 /**
- * Stand-in for the InstaGuru Marketplace API.
+ * Stand-in for the BundleKart Marketplace API.
  *
- * InstaGuru is still being built, so these routes answer locally instead of
+ * BundleKart is still being built, so these routes answer locally instead of
  * calling a live host. They validate the same fields the real service will
  * require and return the same shapes, so the app's publish flow is exercised
  * end to end. Nothing is stored and nothing leaves this machine.

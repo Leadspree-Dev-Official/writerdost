@@ -73,8 +73,8 @@ export default function IdeaAndInput() {
 
   const handleGenerateWithAI = async () => {
     startGeneration({ 
-      title: "Masterpiece Generation Pipeline", 
-      subtitle: "Our Swarm Intelligence is architecting your eBook concept into a structured manuscript." 
+      title: "Writing your ebook",
+      subtitle: "Researching, outlining and drafting. This usually takes a few minutes."
     });
     setGenerationProgress(5);
     setActiveAgent("System");
@@ -270,7 +270,7 @@ export default function IdeaAndInput() {
               </label>
               <textarea
                 id="vision"
-                className="textarea min-h-[8.5rem]"
+                className="textarea min-h-[12rem] text-[14px] leading-relaxed p-3.5"
                 placeholder="The core topic, the problem it solves, or the story you want to tell."
                 value={createDraft.vision}
                 onChange={(event) => updateCreateDraft({ vision: event.target.value })}

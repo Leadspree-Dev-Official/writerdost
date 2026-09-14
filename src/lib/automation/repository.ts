@@ -1,16 +1,36 @@
 /**
- * Supabase data access for the automation engine.
+ * Appwrite data access for the automation engine.
  *
- * Two clients, deliberately:
- *  - the request client carries the caller's JWT, so row level security
- *    decides what they can see;
- *  - the worker client uses the service-role key and bypasses RLS, because
- *    the scheduler acts for every user at once. It must never be reachable
- *    from the browser.
+ * The store is Appwrite 2.0 TablesDB. Two things differ from a SQL backend and
+ * shape most of this file:
+ *
+ *  - there are no joins, so an automation's destination is fetched in a second
+ *    query and stitched on. Runs read a handful of automations at a time, so
+ *    that is one extra round trip per tick, not one per row;
+ *  - columns are typed, so what used to be `jsonb` is longtext holding JSON.
+ *    `encodeJson` / `decodeJson` in src/lib/appwrite/server.ts are the seam.
+ *
+ * Everything here runs with the API key, which ignores row permissions on
+ * purpose: the scheduler acts for every user at once. It must never be
+ * reachable from the browser.
  */
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { TablesDB } from "node-appwrite";
 import { nextCronRun, nextRunFor } from "./schedule";
 import { decryptSecret } from "@/lib/secure-store";
+import {
+  DATABASE_ID,
+  ID,
+  Query,
+  TABLES,
+  appwriteConfigured,
+  decodeJson,
+  encodeJson,
+  listRowsPaged,
+  ownerPermissions,
+  rowKey,
+  workerTables,
+  type GenericRow,
+} from "@/lib/appwrite/server";
 import type { ApiSettings, AutomationFrequency } from "@/lib/store-types";
 import type {
   Automation,
@@ -24,37 +44,12 @@ import type {
 } from "./types";
 import type { PipelineOutcome, QualityReport } from "./pipeline";
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-
-/** True when Supabase is configured, so the UI can show a setup notice. */
+/** True when Appwrite is configured, so the UI can show a setup notice. */
 export function automationBackendReady(): boolean {
-  return Boolean(SUPABASE_URL && SERVICE_ROLE_KEY);
+  return appwriteConfigured();
 }
 
-/** Service-role client. Server only — bypasses row level security. */
-export function workerClient(): SupabaseClient {
-  if (!automationBackendReady()) {
-    throw new Error(
-      "Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.",
-    );
-  }
-  return createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
-
-/** Client scoped to one signed-in user; RLS applies. */
-export function userClient(accessToken: string): SupabaseClient {
-  if (!SUPABASE_URL || !ANON_KEY) {
-    throw new Error("Supabase is not configured for browser access.");
-  }
-  return createClient(SUPABASE_URL, ANON_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false },
-    global: { headers: { Authorization: `Bearer ${accessToken}` } },
-  });
-}
+export { workerTables, userTables } from "@/lib/appwrite/server";
 
 /* ------------------------------------------------------------------ */
 /* Scheduling                                                          */
@@ -80,30 +75,36 @@ export function describeSchedule(cron: string, timezone: string): { valid: boole
 /* ------------------------------------------------------------------ */
 
 type DestinationRow = {
-  id: string;
+  $id: string;
   name: string;
   kind: DestinationKind;
-  config: Record<string, unknown>;
-  secret_cipher: string | null;
+  /** JSON. */
+  config: string | null;
+  secretCipher: string | null;
 };
 
 type AutomationRow = {
-  id: string;
-  user_id: string;
+  $id: string;
+  userId: string;
   name: string;
   enabled: boolean;
-  source_kind: AutomationSource;
-  source_config: SourceConfig;
-  content_config: Partial<ContentConfig>;
-  ai_config: Partial<ApiSettings>;
-  ai_secret_cipher: string | null;
+  sourceKind: AutomationSource;
+  /** JSON. */
+  sourceConfig: string | null;
+  /** JSON. */
+  contentConfig: string | null;
+  /** JSON. */
+  aiConfig: string | null;
+  aiSecretCipher: string | null;
+  destinationId: string | null;
   publish: PublishMode;
-  frequency: AutomationFrequency;
-  schedule_cron: string;
+  frequency: AutomationFrequency | null;
+  startDate: string | null;
+  startTime: string | null;
+  scheduleCron: string;
   timezone: string;
-  last_run_at: string | null;
-  next_run_at: string | null;
-  destinations: DestinationRow | DestinationRow[] | null;
+  lastRunAt: string | null;
+  nextRunAt: string | null;
 };
 
 /** Decrypts a stored credential, returning undefined rather than throwing. */
@@ -119,32 +120,26 @@ function safeDecrypt(cipher: string | null): string | undefined {
 function toDestination(row: DestinationRow | null): Destination | null {
   if (!row) return null;
   return {
-    id: row.id,
+    id: row.$id,
     name: row.name,
     kind: row.kind,
-    config: row.config || {},
-    secret: safeDecrypt(row.secret_cipher),
+    config: decodeJson<Record<string, unknown>>(row.config, {}),
+    secret: safeDecrypt(row.secretCipher),
   };
 }
 
-/** Turns a joined DB row into the shape the pipeline expects. */
-export function toAutomation(row: AutomationRow): Automation {
-  const content = row.content_config || {};
-  const ai = row.ai_config || {};
-
-  // Supabase returns an embedded row as an object or a one-element array
-  // depending on the relationship; normalise both.
-  const destinationRow = Array.isArray(row.destinations)
-    ? row.destinations[0] ?? null
-    : row.destinations;
+/** Turns a stored row into the shape the pipeline expects. */
+export function toAutomation(row: AutomationRow, destination: Destination | null): Automation {
+  const content = decodeJson<Partial<ContentConfig>>(row.contentConfig, {});
+  const ai = decodeJson<Partial<ApiSettings>>(row.aiConfig, {});
 
   return {
-    id: row.id,
-    userId: row.user_id,
+    id: row.$id,
+    userId: row.userId,
     name: row.name,
     enabled: row.enabled,
-    sourceKind: row.source_kind,
-    sourceConfig: row.source_config || {},
+    sourceKind: row.sourceKind,
+    sourceConfig: decodeJson<SourceConfig>(row.sourceConfig, {}),
     contentConfig: {
       tone: content.tone || "Professional",
       audience: content.audience || "",
@@ -156,30 +151,58 @@ export function toAutomation(row: AutomationRow): Automation {
     },
     api: {
       provider: ai.provider || "openai",
-      apiKey: safeDecrypt(row.ai_secret_cipher) || "",
+      apiKey: safeDecrypt(row.aiSecretCipher) || "",
       baseUrl: ai.baseUrl || "",
       model: ai.model || "",
       appName: ai.appName || "Writerdost AI",
       siteUrl: ai.siteUrl || "",
     },
-    destination: toDestination(destinationRow),
+    destination,
     publish: row.publish,
     // Rows written before the frequency column existed default to daily,
     // which is what their cron already said.
     frequency: row.frequency ?? "daily",
-    scheduleCron: row.schedule_cron,
+    startDate: row.startDate ?? "",
+    startTime: row.startTime ?? "09:00",
+    scheduleCron: row.scheduleCron,
     timezone: row.timezone,
-    lastRunAt: row.last_run_at,
-    nextRunAt: row.next_run_at,
+    lastRunAt: row.lastRunAt,
+    nextRunAt: row.nextRunAt,
   };
 }
 
-const AUTOMATION_SELECT = `
-  id, user_id, name, enabled, source_kind, source_config, content_config,
-  ai_config, ai_secret_cipher, publish, frequency, schedule_cron, timezone,
-  last_run_at, next_run_at,
-  destinations ( id, name, kind, config, secret_cipher )
-`;
+/**
+ * Loads the destinations for a batch of automations in one query.
+ * `Query.equal` on `$id` takes a list, which is the closest TablesDB gets to
+ * the embedded select the SQL schema used.
+ */
+async function loadDestinations(
+  db: TablesDB,
+  rows: AutomationRow[],
+): Promise<Map<string, Destination>> {
+  const ids = [...new Set(rows.map((row) => row.destinationId).filter(Boolean))] as string[];
+  if (ids.length === 0) return new Map();
+
+  const page = await db.listRows({
+    databaseId: DATABASE_ID,
+    tableId: TABLES.destinations,
+    queries: [Query.equal("$id", ids), Query.limit(ids.length)],
+  });
+
+  const found = new Map<string, Destination>();
+  for (const raw of page.rows as unknown as DestinationRow[]) {
+    const destination = toDestination(raw);
+    if (destination) found.set(raw.$id, destination);
+  }
+  return found;
+}
+
+async function hydrate(db: TablesDB, rows: AutomationRow[]): Promise<Automation[]> {
+  const destinations = await loadDestinations(db, rows);
+  return rows.map((row) =>
+    toAutomation(row, row.destinationId ? destinations.get(row.destinationId) ?? null : null),
+  );
+}
 
 /* ------------------------------------------------------------------ */
 /* Queries                                                             */
@@ -187,58 +210,90 @@ const AUTOMATION_SELECT = `
 
 /** Automations whose next run has come due. */
 export async function findDueAutomations(limit = 5): Promise<Automation[]> {
-  const db = workerClient();
-  const { data, error } = await db
-    .from("automations")
-    .select(AUTOMATION_SELECT)
-    .eq("enabled", true)
-    .lte("next_run_at", new Date().toISOString())
-    .order("next_run_at", { ascending: true })
-    .limit(limit);
+  const db = workerTables();
 
-  if (error) throw new Error(`Could not load due automations: ${error.message}`);
-  return (data as unknown as AutomationRow[]).map(toAutomation);
+  try {
+    // Rows with no nextRunAt — a spent one-off campaign — are excluded by the
+    // comparison itself, the same way the partial index used to exclude them.
+    const page = await db.listRows({
+      databaseId: DATABASE_ID,
+      tableId: TABLES.automations,
+      queries: [
+        Query.equal("enabled", true),
+        Query.lessThanEqual("nextRunAt", new Date().toISOString()),
+        Query.orderAsc("nextRunAt"),
+        Query.limit(limit),
+      ],
+    });
+
+    return await hydrate(db, page.rows as unknown as AutomationRow[]);
+  } catch (error) {
+    throw new Error(`Could not load due automations: ${messageFor(error)}`);
+  }
 }
 
 export async function loadAutomation(id: string): Promise<Automation | null> {
-  const db = workerClient();
-  const { data, error } = await db
-    .from("automations")
-    .select(AUTOMATION_SELECT)
-    .eq("id", id)
-    .maybeSingle();
+  const db = workerTables();
 
-  if (error) throw new Error(`Could not load automation: ${error.message}`);
-  return data ? toAutomation(data as unknown as AutomationRow) : null;
+  try {
+    const row = (await db.getRow({
+      databaseId: DATABASE_ID,
+      tableId: TABLES.automations,
+      rowId: id,
+    })) as unknown as AutomationRow;
+
+    const [automation] = await hydrate(db, [row]);
+    return automation ?? null;
+  } catch (error) {
+    // A missing row is a 404, not a failure worth propagating.
+    if (isNotFound(error)) return null;
+    throw new Error(`Could not load automation: ${messageFor(error)}`);
+  }
 }
 
 /** URL hashes this automation has already written about. */
 export async function loadSeenHashes(automationId: string): Promise<Set<string>> {
-  const db = workerClient();
-  const { data, error } = await db
-    .from("seen_sources")
-    .select("url_hash")
-    .eq("automation_id", automationId)
-    .order("seen_at", { ascending: false })
-    .limit(2000);
+  const db = workerTables();
 
-  if (error) throw new Error(`Could not load dedupe history: ${error.message}`);
-  return new Set((data || []).map((row) => (row as { url_hash: string }).url_hash));
+  try {
+    const rows = await listRowsPaged(
+      db,
+      TABLES.seen,
+      [Query.equal("automationId", automationId), Query.orderDesc("seenAt")],
+      2000,
+    );
+    return new Set(rows.map((row) => String(row.urlHash)));
+  } catch (error) {
+    throw new Error(`Could not load dedupe history: ${messageFor(error)}`);
+  }
 }
 
 export async function openRun(
   automation: Automation,
   trigger: "schedule" | "manual",
 ): Promise<string> {
-  const db = workerClient();
-  const { data, error } = await db
-    .from("automation_runs")
-    .insert({ automation_id: automation.id, user_id: automation.userId, trigger })
-    .select("id")
-    .single();
+  const db = workerTables();
 
-  if (error) throw new Error(`Could not start a run: ${error.message}`);
-  return (data as { id: string }).id;
+  try {
+    const row = (await db.createRow({
+      databaseId: DATABASE_ID,
+      tableId: TABLES.runs,
+      rowId: ID.unique(),
+      data: {
+        automationId: automation.id,
+        userId: automation.userId,
+        trigger,
+        status: "running",
+        tokensUsed: 0,
+        startedAt: new Date().toISOString(),
+      },
+      permissions: ownerPermissions(automation.userId),
+    })) as unknown as GenericRow;
+
+    return row.$id;
+  } catch (error) {
+    throw new Error(`Could not start a run: ${messageFor(error)}`);
+  }
 }
 
 /**
@@ -250,66 +305,83 @@ export async function closeRun(
   runId: string,
   outcome: PipelineOutcome,
 ): Promise<void> {
-  const db = workerClient();
+  const db = workerTables();
+  const permissions = ownerPermissions(automation.userId);
 
   if (outcome.posts.length > 0) {
     const rows = outcome.posts.map((entry) => ({
-      automation_id: automation.id,
-      run_id: runId,
-      user_id: automation.userId,
+      $id: ID.unique(),
+      $permissions: permissions,
+      automationId: automation.id,
+      runId,
+      userId: automation.userId,
       title: entry.post.title,
       slug: entry.post.slug,
-      body_html: entry.post.bodyHtml,
-      body_markdown: entry.post.bodyMarkdown,
+      bodyHtml: entry.post.bodyHtml,
+      bodyMarkdown: entry.post.bodyMarkdown,
       excerpt: entry.post.excerpt,
-      meta_description: entry.post.metaDescription,
+      metaDescription: entry.post.metaDescription,
       keywords: entry.post.keywords,
-      source_url: entry.post.sourceUrl ?? null,
-      source_title: entry.post.sourceTitle ?? null,
+      sourceUrl: entry.post.sourceUrl ?? null,
+      sourceTitle: entry.post.sourceTitle ?? null,
       state: entry.state,
-      remote_id: entry.remoteId ?? null,
-      remote_url: entry.remoteUrl ?? null,
-      quality: entry.quality as unknown as Record<string, unknown>,
+      remoteId: entry.remoteId ?? null,
+      remoteUrl: entry.remoteUrl ?? null,
+      quality: encodeJson(entry.quality),
     }));
 
-    const { error } = await db.from("generated_posts").insert(rows);
-    if (error) throw new Error(`Could not save generated posts: ${error.message}`);
+    try {
+      // One call for the batch: TablesDB writes rows in bulk, and a run that
+      // drafted five posts should not cost five round trips.
+      await db.createRows({ databaseId: DATABASE_ID, tableId: TABLES.posts, rows });
+    } catch (error) {
+      throw new Error(`Could not save generated posts: ${messageFor(error)}`);
+    }
 
     // Mark sources as handled only once the post is safely stored, so a crash
     // mid-run leaves the item to be retried rather than silently skipped.
     const seen = outcome.posts
       .filter((entry) => entry.state !== "failed")
       .map((entry) => ({
-        automation_id: automation.id,
-        url_hash: entry.sourceHash,
+        // Deterministic id instead of the old (automation_id, url_hash)
+        // primary key, so re-seeing a source overwrites rather than duplicates.
+        $id: rowKey(automation.id, entry.sourceHash),
+        $permissions: permissions,
+        automationId: automation.id,
+        urlHash: entry.sourceHash,
         url: entry.post.sourceUrl || `topic:${entry.post.title}`,
+        seenAt: new Date().toISOString(),
       }));
 
     if (seen.length > 0) {
-      await db.from("seen_sources").upsert(seen, { onConflict: "automation_id,url_hash" });
+      await db.upsertRows({ databaseId: DATABASE_ID, tableId: TABLES.seen, rows: seen });
     }
   }
 
-  await db
-    .from("automation_runs")
-    .update({
+  await db.updateRow({
+    databaseId: DATABASE_ID,
+    tableId: TABLES.runs,
+    rowId: runId,
+    data: {
       status: outcome.status,
       detail: outcome.detail,
-      tokens_used: outcome.tokens,
-      finished_at: new Date().toISOString(),
-    })
-    .eq("id", runId);
+      tokensUsed: outcome.tokens,
+      finishedAt: new Date().toISOString(),
+    },
+  });
 
   const now = new Date();
   const next = nextRunFor({ ...automation, lastRunAt: now.toISOString() }, now);
-  await db
-    .from("automations")
-    .update({
-      last_run_at: now.toISOString(),
-      next_run_at: next?.toISOString() ?? null,
+  await db.updateRow({
+    databaseId: DATABASE_ID,
+    tableId: TABLES.automations,
+    rowId: automation.id,
+    data: {
+      lastRunAt: now.toISOString(),
+      nextRunAt: next?.toISOString() ?? null,
       ...(next ? {} : { enabled: false }),
-    })
-    .eq("id", automation.id);
+    },
+  });
 }
 
 /** Records a run that failed before the pipeline produced anything. */
@@ -318,23 +390,41 @@ export async function failRun(
   runId: string,
   message: string,
 ): Promise<void> {
-  const db = workerClient();
+  const db = workerTables();
   const now = new Date();
 
-  await db
-    .from("automation_runs")
-    .update({ status: "error", detail: message, finished_at: now.toISOString() })
-    .eq("id", runId);
+  await db.updateRow({
+    databaseId: DATABASE_ID,
+    tableId: TABLES.runs,
+    rowId: runId,
+    data: { status: "error", detail: message, finishedAt: now.toISOString() },
+  });
 
   // Still advance the schedule, otherwise a permanently broken automation is
   // retried on every tick forever.
-  await db
-    .from("automations")
-    .update({
-      last_run_at: now.toISOString(),
-      next_run_at: nextRunAt(automation.scheduleCron, automation.timezone, now)?.toISOString() ?? null,
-    })
-    .eq("id", automation.id);
+  await db.updateRow({
+    databaseId: DATABASE_ID,
+    tableId: TABLES.automations,
+    rowId: automation.id,
+    data: {
+      lastRunAt: now.toISOString(),
+      nextRunAt:
+        nextRunAt(automation.scheduleCron, automation.timezone, now)?.toISOString() ?? null,
+    },
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/* Errors                                                              */
+/* ------------------------------------------------------------------ */
+
+/** AppwriteException carries the HTTP status; anything else is unexpected. */
+function isNotFound(error: unknown): boolean {
+  return typeof error === "object" && error !== null && (error as { code?: number }).code === 404;
+}
+
+function messageFor(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 export type StoredPost = GeneratedPost & {

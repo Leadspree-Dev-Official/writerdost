@@ -21,7 +21,7 @@ const DEFAULT_SCOPES: ApiScope[] = ["projects:read", "publish"];
 
 /**
  * Settings → API. Two directions on one page:
- * outbound publishing to InstaGuru Marketplace, and inbound tokens that let
+ * outbound publishing to BundleKart Marketplace, and inbound tokens that let
  * another tool or a contractor drive this workspace over HTTP.
  */
 export function ApiTab() {
@@ -262,6 +262,7 @@ export function ApiTab() {
                     type="number"
                     min="0"
                     step="0.5"
+                    placeholder="9.99"
                     value={platform.defaultPrice}
                     onChange={(event) => updatePlatformApi({ defaultPrice: Number(event.target.value) })}
                   />

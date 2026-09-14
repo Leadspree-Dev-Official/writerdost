@@ -25,13 +25,14 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     if (!isHydrated) return;
 
     const isAuthPage = pathname === "/login" || pathname === "/signup";
+    const isPublicPage = pathname === "/" || isAuthPage;
     
-    if (!currentUser && !isAuthPage) {
+    if (!currentUser && !isPublicPage) {
       router.push("/login");
     } else if (currentUser && isAuthPage) {
-      router.push("/");
+      router.push("/dashboard");
     } else if (currentUser && pathname.startsWith("/admin") && currentUser.role !== "admin") {
-      router.push("/");
+      router.push("/dashboard");
     }
   }, [currentUser, pathname, isHydrated, router]);
 
@@ -55,7 +56,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   // If not logged in and on a protected route, or logged in as standard user on admin route,
   // hide children during transition to avoid content flashing
   const isAuthPage = pathname === "/login" || pathname === "/signup";
-  if (!currentUser && !isAuthPage) return null;
+  const isPublicPage = pathname === "/" || isAuthPage;
+  if (!currentUser && !isPublicPage) return null;
   if (currentUser && isAuthPage) return null;
   if (currentUser && pathname.startsWith("/admin") && currentUser.role !== "admin") return null;
 
@@ -69,9 +71,6 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     }
     if (pathname.startsWith("/blog-generator") && !currentUser.allowedFeatures?.blogGenerator) {
       return <AccessLocked featureName="Blog Generator" featureKey="blogGenerator" />;
-    }
-    if (pathname.startsWith("/settings") && !currentUser.allowedFeatures?.advancedModels) {
-      return <AccessLocked featureName="Advanced AI Settings" featureKey="advancedModels" />;
     }
   }
 

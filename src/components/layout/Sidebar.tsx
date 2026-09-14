@@ -11,12 +11,12 @@ type FeatureKey = "createEbook" | "rewriteEbook" | "blogGenerator" | "advancedMo
 /** Grouped so the nav reads as three short lists rather than one long one. */
 const NAV_GROUPS: Array<{
   label: string;
-  items: Array<{ name: string; href: string; icon: string; feature?: FeatureKey }>;
+  items: Array<{ name: string; href: string; icon: string; feature?: FeatureKey; beta?: boolean }>;
 }> = [
   {
     label: "Workspace",
     items: [
-      { name: "Dashboard", href: "/", icon: "dashboard" },
+      { name: "Dashboard", href: "/dashboard", icon: "dashboard" },
       { name: "Projects", href: "/projects", icon: "menu_book" },
     ],
   },
@@ -26,13 +26,13 @@ const NAV_GROUPS: Array<{
       { name: "New ebook", href: "/create", icon: "auto_awesome", feature: "createEbook" },
       { name: "Rewrite", href: "/rewrite", icon: "book_5", feature: "rewriteEbook" },
       { name: "Blog draft", href: "/blog-generator", icon: "edit_note", feature: "blogGenerator" },
-      { name: "Automation", href: "/automations", icon: "schedule_send", feature: "blogGenerator" },
+      { name: "BlogGen", href: "/automations", icon: "schedule_send", feature: "blogGenerator", beta: true },
     ],
   },
   {
     label: "Account",
     items: [
-      { name: "Settings", href: "/settings", icon: "settings", feature: "advancedModels" },
+      { name: "Settings", href: "/settings", icon: "settings" },
       { name: "Profile", href: "/profile", icon: "account_circle" },
     ],
   },
@@ -106,7 +106,7 @@ export default function Sidebar() {
           collapsed ? "justify-center px-0" : "justify-between pl-3 pr-2",
         )}
       >
-        <Link href="/" className="flex items-center gap-2 min-w-0">
+        <Link href="/dashboard" className="flex items-center gap-2 min-w-0">
           <span className="w-[22px] h-[22px] rounded-[5px] bg-primary flex items-center justify-center shrink-0">
             <span
               className="material-symbols-outlined text-white text-[14px]"
@@ -143,7 +143,7 @@ export default function Sidebar() {
             )}
             <div className="space-y-px">
               {group.items.map((item) => {
-                const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+                const active = item.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(item.href);
                 const locked = isLocked(item.feature);
 
                 return (
@@ -162,6 +162,11 @@ export default function Sidebar() {
                   >
                     <span className="material-symbols-outlined text-[17px] shrink-0">{item.icon}</span>
                     {!collapsed && <span className="truncate">{item.name}</span>}
+                    {item.beta && !collapsed && (
+                      <span className="shrink-0 rounded-full bg-primary/10 px-1.5 py-px text-[9.5px] font-semibold uppercase tracking-[0.04em] text-primary dark:bg-primary/20 dark:text-indigo-300">
+                        Beta
+                      </span>
+                    )}
                     {locked && (
                       <span
                         className={clsx(

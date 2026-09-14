@@ -1,0 +1,8 @@
+{
+  "name": "writerdost-automation-tick",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Scheduled heartbeat that asks Writerdost AI to run due automations.",
+  "type": "module",
+  "main": "src/main.js"
+}

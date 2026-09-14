@@ -2,7 +2,7 @@
  * Dry run for one automation configuration.
  *
  * Takes the whole config in the request body rather than an id, so it works
- * before Supabase is wired up and lets someone see exactly what an automation
+ * before Appwrite is wired up and lets someone see exactly what an automation
  * would produce without scheduling it or storing anything.
  *
  * Nothing is persisted here. Publishing only happens when `publishNow` is

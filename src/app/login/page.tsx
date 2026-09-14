@@ -29,7 +29,7 @@ export default function LoginPage() {
       const res = login(email, password);
       setLoading(false);
       if (res.success) {
-        router.push("/");
+        router.push("/dashboard");
       } else {
         setError(res.error || "Authentication failed.");
       }
@@ -46,7 +46,7 @@ export default function LoginPage() {
       const res = login(presetEmail, presetPass);
       setLoading(false);
       if (res.success) {
-        router.push("/");
+        router.push("/dashboard");
       } else {
         setError(res.error || "Authentication failed.");
       }

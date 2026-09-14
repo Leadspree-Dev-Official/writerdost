@@ -47,7 +47,7 @@ function buildHeaders(api: ApiSettings, isClaude: boolean): Record<string, strin
 
   if (api.provider === "openrouter") {
     if (api.siteUrl) headers["HTTP-Referer"] = api.siteUrl;
-    if (api.appName) headers["X-Title"] = api.appName;
+    headers["X-Title"] = api.appName || "Writerdost AI";
   }
 
   return headers;

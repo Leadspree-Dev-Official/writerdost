@@ -4,7 +4,13 @@
     {
       "name": "writerdost-dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--", "-p", "3500"],
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "-p",
+        "3500"
+      ],
       "port": 3500
     }
   ]

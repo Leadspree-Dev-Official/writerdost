@@ -1,5 +1,5 @@
 /**
- * InstaGuru Marketplace integration.
+ * BundleKart Marketplace integration.
  *
  * The marketplace itself is still being built, so every call here goes to this
  * app's own mock routes under /api/marketplace instead of a live host. The
@@ -18,11 +18,11 @@ import type { Project } from "@/lib/app-store";
 import { calculateProjectWords } from "@/lib/app-utils";
 
 export const MARKETPLACE = {
-  name: "InstaGuru Marketplace",
-  shortName: "InstaGuru",
+  name: "BundleKart Marketplace",
+  shortName: "BundleKart",
   /** Where the live API will live. Editable in Settings → API. */
-  defaultBaseUrl: "https://api.instaguru.market/v1",
-  storeUrl: "https://instaguru.market",
+  defaultBaseUrl: "https://api.bundlekart.market/v1",
+  storeUrl: "https://bundlekart.market",
   /** Everything is mocked until the service is live. */
   isMock: true,
 } as const;

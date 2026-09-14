@@ -39,7 +39,7 @@ export default function SignupPage() {
       const res = signup(fullName, email, password);
       setLoading(false);
       if (res.success) {
-        router.push("/");
+        router.push("/dashboard");
       } else {
         setError(res.error || "Failed to create account.");
       }
@@ -97,7 +97,7 @@ export default function SignupPage() {
               </label>
               <input
                 type="text"
-                placeholder="Julian Thorne"
+                placeholder="Aniruddha Das"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 className="w-full bg-[#0c0c14]/80 border border-slate-800 rounded-[var(--radius)] py-3 px-4 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-slate-200 text-sm font-semibold outline-none transition-all"

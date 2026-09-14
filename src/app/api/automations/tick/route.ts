@@ -1,12 +1,12 @@
 /**
  * The scheduler entry point.
  *
- * pg_cron pokes this every five minutes; this route decides which automations
- * are actually due and runs them. Keeping the decision here means one cron
- * entry to operate instead of one per automation.
+ * The `automation-tick` Appwrite Function pokes this every five minutes; this
+ * route decides which automations are actually due and runs them. Keeping the
+ * decision here means one cron entry to operate instead of one per automation.
  *
  * Authentication is a shared secret, NOT a user session — the caller is a
- * database job, not a browser.
+ * scheduled function, not a browser.
  */
 import { NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
@@ -85,7 +85,7 @@ export async function POST(request: Request) {
   if (denied) return denied;
 
   if (!automationBackendReady()) {
-    return NextResponse.json({ error: "Supabase is not configured." }, { status: 503 });
+    return NextResponse.json({ error: "Appwrite is not configured." }, { status: 503 });
   }
 
   try {

@@ -1,8 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAppStore, ProjectDesignSettings } from "@/lib/app-store";
-import { FONTS_BY_CATEGORY, findFont, DEFAULT_BODY_FONT, DEFAULT_HEADING_FONT } from "@/lib/fonts";
+import {
+  getDynamicFontsByCategory,
+  findFont,
+  DEFAULT_BODY_FONT,
+  DEFAULT_HEADING_FONT,
+  loadGoogleFont,
+} from "@/lib/fonts";
 
 interface DesignSettingsProps {
   projectId: string;
@@ -62,7 +68,16 @@ export const DesignSettings: React.FC<DesignSettingsProps> = ({ projectId }) => 
 
   const settings: ProjectDesignSettings = { ...DEFAULTS, ...project.designSettings };
 
+  useEffect(() => {
+    const bodyFont = findFont(settings.bodyFont, DEFAULT_BODY_FONT);
+    const headingFont = findFont(settings.headingFont, DEFAULT_HEADING_FONT);
+    if (bodyFont?.isGoogleFont) loadGoogleFont(bodyFont.family);
+    if (headingFont?.isGoogleFont) loadGoogleFont(headingFont.family);
+  }, [settings.bodyFont, settings.headingFont]);
+
   const handleChange = (key: keyof ProjectDesignSettings, value: string) => {
+    const font = findFont(value, DEFAULT_BODY_FONT);
+    if (font?.isGoogleFont) loadGoogleFont(font.family);
     updateProjectDesign(projectId, { ...settings, [key]: value });
   };
 
@@ -104,7 +119,7 @@ export const DesignSettings: React.FC<DesignSettingsProps> = ({ projectId }) => 
                       className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-[var(--radius)] px-2 py-1.5 text-[11px] font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20"
                       style={{ fontFamily: selected.stack }}
                     >
-                      {FONTS_BY_CATEGORY.map(({ category, fonts }) => (
+                      {getDynamicFontsByCategory().map(({ category, fonts }) => (
                         <optgroup key={category} label={category}>
                           {fonts.map((font) => (
                             <option key={font.id} value={font.id} style={{ fontFamily: font.stack }}>

@@ -19,7 +19,7 @@ import type { ListingFormat, ListingVisibility, MarketplaceLicense } from "@/lib
 const CURRENCIES = ["USD", "INR", "EUR", "GBP"];
 
 /**
- * Publishes one project to InstaGuru Marketplace.
+ * Publishes one project to BundleKart Marketplace.
  *
  * Opened from the editor and from the projects list, so the listing fields and
  * the pre-flight checks live here rather than in either page.
@@ -193,8 +193,8 @@ export function PublishDialog({
             <label htmlFor="pub-summary" className="label">Listing summary</label>
             <textarea
               id="pub-summary"
-              className="textarea"
-              rows={3}
+              className="textarea min-h-[6.5rem] leading-relaxed"
+              rows={4}
               value={summary}
               onChange={(event) => setSummary(event.target.value)}
               placeholder="What a buyer gets, in two or three sentences."
@@ -211,6 +211,7 @@ export function PublishDialog({
                   type="number"
                   min="0"
                   step="0.5"
+                  placeholder="0.00"
                   value={price}
                   onChange={(event) => setPrice(Number(event.target.value))}
                 />

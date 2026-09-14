@@ -402,6 +402,7 @@ export function AiSettingsTab() {
                     <input
                       id="ap-site"
                       className="input"
+                      placeholder="https://writerdost.ai"
                       value={api.siteUrl || ""}
                       onChange={(event) => updateApiSettings({ siteUrl: event.target.value })}
                     />

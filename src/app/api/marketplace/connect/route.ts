@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
       seller: {
         sellerId,
         displayName: `${sellerId} store`,
-        storeUrl: `https://instaguru.market/s/${encodeURIComponent(sellerId)}`,
+        storeUrl: `https://bundlekart.market/s/${encodeURIComponent(sellerId)}`,
         plan: "Seller (mock)",
       },
       mock: true,

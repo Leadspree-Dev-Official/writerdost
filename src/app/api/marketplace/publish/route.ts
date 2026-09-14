@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       listingId,
-      listingUrl: `https://instaguru.market/l/${listingId}`,
+      listingUrl: `https://bundlekart.market/l/${listingId}`,
       revision,
       publishedAt: new Date().toISOString(),
       visibility,

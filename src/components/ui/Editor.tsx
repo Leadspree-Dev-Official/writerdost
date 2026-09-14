@@ -9,7 +9,15 @@ import TiptapImage from "@tiptap/extension-image";
 import TextAlign from "@tiptap/extension-text-align";
 import { Extension } from '@tiptap/core';
 import { TextStyle, FontSize, FontFamily } from '@tiptap/extension-text-style';
-import { FONTS_BY_CATEGORY, FONT_OPTIONS } from "@/lib/fonts";
+import {
+  FONTS_BY_CATEGORY,
+  FONT_OPTIONS,
+  findFont,
+  loadGoogleFont,
+  DEFAULT_BODY_FONT,
+  getDynamicFontsByCategory,
+} from "@/lib/fonts";
+import FontLibraryModal from "@/components/ui/FontLibraryModal";
 import { Plugin, PluginKey } from "prosemirror-state";
 import { Decoration, DecorationSet } from "prosemirror-view";
 import clsx from "clsx";
@@ -68,6 +76,7 @@ export default function Editor({
   const [targetWords, setTargetWords] = useState(500);
   const [aiInstruction, setAiInstruction] = useState("");
   const [savedSelection, setSavedSelection] = useState<{from: number, to: number, text: string} | null>(null);
+  const [showFontLibraryModal, setShowFontLibraryModal] = useState(false);
   const aiInputRef = useRef<HTMLInputElement | null>(null);
 
   const editor = useEditor({
@@ -120,7 +129,7 @@ export default function Editor({
         return false;
       },
       attributes: {
-        class: "prose prose-indigo dark:prose-invert max-w-none text-slate-700 dark:text-slate-300 focus:outline-none min-h-[500px] prose-headings:text-slate-900 dark:prose-headings:text-white prose-headings:font-black prose-p:mb-4 prose-headings:mt-6 prose-headings:mb-3 px-4",
+        class: "prose prose-indigo dark:prose-invert max-w-none text-on-surface prose-headings:text-on-surface prose-strong:text-on-surface focus:outline-none focus-visible:outline-none min-h-[260px] prose-headings:font-black prose-p:mb-3 prose-headings:mt-5 prose-headings:mb-2",
       },
     },
     content,
@@ -137,17 +146,26 @@ export default function Editor({
   const activeFontId = (() => {
     const stack = editor?.getAttributes("textStyle").fontFamily;
     if (!stack) return "default";
-    return FONT_OPTIONS.find((font) => font.stack === stack)?.id ?? "default";
+    return findFont(stack, "default").id;
   })();
 
   const applyFont = (id: string) => {
     if (!editor) return;
+    if (id === "__open_library__") {
+      setShowFontLibraryModal(true);
+      return;
+    }
     if (id === "default") {
       editor.chain().focus().unsetFontFamily().run();
       return;
     }
-    const font = FONT_OPTIONS.find((f) => f.id === id);
-    if (font) editor.chain().focus().setFontFamily(font.stack).run();
+    const font = findFont(id, DEFAULT_BODY_FONT);
+    if (font) {
+      if (font.isGoogleFont) {
+        loadGoogleFont(font.family);
+      }
+      editor.chain().focus().setFontFamily(font.stack).run();
+    }
   };
 
   useEffect(() => {
@@ -323,6 +341,7 @@ export default function Editor({
                 const val = parseInt(e.target.value);
                 setTargetWords(Math.min(1000, isNaN(val) ? 0 : val));
               }}
+              placeholder="300"
               className={clsx(
                 "w-16 bg-surface-container-low border-none rounded px-2 py-1 text-xs font-bold text-center outline-none",
                 targetWords >= 1000 ? "text-rose-500" : "text-primary"
@@ -408,72 +427,72 @@ export default function Editor({
         type="file"
         onChange={handleImageFileChange}
       />
-      <div className="sticky top-2 mb-6 z-30 flex justify-center no-print">
-        <div className="bg-white/80 dark:bg-[#141420]/90 backdrop-blur-xl editorial-shadow rounded-2xl px-3 py-2 flex items-center space-x-1 border border-outline-variant/20 dark:border-white/[0.06]">
+      <div className="sticky top-2 mb-3 z-30 flex justify-center no-print">
+        <div className="bg-white/80 dark:bg-[#141420]/90 backdrop-blur-xl editorial-shadow rounded-xl px-2 py-1.5 flex items-center space-x-0.5 border border-outline-variant/20 dark:border-white/[0.06]">
           <button
             onClick={() => editor?.chain().focus().toggleBold().run()}
             className={clsx(
-              "p-2 rounded-lg transition-all",
+              "p-1.5 rounded-lg transition-all",
               editor?.isActive("bold") ? "bg-surface-container dark:bg-slate-800 text-primary dark:text-indigo-400" : "text-slate-600 dark:text-slate-400 hover:bg-surface-container dark:hover:bg-slate-800",
             )}
             type="button"
           >
-            <span className="material-symbols-outlined text-[20px]">format_bold</span>
+            <span className="material-symbols-outlined text-[18px]">format_bold</span>
           </button>
           <button
             onClick={() => editor?.chain().focus().toggleItalic().run()}
             className={clsx(
-              "p-2 rounded-lg transition-all",
+              "p-1.5 rounded-lg transition-all",
               editor?.isActive("italic") ? "bg-surface-container dark:bg-slate-800 text-primary dark:text-indigo-400" : "text-slate-600 dark:text-slate-400 hover:bg-surface-container dark:hover:bg-slate-800",
             )}
             type="button"
           >
-            <span className="material-symbols-outlined text-[20px]">format_italic</span>
+            <span className="material-symbols-outlined text-[18px]">format_italic</span>
           </button>
           <button
             onClick={() => editor?.chain().focus().toggleStrike().run()}
             className={clsx(
-              "p-2 rounded-lg transition-all",
+              "p-1.5 rounded-lg transition-all",
               editor?.isActive("strike") ? "bg-surface-container dark:bg-slate-800 text-primary dark:text-indigo-400" : "text-slate-600 dark:text-slate-400 hover:bg-surface-container dark:hover:bg-slate-800",
             )}
             type="button"
             title="Strikethrough"
           >
-            <span className="material-symbols-outlined text-[20px]">format_strikethrough</span>
+            <span className="material-symbols-outlined text-[18px]">format_strikethrough</span>
           </button>
-          <div className="w-px h-4 bg-slate-200 dark:bg-white/10 mx-2"></div>
+          <div className="w-px h-4 bg-slate-200 dark:bg-white/10 mx-1"></div>
           <button
             onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
             className={clsx(
-              "p-2 rounded-lg transition-all",
+              "p-1.5 rounded-lg transition-all",
               editor?.isActive("heading", { level: 2 }) ? "bg-surface-container text-primary" : "text-slate-600 hover:bg-surface-container",
             )}
             type="button"
           >
-            <span className="material-symbols-outlined text-[20px]">format_h1</span>
+            <span className="material-symbols-outlined text-[18px]">format_h1</span>
           </button>
           <button
             onClick={() => editor?.chain().focus().toggleBulletList().run()}
             className={clsx(
-              "p-2 rounded-lg transition-all",
+              "p-1.5 rounded-lg transition-all",
               editor?.isActive("bulletList") ? "bg-surface-container text-primary" : "text-slate-600 hover:bg-surface-container",
             )}
             type="button"
           >
-            <span className="material-symbols-outlined text-[20px]">format_list_bulleted</span>
+            <span className="material-symbols-outlined text-[18px]">format_list_bulleted</span>
           </button>
-          <div className="w-px h-4 bg-slate-200 dark:bg-white/10 mx-2"></div>
+          <div className="w-px h-4 bg-slate-200 dark:bg-white/10 mx-1"></div>
           <button
-            className="p-2 hover:bg-surface-container dark:hover:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-400 transition-all"
+            className="p-1.5 hover:bg-surface-container dark:hover:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-400 transition-all"
             onClick={handleInsertImage}
             type="button"
             title="Insert image"
           >
-            <span className="material-symbols-outlined text-[20px]">image</span>
+            <span className="material-symbols-outlined text-[18px]">image</span>
           </button>
           <button
             className={clsx(
-              "p-2 rounded-lg transition-all border-2",
+              "p-1.5 rounded-lg transition-all border-2",
               showAiCommand && aiMenuAnchor === "top"
                 ? "bg-primary text-white border-primary shadow-lg shadow-primary/20 scale-105" 
                 : "bg-primary/10 text-primary border-transparent hover:bg-primary/20"
@@ -483,27 +502,38 @@ export default function Editor({
             disabled={aiAssistLoading}
             title={aiAssistLoading ? "AI is working" : "AI assist"}
           >
-            <span className="material-symbols-outlined text-[20px]">auto_awesome</span>
+            <span className="material-symbols-outlined text-[18px]">auto_awesome</span>
           </button>
-          <div className="w-px h-4 bg-slate-200 dark:bg-white/10 mx-2"></div>
-          <select
-            aria-label="Font"
-            title="Font for the selected text"
-            className="select w-auto max-w-[9rem] !h-7 !text-[12px]"
-            onChange={(e) => applyFont(e.target.value)}
-            value={activeFontId}
-          >
-            <option value="default">Font</option>
-            {FONTS_BY_CATEGORY.map((group) => (
-              <optgroup key={group.category} label={group.category}>
-                {group.fonts.map((font) => (
-                  <option key={font.id} value={font.id} title={font.note}>
-                    {font.label}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
+          <div className="w-px h-4 bg-slate-200 dark:bg-white/10 mx-1"></div>
+          <div className="flex items-center gap-1">
+            <select
+              aria-label="Font"
+              title="Font for the selected text"
+              className="select w-auto max-w-[9.5rem] !h-7 !text-[12px]"
+              onChange={(e) => applyFont(e.target.value)}
+              value={activeFontId}
+            >
+              <option value="default">Font (Default)</option>
+              <option value="__open_library__">📚 Font Library (100+)...</option>
+              {getDynamicFontsByCategory().map((group) => (
+                <optgroup key={group.category} label={group.category}>
+                  {group.fonts.map((font) => (
+                    <option key={font.id} value={font.id} title={font.note}>
+                      {font.label}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+            <button
+              className="btn btn-ghost btn-sm !h-7 !px-1.5 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-primary"
+              onClick={() => setShowFontLibraryModal(true)}
+              title="Browse 100+ Font Library & Add Google Fonts"
+              type="button"
+            >
+              <span className="material-symbols-outlined text-[16px] text-primary">font_download</span>
+            </button>
+          </div>
           <select
             aria-label="Font size"
             className="bg-surface-container-low border border-outline-variant/10 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none hover:border-primary/30 transition-colors ml-1.5"
@@ -595,7 +625,8 @@ export default function Editor({
               value={activeFontId}
             >
               <option value="default" className="bg-slate-900 text-white">Font</option>
-              {FONTS_BY_CATEGORY.map((group) => (
+              <option value="__open_library__" className="bg-slate-900 text-primary font-bold">📚 Library (100+)...</option>
+              {getDynamicFontsByCategory().map((group) => (
                 <optgroup key={group.category} label={group.category} className="bg-slate-900 text-white">
                   {group.fonts.map((font) => (
                     <option key={font.id} value={font.id} className="bg-slate-900 text-white">
@@ -703,9 +734,19 @@ export default function Editor({
         </div>
       ) : null}
 
-      <div className="bg-surface-container-lowest rounded-[2rem] p-8 md:p-14 editorial-shadow border border-outline-variant/10 relative print:p-0 print:border-none print:shadow-none print:bg-transparent">
+      <div className="bg-surface-container-lowest rounded-2xl p-4 md:p-6 editorial-shadow border border-outline-variant/10 relative transition-colors focus-within:border-primary/35 [&_.ProseMirror]:outline-none [&_.tiptap]:outline-none print:p-0 print:border-none print:shadow-none print:bg-transparent">
         <EditorContent editor={editor} />
       </div>
+
+      <FontLibraryModal
+        isOpen={showFontLibraryModal}
+        onClose={() => setShowFontLibraryModal(false)}
+        activeFontId={activeFontId}
+        onSelectFont={(font) => {
+          applyFont(font.id);
+          setShowFontLibraryModal(false);
+        }}
+      />
     </div>
   );
 }

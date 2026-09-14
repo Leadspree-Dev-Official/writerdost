@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { generateAiText } from "@/lib/ai-client";
 import { useAppStore, type RewriteFlow } from "@/lib/app-store";
@@ -59,6 +59,29 @@ export default function RewritePage() {
     }
   };
 
+  // Ensure no legacy seeded/placeholder chapters exist at the beginning
+  useEffect(() => {
+    if (outlineGenerator.chapters?.length > 0) {
+      const hasSeeded = outlineGenerator.chapters.some(
+        (ch) =>
+          ch.title === "Next Chapter Title" ||
+          ch.topics === "Explain key concepts for this section..." ||
+          ch.title === "Chapter 1: The Foundation" ||
+          ch.title === "Chapter 2: Strategy",
+      );
+      if (hasSeeded) {
+        const cleaned = outlineGenerator.chapters.filter(
+          (ch) =>
+            ch.title !== "Next Chapter Title" &&
+            ch.topics !== "Explain key concepts for this section..." &&
+            ch.title !== "Chapter 1: The Foundation" &&
+            ch.title !== "Chapter 2: Strategy",
+        );
+        updateOutlineGenerator({ chapters: cleaned });
+      }
+    }
+  }, [outlineGenerator.chapters, updateOutlineGenerator]);
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -111,8 +134,8 @@ export default function RewritePage() {
     const startTime = Date.now();
 
     startGeneration({ 
-      title: "Deep Swarm Rewrite Pipeline", 
-      subtitle: "Deconstructing and rebuilding your manuscript with swarm logic." 
+      title: "Rewriting your manuscript",
+      subtitle: "Taking the source apart and rebuilding it in your voice."
     });
     setGenerationProgress(5);
     setActiveAgent("System");
@@ -239,8 +262,8 @@ export default function RewritePage() {
     const startTime = Date.now();
 
     startGeneration({ 
-      title: "Blueprint Intelligence Pipeline", 
-      subtitle: "Architecting your creative vision from the blueprint up." 
+      title: "Building from your outline",
+      subtitle: "Turning the chapter blueprint into a full draft."
     });
     setGenerationProgress(5);
     setActiveAgent("System");
@@ -344,8 +367,8 @@ export default function RewritePage() {
     const startTime = Date.now();
 
     startGeneration({ 
-      title: "Universal Contextual Translator", 
-      subtitle: `Translating project into ${rewrite.targetLanguage}...` 
+      title: "Translating your project",
+      subtitle: `Rewriting every chapter in ${rewrite.targetLanguage}.`
     });
     setGenerationProgress(5);
     setActiveAgent("System");
@@ -440,9 +463,9 @@ export default function RewritePage() {
           </div>
           <div className="segmented" role="tablist" aria-label="Rewrite mode">
             {[
+              { id: "Outline", label: "From outline", icon: "auto_awesome_motion" },
               { id: "Simple", label: "Quick fix", icon: "bolt" },
               { id: "Deep", label: "Deep swarm", icon: "account_tree" },
-              { id: "Outline", label: "From outline", icon: "auto_awesome_motion" },
               { id: "Translate", label: "Translate", icon: "translate" },
             ].map((flow) => (
               <button
@@ -645,7 +668,7 @@ export default function RewritePage() {
                   </span>
                   <div className="flex items-center gap-2">
                     <span className="row-meta">
-                      {rewrite.manuscript.split(/\s+/).filter(Boolean).length.toLocaleString()} words
+                      {(rewrite.manuscript || "").split(/\s+/).filter(Boolean).length.toLocaleString()} words
                     </span>
                     <input
                       type="file"
@@ -673,7 +696,7 @@ export default function RewritePage() {
                 {/* The work surface fills the column instead of floating in it */}
                 <textarea
                   aria-label={rewrite.flow === "Deep" ? "Manuscript" : "Source text"}
-                  className="w-full flex-1 min-h-[18rem] lg:min-h-[calc(100vh-14rem)] resize-none bg-transparent border-0 outline-none p-4 text-[13px] leading-[1.65] text-on-surface placeholder:text-on-surface-variant"
+                  className="w-full flex-1 min-h-[18rem] lg:min-h-[calc(100vh-14rem)] resize-none bg-transparent border-0 outline-none p-4 text-[14px] leading-[1.65] text-on-surface placeholder:text-on-surface-variant"
                   value={rewrite.manuscript || ""}
                   onChange={(event) => updateRewrite({ manuscript: event.target.value })}
                   placeholder={
@@ -953,7 +976,7 @@ export default function RewritePage() {
                   Ebook Title
                 </label>
                 <input
-                  className="w-full bg-slate-50 dark:bg-white/[0.05] px-5 py-2 rounded-[var(--radius-lg)] text-sm font-semibold border border-slate-200 dark:border-white/[0.08] outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/30 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 transition-all"
+                  className="w-full min-h-[2.625rem] bg-slate-50 dark:bg-white/[0.05] px-5 py-2.5 rounded-[var(--radius-lg)] text-sm font-semibold border border-slate-200 dark:border-white/[0.08] outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/30 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 transition-all"
                   placeholder="e.g., Marketing Psychology Decoded"
                   value={importTitle}
                   onChange={(e) => setImportTitle(e.target.value)}
@@ -967,7 +990,7 @@ export default function RewritePage() {
                   Description / Audience
                 </label>
                 <textarea
-                  className="w-full h-32 bg-slate-50 dark:bg-white/[0.05] px-5 py-2 rounded-[var(--radius-lg)] text-sm font-medium border border-slate-200 dark:border-white/[0.08] outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/30 resize-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 transition-all leading-relaxed"
+                  className="w-full h-36 bg-slate-50 dark:bg-white/[0.05] px-5 py-3 rounded-[var(--radius-lg)] text-sm font-medium border border-slate-200 dark:border-white/[0.08] outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/30 resize-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 transition-all leading-relaxed"
                   placeholder="Exploring consumer behavior, persuasion triggers, and marketing psychology for digital marketers and copywriters..."
                   value={importDescription}
                   onChange={(e) => setImportDescription(e.target.value)}
@@ -981,7 +1004,7 @@ export default function RewritePage() {
                   Curriculum / Outline
                 </label>
                 <textarea
-                  className="w-full h-56 bg-slate-50 dark:bg-white/[0.05] px-5 py-2 rounded-[var(--radius-lg)] text-sm font-medium border border-slate-200 dark:border-white/[0.08] outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/30 resize-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 transition-all font-mono leading-relaxed"
+                  className="w-full h-64 bg-slate-50 dark:bg-white/[0.05] px-5 py-3 rounded-[var(--radius-lg)] text-sm font-medium border border-slate-200 dark:border-white/[0.08] outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/30 resize-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 transition-all font-mono leading-relaxed"
                   placeholder={"1. Delving into Minds\n* The psychology of attention\n* Cognitive biases in decision making\n\n2. Persuasion Triggers\n* Social proof and authority\n* Scarcity and urgency"}
                   value={importOutlineText}
                   onChange={(e) => setImportOutlineText(e.target.value)}

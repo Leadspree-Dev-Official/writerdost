@@ -284,7 +284,7 @@ export default function AdminDashboard() {
               <label className="block text-xs font-bold text-slate-500 mb-2">Full Name</label>
               <input
                 type="text"
-                placeholder="Name"
+                placeholder="e.g. Jane Doe"
                 value={newFullName}
                 onChange={(e) => setNewFullName(e.target.value)}
                 className="w-full bg-surface border border-outline-variant/20 rounded-[var(--radius)] py-3 px-4 text-on-surface text-sm font-semibold outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"

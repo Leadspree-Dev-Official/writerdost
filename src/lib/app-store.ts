@@ -2,13 +2,14 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { cronForFrequency } from "./automation/schedule";
+import { cronForFrequency, todayIso } from "./automation/schedule";
 import { providerDefaults } from "@/lib/ai-providers";
 import { MARKETPLACE, generateApiToken } from "@/lib/marketplace";
 import type {
   ApiScope,
   BlogAutomation,
   AutomationDestination,
+  CampaignPost,
   ApiSettings,
   ApiToken,
   GeneratedProjectPayload,
@@ -139,8 +140,16 @@ type OutlineGeneratorState = {
   chapters: OutlineChapter[];
 };
 
+/** How a blog draft was started. "none" means the writer has not chosen yet,
+ *  which is what puts the picker on screen instead of a half-filled editor. */
+export type BlogSource = "none" | "blank" | "project" | "topic";
+
 type BlogComposer = {
+  source: BlogSource;
+  /** Set for "project" drafts only. */
   projectId: string;
+  /** Set for "topic" drafts only. */
+  topic: string;
   title: string;
   draft: string;
   metaDescription: string;
@@ -221,6 +230,9 @@ type AppStore = {
   applyRewriteToCurrentProject: () => void;
   createProjectFromRewrite: () => Project;
   loadBlogFromProject: (projectId: string) => void;
+  startBlankBlog: () => void;
+  startBlogFromTopic: (topic: string) => void;
+  resetBlogSource: () => void;
   regenerateBlogSuggestions: () => void;
   updateBlog: (payload: Partial<BlogComposer>) => void;
   updateChapterContent: (content: string) => void;
@@ -259,11 +271,16 @@ type AppStore = {
 
   automations: BlogAutomation[];
   automationDestinations: AutomationDestination[];
+  campaignPosts: CampaignPost[];
   createAutomation: (name: string) => BlogAutomation;
   updateAutomation: (id: string, payload: Partial<BlogAutomation>) => void;
   deleteAutomation: (id: string) => void;
   saveAutomationDestination: (destination: AutomationDestination) => void;
   deleteAutomationDestination: (id: string) => void;
+  saveCampaignPost: (post: Omit<CampaignPost, "id" | "createdAt"> & { id?: string; createdAt?: string }) => CampaignPost;
+  deleteCampaignPost: (id: string) => void;
+  updateCampaignPost: (id: string, patch: Partial<CampaignPost>) => void;
+  loadCampaignPostToEditor: (postId: string) => void;
   addResearchSource: (source: Omit<ResearchSource, "id">) => void;
   removeResearchSource: (id: string) => void;
   toggleDarkMode: () => void;
@@ -417,15 +434,14 @@ const defaultCreateDraft: CreateDraft = {
 };
 
 const defaultRewrite: RewriteState = {
-  flow: "Simple",
-  manuscript:
-    "Paste an existing draft here, or load a recent manuscript to generate a more polished rewrite.",
+  flow: "Outline",
+  manuscript: "",
   title: "",
   audience: "",
   tone: "Professional",
   humanize: true,
   avoidPlagiarism: true,
-  preview: "Your rewritten preview will appear here after generation.",
+  preview: "",
   length: 20000,
   translateProjectId: "",
   targetLanguage: "Spanish",
@@ -440,15 +456,35 @@ const defaultOutlineGenerator: OutlineGeneratorState = {
 };
 
 /** The placeholder chapters older builds seeded, cleared once on migration. */
-const SEEDED_OUTLINE_TITLES = ["Chapter 1: The Foundation", "Chapter 2: Strategy"];
+const SEEDED_OUTLINE_TITLES = [
+  "Chapter 1: The Foundation",
+  "Chapter 2: Strategy",
+  "Next Chapter Title",
+];
+
+/** The exact placeholder outline older builds seeded into saves. Matching on the
+ *  topics as well as the title means a chapter the author actually wrote is
+ *  never mistaken for one of these. */
+const SEEDED_OUTLINE_CHAPTERS: { title: string; topics: string }[] = [
+  { title: "Chapter 1: The Foundation", topics: "Core concepts, problem statement, and goals." },
+  { title: "Chapter 2: Strategy", topics: "Frameworks, execution steps, and case studies." },
+  { title: "Next Chapter Title", topics: "Explain key concepts for this section..." },
+];
+
+const isSeededOutlineChapter = (chapter: OutlineChapter) =>
+  SEEDED_OUTLINE_CHAPTERS.some(
+    (seed) => seed.title === chapter.title && seed.topics === chapter.topics,
+  ) ||
+  chapter.title === "Next Chapter Title" ||
+  chapter.topics === "Explain key concepts for this section...";
 
 const defaultProfile: ProfileState = {
-  fullName: "Aniruddha Das",
+  fullName: "",
   penName: "",
-  tagline: "Bestselling Sci-Fi & Technology Author",
-  email: "aniruddha@example.com",
-  website: "www.julianthorne.com",
-  bio: "Julian Thorne is a visionary author exploring the intersection of human consciousness and artificial intelligence. With over a decade of experience in speculative fiction, Julian's works have been translated into 14 languages.",
+  tagline: "",
+  email: "",
+  website: "",
+  bio: "",
   defaultTone: "Professional",
   defaultLength: 25000,
   language: "English (India)",
@@ -472,7 +508,7 @@ const defaultApiSettings: ApiSettings = {
   apiKey: "",
   baseUrl: providerDefaults.openai.baseUrl,
   model: providerDefaults.openai.model,
-  appName: "Writerdost AI",
+  appName: "",
   siteUrl: "", // Initialize empty, will be set on client to avoid hydration/port mismatch
 };
 
@@ -517,10 +553,10 @@ const defaultUsage: UsageState = {
   timingHistory: [],
 };
 
-const createBlogSuggestions = (projectTitle: string) => [
-  `Why ${projectTitle} Could Become Your Strongest Content Asset`,
-  `How ${projectTitle} Turns Long-Form Ideas Into Reach`,
-  `Lessons From ${projectTitle} For Smarter Editorial Strategy`,
+const createBlogSuggestions = (subject: string) => [
+  `Why ${subject} Could Become Your Strongest Content Asset`,
+  `How ${subject} Turns Long-Form Ideas Into Reach`,
+  `Lessons From ${subject} For Smarter Editorial Strategy`,
 ];
 
 const createProjectId = (title: string) =>
@@ -558,14 +594,16 @@ export const useAppStore = create<AppStore>()(
       createDraft: defaultCreateDraft,
       rewrite: defaultRewrite,
       blog: {
-        projectId: starterProjects[0].id,
-        title: starterProjects[0].blogTitle,
-        draft: starterProjects[0].blogDraft,
-        metaDescription: starterProjects[0].metaDescription,
-        keywords: starterProjects[0].seoKeywords,
-        suggestions: createBlogSuggestions(starterProjects[0].title),
+        source: "none",
+        projectId: "",
+        topic: "",
+        title: "",
+        draft: "",
+        metaDescription: "",
+        keywords: [],
+        suggestions: [],
         targetWords: 1000,
-        lastSavedLabel: "2 minutes ago",
+        lastSavedLabel: "",
       },
       profile: defaultProfile,
       settings: defaultSettings,
@@ -1012,7 +1050,7 @@ export const useAppStore = create<AppStore>()(
       },
       applyRewriteToCurrentProject: () => {
         const { currentProjectId, projects, rewrite } = get();
-        const preview = rewrite.preview.startsWith("Your rewritten preview")
+        const preview = (!rewrite.preview || rewrite.preview.startsWith("Your rewritten preview"))
           ? buildRewrite(rewrite.manuscript, rewrite.tone, rewrite.humanize, rewrite.avoidPlagiarism)
           : rewrite.preview;
 
@@ -1045,7 +1083,9 @@ export const useAppStore = create<AppStore>()(
       createProjectFromRewrite: () => {
         const { rewrite, projects } = get();
         const title = rewrite.title.trim() || `Rewrite - ${new Date().toLocaleDateString()}`;
-        const preview = rewrite.preview;
+        const preview =
+          rewrite.preview ||
+          buildRewrite(rewrite.manuscript, rewrite.tone, rewrite.humanize, rewrite.avoidPlagiarism);
         
         const project: Project = {
           id: createProjectId(title),
@@ -1084,13 +1124,56 @@ export const useAppStore = create<AppStore>()(
 
         return project;
       },
+      startBlankBlog: () =>
+        set({
+          blog: {
+            source: "blank",
+            projectId: "",
+            topic: "",
+            title: "",
+            draft: "",
+            metaDescription: "",
+            keywords: [],
+            suggestions: [],
+            targetWords: 1000,
+            lastSavedLabel: "",
+          },
+        }),
+
+      startBlogFromTopic: (topic) => {
+        const subject = topic.trim();
+        if (!subject) return;
+        set({
+          blog: {
+            source: "topic",
+            projectId: "",
+            topic: subject,
+            title: "",
+            draft: "",
+            metaDescription: "",
+            keywords: [],
+            suggestions: createBlogSuggestions(subject),
+            targetWords: 1000,
+            lastSavedLabel: "",
+          },
+        });
+      },
+
+      /** Back to the picker. The draft is dropped, so the caller confirms first. */
+      resetBlogSource: () =>
+        set((state) => ({
+          blog: { ...state.blog, source: "none", projectId: "", topic: "" },
+        })),
+
       loadBlogFromProject: (projectId) => {
         const project = get().projects.find((entry) => entry.id === projectId);
         if (!project) return;
 
         set({
           blog: {
+            source: "project",
             projectId,
+            topic: "",
             title: project.blogTitle,
             draft: project.blogDraft,
             metaDescription: project.metaDescription,
@@ -1545,12 +1628,14 @@ export const useAppStore = create<AppStore>()(
             progress,
           },
         })),
+      /** Ends the run. `isMinimized` is left as it is on purpose: a run that
+          finished while minimised is what the overlay reads to show its
+          "finished" pill, and dismissing that pill is what clears the flag. */
       finishGeneration: () =>
         set((state) => ({
           generationStatus: {
             ...state.generationStatus,
             isGenerating: false,
-            isMinimized: false,
           },
         })),
       setMinimized: (minimized) =>
@@ -1635,6 +1720,7 @@ export const useAppStore = create<AppStore>()(
 
       automations: [],
       automationDestinations: [],
+      campaignPosts: [],
 
       createAutomation: (name) => {
         const automation: BlogAutomation = {
@@ -1655,6 +1741,8 @@ export const useAppStore = create<AppStore>()(
           // Draft is the safe default: nothing reaches a live site unreviewed.
           publish: "draft",
           frequency: "daily",
+          startDate: todayIso(),
+          startTime: "09:00",
           scheduleCron: "0 9 * * *",
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
           createdAt: new Date().toISOString(),
@@ -1668,15 +1756,29 @@ export const useAppStore = create<AppStore>()(
           automations: state.automations.map((a) => {
             if (a.id !== id) return a;
             const next = { ...a, ...payload };
-            if (payload.frequency && payload.frequency !== "custom") {
-              next.scheduleCron = cronForFrequency(payload.frequency, a.scheduleCron);
+            // Frequency, date and time together define the cron, so any of the
+            // three changing rewrites it. Custom keeps whatever was typed.
+            const touchesSchedule =
+              payload.frequency !== undefined ||
+              payload.startDate !== undefined ||
+              payload.startTime !== undefined;
+            if (touchesSchedule && next.frequency !== "custom") {
+              // A date input clears itself when given an impossible day such as
+              // 31 September. Normalise here so the stored date and the derived
+              // cron can never disagree about which day was meant.
+              if (!next.startDate) next.startDate = todayIso();
+              if (!next.startTime) next.startTime = "09:00";
+              next.scheduleCron = cronForFrequency(next.frequency, next);
             }
             return next;
           }),
         })),
 
       deleteAutomation: (id) =>
-        set((state) => ({ automations: state.automations.filter((a) => a.id !== id) })),
+        set((state) => ({
+          automations: state.automations.filter((a) => a.id !== id),
+          campaignPosts: (state.campaignPosts || []).filter((p) => p.automationId !== id),
+        })),
 
       saveAutomationDestination: (destination) =>
         set((state) => {
@@ -1695,10 +1797,59 @@ export const useAppStore = create<AppStore>()(
             a.destinationId === id ? { ...a, destinationId: null } : a,
           ),
         })),
+
+      saveCampaignPost: (post) => {
+        const newPost: CampaignPost = {
+          ...post,
+          id: post.id || `cpost-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
+          createdAt: post.createdAt || new Date().toISOString(),
+        };
+        set((state) => {
+          const current = state.campaignPosts || [];
+          const exists = current.some((p) => p.id === newPost.id);
+          return {
+            campaignPosts: exists
+              ? current.map((p) => (p.id === newPost.id ? newPost : p))
+              : [newPost, ...current],
+          };
+        });
+        return newPost;
+      },
+
+      deleteCampaignPost: (id) =>
+        set((state) => ({
+          campaignPosts: (state.campaignPosts || []).filter((p) => p.id !== id),
+        })),
+
+      updateCampaignPost: (id, patch) =>
+        set((state) => ({
+          campaignPosts: (state.campaignPosts || []).map((p) =>
+            p.id === id ? { ...p, ...patch } : p,
+          ),
+        })),
+
+      loadCampaignPostToEditor: (postId) => {
+        const post = (get().campaignPosts || []).find((p) => p.id === postId);
+        if (!post) return;
+        set({
+          blog: {
+            source: "blank",
+            projectId: "",
+            topic: post.title,
+            title: post.title,
+            draft: post.bodyMarkdown,
+            metaDescription: post.metaDescription,
+            keywords: post.keywords,
+            suggestions: [],
+            targetWords: post.quality?.wordCount || 1000,
+            lastSavedLabel: "from campaign",
+          },
+        });
+      },
     }),
     {
       name: "writerdost-app-store",
-      version: 2,
+      version: 7,
       migrate: (persisted, fromVersion) => {
         const state = persisted as Partial<AppStore> | undefined;
         if (!state) return persisted as AppStore;
@@ -1706,6 +1857,11 @@ export const useAppStore = create<AppStore>()(
         // A hand-edited or partially written save can arrive with no version at
         // all, and `undefined < n` is false, which would skip every step below.
         const from = typeof fromVersion === "number" ? fromVersion : 0;
+
+        // Ensure campaignPosts is always an array
+        if (!Array.isArray(state.campaignPosts)) {
+          state.campaignPosts = [];
+        }
 
         // v0 seeded two placeholder chapters into every new outline. Drop them
         // if they are still untouched; keep anything the author edited or added.
@@ -1719,11 +1875,82 @@ export const useAppStore = create<AppStore>()(
           }
         }
 
+        // v1's cleanup only fired when the outline was a pristine two-chapter
+        // seed, so anyone who had pressed "Add chapter" first kept the
+        // placeholders for good. Drop the seeds wherever they sit, and leave
+        // every chapter the author wrote or added alone.
+        if (from < 3 && state.outlineGenerator?.chapters?.length) {
+          const kept = state.outlineGenerator.chapters.filter(
+            (chapter: OutlineChapter) => !isSeededOutlineChapter(chapter),
+          );
+          if (kept.length !== state.outlineGenerator.chapters.length) {
+            state.outlineGenerator = { ...state.outlineGenerator, chapters: kept };
+          }
+        }
+
+        // v4 added the blog source picker. A save from before it has no
+        // `source`; infer one so a draft in progress opens where it left off
+        // and only an untouched composer lands on the picker.
+        if (from < 4 && state.blog) {
+          const blog = state.blog as BlogComposer;
+          if (!blog.source) {
+            const hasWork = Boolean(blog.title?.trim() || blog.draft?.trim());
+            blog.source = hasWork ? (blog.projectId ? "project" : "blank") : "none";
+          }
+          if (typeof blog.topic !== "string") blog.topic = "";
+        }
+
         // v2 added the platform API block. An older save has no `platform` at
         // all, and a save written mid-development may be missing newer fields,
         // so fill from defaults either way rather than trusting the shape.
         if (from < 2) {
           state.platform = { ...defaultPlatformApi, ...(state.platform ?? {}) };
+        }
+
+        // v6 ensures no placeholder/seeded chapters exist at the beginning and
+        // sets the default rewrite flow to "Outline" ("From outline").
+        if (from < 6) {
+          if (state.outlineGenerator?.chapters?.length) {
+            const kept = state.outlineGenerator.chapters.filter(
+              (chapter: OutlineChapter) => !isSeededOutlineChapter(chapter),
+            );
+            state.outlineGenerator = { ...state.outlineGenerator, chapters: kept };
+          }
+          if (state.rewrite && (state.rewrite.flow === "Simple" || !state.rewrite.flow)) {
+            state.rewrite = { ...state.rewrite, flow: "Outline" };
+          }
+        }
+
+        // v7 clears pre-filled sample content from input fields so they serve as placeholders
+        if (from < 7) {
+          if (state.profile) {
+            if (state.profile.fullName === "Aniruddha Das") {
+              state.profile.fullName = "";
+            }
+            if (state.profile.tagline === "Bestselling Sci-Fi & Technology Author") {
+              state.profile.tagline = "";
+            }
+            if (state.profile.email === "aniruddha@example.com" || state.profile.email === "aniruddhadas@example.com") {
+              state.profile.email = "";
+            }
+            if (state.profile.website === "www.julianthorne.com") {
+              state.profile.website = "";
+            }
+            if (state.profile.bio?.includes("Julian Thorne is a visionary author")) {
+              state.profile.bio = "";
+            }
+          }
+          if (state.rewrite) {
+            if (state.rewrite.manuscript?.includes("Paste an existing draft here")) {
+              state.rewrite.manuscript = "";
+            }
+            if (state.rewrite.preview?.includes("Your rewritten preview will appear here")) {
+              state.rewrite.preview = "";
+            }
+          }
+          if (state.api?.appName === "Writerdost AI") {
+            state.api.appName = "";
+          }
         }
 
         return state as AppStore;

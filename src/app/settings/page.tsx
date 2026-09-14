@@ -17,7 +17,7 @@ const TABS = [
     id: "api",
     label: "API",
     icon: "api",
-    sub: "Programmatic access to your projects, and publishing to InstaGuru Marketplace.",
+    sub: "Programmatic access to your projects, and publishing to BundleKart Marketplace.",
   },
   {
     id: "application",
@@ -35,6 +35,9 @@ function SettingsTabs() {
   // ?tab=api is how the publish flow deep-links here when the API is not set up
   // yet. Only the initial tab comes from the URL; after that the buttons own it.
   const requested = useSearchParams().get("tab");
+
+  // Every author configures their own provider, model and generation controls,
+  // so all of Settings is open to any signed-in account.
   const [tab, setTab] = useState<TabId>(isTabId(requested) ? requested : "ai");
 
   const select = (next: TabId) => {

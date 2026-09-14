@@ -74,7 +74,7 @@ export default function ProfilePage() {
                   <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" />
                 ) : (
                   <span className="text-[20px] font-semibold text-on-surface-variant">
-                    {profile.fullName.slice(0, 1)}
+                    {(profile.fullName ? profile.fullName.slice(0, 1) : "A").toUpperCase()}
                   </span>
                 )}
               </div>
@@ -90,9 +90,9 @@ export default function ProfilePage() {
 
             <div className="min-w-0 flex-1 basis-40">
               <h1 className="text-[17px] font-semibold tracking-[-0.017em] text-on-surface truncate">
-                {profile.fullName}
+                {profile.fullName || "Your Name"}
               </h1>
-              <p className="text-[12.5px] text-on-surface-variant truncate">{profile.tagline}</p>
+              <p className="text-[12.5px] text-on-surface-variant truncate">{profile.tagline || "Author & Writer"}</p>
             </div>
 
             <div className="flex gap-2 shrink-0 w-full sm:w-auto">
@@ -128,6 +128,7 @@ export default function ProfilePage() {
                   id="pf-name"
                   className="input"
                   type="text"
+                  placeholder="Aniruddha Das"
                   value={profile.fullName || ""}
                   onChange={(event) => updateProfile({ fullName: event.target.value })}
                 />
@@ -137,7 +138,7 @@ export default function ProfilePage() {
                 <input
                   id="pf-pen"
                   className="input"
-                  placeholder="Optional"
+                  placeholder="e.g. Julian Thorne (optional)"
                   type="text"
                   value={profile.penName || ""}
                   onChange={(event) => updateProfile({ penName: event.target.value })}
@@ -148,7 +149,7 @@ export default function ProfilePage() {
                 <input
                   id="pf-tagline"
                   className="input"
-                  placeholder="Bestselling sci-fi and technology author"
+                  placeholder="Bestselling Sci-Fi & Technology Author"
                   type="text"
                   value={profile.tagline || ""}
                   onChange={(event) => updateProfile({ tagline: event.target.value })}
@@ -160,6 +161,7 @@ export default function ProfilePage() {
                   id="pf-email"
                   className="input"
                   type="email"
+                  placeholder="aniruddha@example.com"
                   value={profile.email || ""}
                   onChange={(event) => updateProfile({ email: event.target.value })}
                 />
@@ -170,7 +172,7 @@ export default function ProfilePage() {
                   id="pf-web"
                   className="input"
                   type="url"
-                  placeholder="https://"
+                  placeholder="https://www.julianthorne.com"
                   value={profile.website || ""}
                   onChange={(event) => updateProfile({ website: event.target.value })}
                 />
@@ -180,13 +182,13 @@ export default function ProfilePage() {
                 <div className="flex items-baseline justify-between">
                   <label htmlFor="pf-bio" className="label !mb-0">Bio</label>
                   <span className="row-meta">
-                    {profile.bio.split(/\s+/).filter(Boolean).length} words
+                    {(profile.bio || "").split(/\s+/).filter(Boolean).length} words
                   </span>
                 </div>
                 <textarea
                   id="pf-bio"
-                  className="textarea mt-1.5 min-h-[6.5rem] leading-relaxed"
-                  placeholder="A short editorial bio, used on your public profile."
+                  className="textarea mt-1.5 min-h-[9.5rem] leading-relaxed p-3 text-[14px]"
+                  placeholder="Julian Thorne is a visionary author exploring the intersection of human consciousness and artificial intelligence. Having spent over a decade researching computational neuroscience and speculative philosophy..."
                   value={profile.bio || ""}
                   onChange={(event) => updateProfile({ bio: event.target.value })}
                 />

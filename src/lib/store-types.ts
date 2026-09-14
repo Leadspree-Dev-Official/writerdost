@@ -74,7 +74,7 @@ export interface UpgradeRequest {
 /* ---- Platform API & marketplace publishing ---------------------------
    Two directions, both configured on Settings → API:
 
-   Outbound — this workspace pushes a finished project to InstaGuru
+   Outbound — this workspace pushes a finished project to BundleKart
    Marketplace as a listing.
    Inbound  — a token lets another tool drive this workspace over HTTP, so a
    project can be outsourced to an editor, an agency or a script.          */
@@ -150,7 +150,7 @@ export type PublishState = {
  * Blog automation
  *
  * Held locally so automations can be configured and dry-run before the
- * Supabase backend is connected. Scheduling requires the backend; everything
+ * Appwrite backend is connected. Scheduling requires the backend; everything
  * here is what the UI needs to describe a job.
  * ----------------------------------------------------------------------- */
 
@@ -203,8 +203,33 @@ export type BlogAutomation = {
   destinationId: string | null;
   publish: AutomationPublishMode;
   frequency: AutomationFrequency;
+  /** YYYY-MM-DD, read in `timezone`. Its meaning depends on the frequency:
+   *  the day a one-off runs, the weekday a weekly repeats on, the anchor a
+   *  fortnightly counts from, the day-of-month a monthly uses. */
+  startDate: string;
+  /** HH:mm, read in `timezone`. */
+  startTime: string;
   scheduleCron: string;
   timezone: string;
   createdAt: string;
   lastPreviewAt?: string;
+};
+
+export type CampaignPost = {
+  id: string;
+  automationId: string;
+  title: string;
+  slug: string;
+  bodyHtml: string;
+  bodyMarkdown: string;
+  excerpt: string;
+  metaDescription: string;
+  keywords: string[];
+  sourceUrl?: string;
+  sourceTitle?: string;
+  state: "draft" | "published" | "failed";
+  remoteUrl?: string;
+  quality?: { passed: boolean; wordCount: number; issues: string[] };
+  tokens?: number;
+  createdAt: string;
 };

@@ -3,7 +3,7 @@
 import Editor from "@/components/ui/Editor";
 import { CoverSettings } from "@/components/CoverSettings";
 import { StageBar } from "@/components/StageBar";
-import { fontStack, DEFAULT_BODY_FONT, DEFAULT_HEADING_FONT } from "@/lib/fonts";
+import { fontStack, findFont, loadGoogleFont, DEFAULT_BODY_FONT, DEFAULT_HEADING_FONT } from "@/lib/fonts";
 import { DesignSettings } from "@/components/DesignSettings";
 import { generateAiText } from "@/lib/ai-client";
 import { useAppStore, type ProjectChapter } from "@/lib/app-store";
@@ -55,6 +55,10 @@ export default function EditorPage() {
   const [abortController, setAbortController] = useState<AbortController | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  // Declared before the effects below: a dependency array is evaluated during
+  // render, so anything a hook reads must already be initialized at that point.
+  const project = findProjectById(projects, currentProjectId ?? "");
+
   useEffect(() => {
     if (activeChapterId) {
       // Immediate reset
@@ -73,11 +77,22 @@ export default function EditorPage() {
     }
   }, [activeChapterId]);
 
+  useEffect(() => {
+    if (project?.designSettings?.bodyFont) {
+      const bf = findFont(project.designSettings.bodyFont, DEFAULT_BODY_FONT);
+      if (bf?.isGoogleFont) loadGoogleFont(bf.family);
+    }
+    if (project?.designSettings?.headingFont) {
+      const hf = findFont(project.designSettings.headingFont, DEFAULT_HEADING_FONT);
+      if (hf?.isGoogleFont) loadGoogleFont(hf.family);
+    }
+  }, [project?.designSettings?.bodyFont, project?.designSettings?.headingFont]);
+
   const handleDraftContent = async () => {
     if (!project) return;
     startGeneration({ 
-      title: "Manuscript Drafting Phase", 
-      subtitle: "Agents collaborating in real-time to refine your manuscript." 
+      title: "Drafting this chapter",
+      subtitle: "Writing the section from your outline and project settings."
     });
     setGenerationProgress(5);
     setActiveAgent("Writing Agent");
@@ -186,8 +201,8 @@ export default function EditorPage() {
   const handleGenerateWrappers = async () => {
     if (!project) return;
     startGeneration({ 
-      title: "eBook Wrapper Pipeline", 
-      subtitle: "Designing professional front and back matter for your eBook." 
+      title: "Adding front and back matter",
+      subtitle: "Title page, copyright, dedication and closing pages."
     });
     setGenerationProgress(5);
     setActiveAgent("Manuscript Agent");
@@ -347,7 +362,6 @@ export default function EditorPage() {
     }
   };
 
-  const project = findProjectById(projects, currentProjectId ?? "");
   const chapter = findChapterById(project, activeChapterId ?? "");
   const chapterIndex = project?.chapters.findIndex((item) => item.id === chapter?.id) ?? 0;
   const listed = project?.publish?.status === "published";

@@ -55,6 +55,8 @@ export type Automation = {
   destination: Destination | null;
   publish: PublishMode;
   frequency: AutomationFrequency;
+  startDate: string;
+  startTime: string;
   scheduleCron: string;
   timezone: string;
   lastRunAt: string | null;

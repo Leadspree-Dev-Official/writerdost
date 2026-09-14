@@ -8,12 +8,13 @@ import { AnimatePresence, motion } from "framer-motion";
 import { downloadTxt, generateProjectText, triggerPdfExport, downloadDocx, downloadEpub, downloadMarkdown } from "@/lib/export-utils";
 
 const SECTION_LABELS: Record<string, string> = {
-  "/": "Dashboard",
+  "/": "Home",
+  "/dashboard": "Dashboard",
   "/projects": "Projects",
   "/create": "New ebook",
   "/rewrite": "Rewrite",
   "/blog-generator": "Blog draft",
-  "/automations": "Automation",
+  "/automations": "BlogGen",
   "/editor": "Editor",
   "/settings": "Settings",
   "/profile": "Profile",
@@ -165,7 +166,7 @@ export default function Header() {
 
         <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 min-w-0 text-[12.5px]">
           <span className="text-on-surface-variant shrink-0">{sectionLabel}</span>
-          {currentProject && (
+          {pathname === "/editor" && currentProject && (
             <>
               <span className="text-on-surface-variant/45 shrink-0">/</span>
               <span className="font-semibold text-on-surface truncate">{currentProject.title}</span>

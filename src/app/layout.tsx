@@ -94,8 +94,19 @@ const fontVariables = [
 ].join(" ");
 
 export const metadata: Metadata = {
-  title: "Writerdost AI - Quick Ebook Generators with AI Agents",
-  description: "A SaaS platform for generating ebooks end-to-end using AI agents.",
+  title: "Writerdost AI - Autonomous Ebook Generation & WordPress Publishing Studio",
+  description:
+    "Generate cohesive 30,000+ word ebooks, rewrite full manuscripts with human nuance, and auto-publish SEO blog campaigns directly to WordPress using collaborative multi-agent AI swarms.",
+  keywords: [
+    "AI ebook generator",
+    "multi-agent writing",
+    "WordPress automated publishing",
+    "manuscript rewrite",
+    "Kindle EPUB generator",
+    "Writerdost AI",
+    "LeadSpree",
+  ],
+  authors: [{ name: "LeadSpree Business Solutions", url: "https://leadspree.in" }],
 };
 
 import ThemeWrapper from "@/components/ThemeWrapper";
@@ -110,6 +121,8 @@ export default function RootLayout({
     <html lang="en" className={`${fontVariables} light`}>
       <head>
         <ThemeWrapper />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         {/* App Router: a link in the root layout head is global, so the
             "loads for a single page" warning (a Pages Router concern) does
             not apply. next/font cannot express this icon font's axis range. */}

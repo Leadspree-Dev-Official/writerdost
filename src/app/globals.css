@@ -155,9 +155,9 @@
   --sp-6: 1.5rem;
 
   /* Control heights — every clickable row lands on one of these. */
-  --ctl-sm: 1.625rem;
-  --ctl-md: 1.875rem;
-  --ctl-lg: 2.125rem;
+  --ctl-sm: 1.75rem;
+  --ctl-md: 2.125rem;
+  --ctl-lg: 2.625rem;
 
   --radius: 0.375rem;
   --radius-lg: 0.5rem;
@@ -444,26 +444,40 @@
   .input, .select, .textarea {
     width: 100%;
     height: var(--ctl-lg);
-    padding: 0 0.5625rem;
-    border-radius: var(--radius);
+    padding: 0 0.75rem;
+    border-radius: var(--radius-lg);
     border: 1px solid var(--hairline-strong);
-    background: var(--color-surface-container-lowest);
+    background-color: var(--color-surface-container-lowest);
     color: var(--color-on-surface);
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     font-family: inherit;
     transition: border-color 130ms ease, box-shadow 130ms ease;
   }
-  .dark .input, .dark .select, .dark .textarea { background: rgb(255 255 255 / 0.03); }
+  .dark .input, .dark .select, .dark .textarea { background-color: rgb(255 255 255 / 0.03); }
 
   .textarea {
     height: auto;
-    min-height: 5rem;
-    padding: 0.4375rem 0.5625rem;
-    line-height: 1.5;
+    min-height: 7.5rem;
+    padding: 0.625rem 0.75rem;
+    line-height: 1.6;
     resize: vertical;
   }
 
-  .select { appearance: none; padding-right: 1.75rem; cursor: pointer; }
+  /* `appearance: none` strips the native arrow, so draw one back — the
+     padding-right was always reserving room for it. */
+  .select {
+    appearance: none;
+    padding-right: 1.75rem;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 4.5 6 7.5 9 4.5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    background-size: 0.75rem 0.75rem;
+  }
+
+  .dark .select { background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%239ca3af' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 4.5 6 7.5 9 4.5'/%3E%3C/svg%3E"); }
+
+  .select:disabled { cursor: not-allowed; background-image: none; }
 
   .input::placeholder, .textarea::placeholder { color: var(--color-on-surface-variant); opacity: 0.75; }
 
@@ -780,7 +794,7 @@
 
 :root { caret-color: var(--color-primary); accent-color: var(--color-primary); }
 
-:where(a, button, [role="button"], input, select, textarea, [tabindex]):focus-visible {
+:where(a, button, [role="button"], input, select, textarea, [tabindex]):not([contenteditable="true"]):focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
   border-radius: 3px;
@@ -832,6 +846,17 @@ body {
   background: var(--color-surface);
   color: var(--color-on-surface);
   font-family: var(--font-body);
+}
+
+/* The editable surface is focused constantly while writing, and the page
+   wrapper already shows a focus ring. Without this, the global
+   [tabindex]:focus-visible rule draws a second box inside the first. */
+.ProseMirror:focus,
+.ProseMirror:focus-visible,
+.tiptap:focus,
+.tiptap:focus-visible {
+  outline: none;
+  box-shadow: none;
 }
 
 .ProseMirror img {
