@@ -3,6 +3,10 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { cronForFrequency, todayIso } from "./automation/schedule";
+import { account, appwriteBrowserConfigured, appwriteMessage } from "@/lib/appwrite/client";
+import { defaultPrefs, toUser } from "@/lib/auth/profile";
+import * as backend from "./automation/client-api";
+import type { AutomationWire, DestinationWire } from "./automation/wire";
 import { providerDefaults } from "@/lib/ai-providers";
 import { MARKETPLACE, generateApiToken } from "@/lib/marketplace";
 import type {
@@ -20,6 +24,112 @@ import type {
   UserPlan,
   UserFeatures,
 } from "@/lib/store-types";
+
+/** Whether the session has been resolved yet. See `restoreSession`. */
+export type AuthStatus = "unknown" | "authenticated" | "anonymous";
+
+export type AuthResult = { success: boolean; error?: string };
+
+/** What the campaign screen shows about the state of the write-behind queue. */
+export type AutomationSync = { pending: boolean; error: string | null };
+
+/* -------------------------------------------------------------------------
+   Campaign write-behind
+
+   The campaign screen calls `updateAutomation` on every keystroke, so writes
+   are coalesced per automation and sent once the typing stops. Timers are
+   keyed by id: editing two campaigns in quick succession must not have one
+   flush cancel the other.
+   ------------------------------------------------------------------------- */
+
+const FLUSH_DELAY_MS = 800;
+
+const pendingFlushes = new Map<string, ReturnType<typeof setTimeout>>();
+
+type StoreSet = (
+  partial: Partial<AppStore> | ((state: AppStore) => Partial<AppStore>),
+) => void;
+type StoreGet = () => AppStore;
+
+/** The server shape, narrowed to what the UI edits. */
+function fromWire(wire: AutomationWire): BlogAutomation {
+  return {
+    id: wire.id,
+    name: wire.name,
+    enabled: wire.enabled,
+    sourceKind: wire.sourceKind,
+    sourceConfig: wire.sourceConfig,
+    contentConfig: wire.contentConfig,
+    destinationId: wire.destinationId,
+    publish: wire.publish,
+    frequency: wire.frequency,
+    startDate: wire.startDate,
+    startTime: wire.startTime,
+    scheduleCron: wire.scheduleCron,
+    timezone: wire.timezone,
+    createdAt: wire.createdAt,
+    lastPreviewAt: wire.lastPreviewAt,
+  };
+}
+
+/**
+ * The credential is deliberately absent: it never leaves the server once
+ * stored, so the form shows an empty field meaning "leave what is on file".
+ */
+function destinationFromWire(wire: DestinationWire): AutomationDestination {
+  return { id: wire.id, name: wire.name, kind: wire.kind, config: wire.config };
+}
+
+/**
+ * The AI settings travel with every save so the scheduler holds a current key:
+ * it runs at three in the morning with no browser to ask. The key is encrypted
+ * server-side before it is stored, and never comes back.
+ */
+function toInput(automation: BlogAutomation, api: ApiSettings) {
+  return {
+    name: automation.name,
+    enabled: automation.enabled,
+    sourceKind: automation.sourceKind,
+    sourceConfig: automation.sourceConfig,
+    contentConfig: automation.contentConfig,
+    destinationId: automation.destinationId,
+    publish: automation.publish,
+    frequency: automation.frequency,
+    startDate: automation.startDate,
+    startTime: automation.startTime,
+    scheduleCron: automation.scheduleCron,
+    timezone: automation.timezone,
+    api,
+  };
+}
+
+function queueAutomationFlush(id: string, set: StoreSet, get: StoreGet) {
+  const running = pendingFlushes.get(id);
+  if (running) clearTimeout(running);
+
+  pendingFlushes.set(
+    id,
+    setTimeout(async () => {
+      pendingFlushes.delete(id);
+
+      const automation = get().automations.find((entry) => entry.id === id);
+      // Deleted while the timer was running: nothing left to write.
+      if (!automation) return;
+
+      try {
+        await backend.patchAutomation(id, toInput(automation, get().api));
+        set({ automationSync: { pending: pendingFlushes.size > 0, error: null } });
+      } catch (error) {
+        set({
+          automationSync: {
+            pending: false,
+            error: error instanceof Error ? error.message : "Could not save the campaign.",
+          },
+        });
+      }
+    }, FLUSH_DELAY_MS),
+  );
+}
 
 export type ProjectStatus = "Planning" | "Drafting" | "Editing" | "Ready";
 
@@ -269,16 +379,27 @@ type AppStore = {
   updateUsageRates: (inputRate: number, outputRate: number) => void;
   resetUsage: () => void;
 
+  /* Campaign data lives in Appwrite, not in localStorage. What the store
+     holds is a working copy: reads fill it from the server, edits change it
+     immediately so typing stays responsive, and a debounced flush writes the
+     result back. `automationSync` is what the UI shows while that happens. */
   automations: BlogAutomation[];
   automationDestinations: AutomationDestination[];
   campaignPosts: CampaignPost[];
-  createAutomation: (name: string) => BlogAutomation;
+  automationsLoaded: boolean;
+  automationSync: AutomationSync;
+  loadAutomationData: () => Promise<void>;
+  createAutomation: (name: string) => Promise<BlogAutomation | null>;
   updateAutomation: (id: string, payload: Partial<BlogAutomation>) => void;
-  deleteAutomation: (id: string) => void;
-  saveAutomationDestination: (destination: AutomationDestination) => void;
-  deleteAutomationDestination: (id: string) => void;
-  saveCampaignPost: (post: Omit<CampaignPost, "id" | "createdAt"> & { id?: string; createdAt?: string }) => CampaignPost;
-  deleteCampaignPost: (id: string) => void;
+  deleteAutomation: (id: string) => Promise<void>;
+  saveAutomationDestination: (
+    destination: AutomationDestination,
+  ) => Promise<AutomationDestination | null>;
+  deleteAutomationDestination: (id: string) => Promise<void>;
+  saveCampaignPost: (
+    post: Omit<CampaignPost, "id" | "createdAt"> & { id?: string; createdAt?: string },
+  ) => Promise<CampaignPost | null>;
+  deleteCampaignPost: (id: string) => Promise<void>;
   updateCampaignPost: (id: string, patch: Partial<CampaignPost>) => void;
   loadCampaignPostToEditor: (postId: string) => void;
   addResearchSource: (source: Omit<ResearchSource, "id">) => void;
@@ -291,19 +412,35 @@ type AppStore = {
   toggleEditorSidebar: () => void;
   setManuscriptFullView: (open: boolean) => void;
 
-  // Authentication & Admin State
+  /* Authentication & administration.
+
+     Appwrite owns identity now, so none of this is persisted: the session
+     lives in Appwrite's own cookie and is restored by `restoreSession` on
+     boot. `authStatus` exists because "no user yet" and "not signed in" must
+     look different to the route guard — persisting `currentUser` instead
+     would keep showing a signed-in shell after the session had expired. */
   users: User[];
   currentUser: User | null;
+  authStatus: AuthStatus;
   upgradeRequests: UpgradeRequest[];
-  login: (email: string, password: string) => { success: boolean; error?: string };
-  signup: (fullName: string, email: string, password: string) => { success: boolean; error?: string };
-  logout: () => void;
-  adminUpdateUser: (userId: string, updates: Partial<User>) => void;
-  adminDeleteUser: (userId: string) => void;
-  adminAddUser: (user: Omit<User, "id" | "registeredAt">) => { success: boolean; error?: string };
-  adminSetUserPlanAndFeatures: (userId: string, plan: UserPlan, features: UserFeatures) => void;
-  adminResolveUpgradeRequest: (requestId: string) => void;
-  requestFeatureUpgrade: (userId: string, feature: string) => { success: boolean; error?: string };
+  restoreSession: () => Promise<void>;
+  login: (email: string, password: string) => Promise<AuthResult>;
+  signup: (fullName: string, email: string, password: string) => Promise<AuthResult>;
+  logout: () => Promise<void>;
+  loadUsers: () => Promise<void>;
+  adminUpdateUser: (userId: string, updates: Partial<User>) => Promise<AuthResult>;
+  adminDeleteUser: (userId: string) => Promise<AuthResult>;
+  adminAddUser: (
+    user: Omit<User, "id" | "registeredAt"> & { password?: string },
+  ) => Promise<AuthResult>;
+  adminSetUserPlanAndFeatures: (
+    userId: string,
+    plan: UserPlan,
+    features: UserFeatures,
+  ) => Promise<AuthResult>;
+  loadUpgradeRequests: () => Promise<void>;
+  adminResolveUpgradeRequest: (requestId: string) => Promise<void>;
+  requestFeatureUpgrade: (userId: string, feature: string) => Promise<AuthResult>;
 };
 
 const starterProjects: Project[] = [
@@ -616,41 +753,11 @@ export const useAppStore = create<AppStore>()(
       isEditorSidebarCollapsed: false,
       isManuscriptFullView: false,
       outlineGenerator: defaultOutlineGenerator,
-      users: [
-        {
-          id: "admin-id-1",
-          fullName: "Super Admin",
-          email: "admin@leadspree.com",
-          role: "admin",
-          status: "active",
-          registeredAt: new Date(2026, 6, 1).toISOString(),
-          password: "admin123",
-          plan: "Enterprise",
-          allowedFeatures: {
-            createEbook: true,
-            rewriteEbook: true,
-            blogGenerator: true,
-            advancedModels: true
-          }
-        },
-        {
-          id: "julian-id-1",
-          fullName: "Julian Thorne",
-          email: "julian@example.com",
-          role: "user",
-          status: "active",
-          registeredAt: new Date(2026, 6, 8).toISOString(),
-          password: "password",
-          plan: "Pro",
-          allowedFeatures: {
-            createEbook: true,
-            rewriteEbook: true,
-            blogGenerator: true,
-            advancedModels: false
-          }
-        }
-      ],
+      // No seeded accounts: Appwrite is the register of users now. The admin
+      // screen fills this from the Users API, and everyone else leaves it empty.
+      users: [],
       currentUser: null,
+      authStatus: "unknown",
       upgradeRequests: [],
       
       // Global abort mechanism (not persisted)
@@ -1282,186 +1389,237 @@ export const useAppStore = create<AppStore>()(
               : p
           ),
         })),
-      updateProfile: (payload) =>
+      updateProfile: (payload) => {
         set((state) => {
-          const updatedProfile = { ...state.profile, ...payload };
-          
-          let updatedCurrentUser = state.currentUser;
-          let updatedUsers = state.users;
-          
-          if (state.currentUser) {
-            updatedCurrentUser = {
-              ...state.currentUser,
-              fullName: payload.fullName ?? state.currentUser.fullName,
-              email: payload.email ?? state.currentUser.email,
-            };
-            
-            updatedUsers = state.users.map((u) => 
-              u.id === state.currentUser!.id
-                ? { ...u, fullName: updatedCurrentUser!.fullName, email: updatedCurrentUser!.email }
-                : u
-            );
-          }
-          
+          const currentUser = state.currentUser
+            ? {
+                ...state.currentUser,
+                fullName: payload.fullName ?? state.currentUser.fullName,
+                email: payload.email ?? state.currentUser.email,
+              }
+            : null;
+
           return {
-            profile: updatedProfile,
-            currentUser: updatedCurrentUser,
-            users: updatedUsers
+            profile: { ...state.profile, ...payload },
+            currentUser,
+            users: currentUser
+              ? state.users.map((user) =>
+                  user.id === currentUser.id
+                    ? { ...user, fullName: currentUser.fullName, email: currentUser.email }
+                    : user,
+                )
+              : state.users,
           };
-        }),
-      login: (email, password) => {
-        const { users } = get();
-        const user = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
-        if (!user) {
-          return { success: false, error: "Invalid email or password." };
-        }
-        if (user.password !== password) {
-          return { success: false, error: "Invalid email or password." };
-        }
-        if (user.status === "suspended") {
-          return { success: false, error: "Your account is suspended. Please contact support." };
-        }
-        
-        set({ 
-          currentUser: user,
-          profile: {
-            ...get().profile,
-            fullName: user.fullName,
-            email: user.email,
-            penName: user.role === 'admin' ? 'LeadSpree Admin' : user.fullName
-          }
         });
-        return { success: true };
-      },
-      signup: (fullName, email, password) => {
-        const { users } = get();
-        if (users.some((u) => u.email.toLowerCase() === email.toLowerCase())) {
-          return { success: false, error: "An account with this email already exists." };
+
+        // Keep Appwrite's copy of the display name in step. The email is not
+        // synced: Appwrite requires the account password to change it, which
+        // this form does not ask for, so it stays profile metadata.
+        if (payload.fullName !== undefined && get().currentUser) {
+          void account()
+            .updateName({ name: payload.fullName })
+            .catch(() => {});
         }
-        const newUser: User = {
-          id: Math.random().toString(36).substring(7),
-          fullName,
-          email,
-          role: "user",
-          status: "active",
-          registeredAt: new Date().toISOString(),
-          password,
-          plan: "Basic",
-          allowedFeatures: {
-            createEbook: true,
-            rewriteEbook: false,
-            blogGenerator: false,
-            advancedModels: false
-          }
-        };
-        
-        set({
-          users: [...users, newUser],
-          currentUser: newUser,
-          profile: {
-            ...get().profile,
-            fullName: newUser.fullName,
-            email: newUser.email,
-            penName: newUser.fullName
-          }
-        });
-        return { success: true };
       },
-      logout: () => {
-        set({ currentUser: null });
-      },
-      adminUpdateUser: (userId, updates) => {
-        const { users, currentUser } = get();
-        const updatedUsers = users.map((user) => 
-          user.id === userId ? { ...user, ...updates } : user
-        );
-        
-        let updatedCurrentUser = currentUser;
-        if (currentUser && currentUser.id === userId) {
-          if (updates.status === "suspended") {
-            updatedCurrentUser = null;
-          } else {
-            updatedCurrentUser = { ...currentUser, ...updates };
-          }
+
+      /* ----------------------------------------------------------------
+         Authentication, on Appwrite
+         ---------------------------------------------------------------- */
+
+      /**
+       * Restores the session on boot.
+       *
+       * Appwrite keeps its own session cookie, so a reload asks it who the
+       * caller is rather than trusting anything in localStorage. A failure
+       * here is the ordinary "not signed in" case, not an error worth showing.
+       */
+      restoreSession: async () => {
+        if (!appwriteBrowserConfigured()) {
+          set({ authStatus: "anonymous", currentUser: null });
+          return;
         }
-        
-        set({ users: updatedUsers, currentUser: updatedCurrentUser });
-      },
-      adminDeleteUser: (userId) => {
-        const { users, currentUser } = get();
-        if (currentUser && currentUser.id === userId) return;
-        
-        set({ users: users.filter((u) => u.id !== userId) });
-      },
-      adminAddUser: (userPayload) => {
-        const { users } = get();
-        if (users.some((u) => u.email.toLowerCase() === userPayload.email.toLowerCase())) {
-          return { success: false, error: "A user with this email already exists." };
+
+        try {
+          const me = toUser(await account().get());
+          set({
+            currentUser: me,
+            authStatus: "authenticated",
+            profile: { ...get().profile, fullName: me.fullName, email: me.email },
+          });
+        } catch {
+          set({ currentUser: null, authStatus: "anonymous" });
         }
-        const plan = userPayload.plan || "Basic";
-        const defaultFeatures: UserFeatures = {
-          createEbook: true,
-          rewriteEbook: plan === "Pro" || plan === "Enterprise",
-          blogGenerator: plan === "Pro" || plan === "Enterprise",
-          advancedModels: plan === "Enterprise",
-        };
-        const newUser: User = {
-          ...userPayload,
-          plan,
-          allowedFeatures: userPayload.allowedFeatures || defaultFeatures,
-          id: Math.random().toString(36).substring(7),
-          registeredAt: new Date().toISOString(),
-        } as User;
-        set({ users: [...users, newUser] });
-        return { success: true };
       },
-      adminSetUserPlanAndFeatures: (userId, plan, features) => {
-        const { users, currentUser } = get();
-        const updatedUsers = users.map((user) => 
-          user.id === userId ? { ...user, plan, allowedFeatures: features } : user
-        );
-        
-        let updatedCurrentUser = currentUser;
-        if (currentUser && currentUser.id === userId) {
-          updatedCurrentUser = { ...currentUser, plan, allowedFeatures: features };
+
+      login: async (email, password) => {
+        if (!appwriteBrowserConfigured()) {
+          return { success: false, error: "Sign-in is unavailable: Appwrite is not configured." };
         }
-        
-        set({ users: updatedUsers, currentUser: updatedCurrentUser });
-      },
-      adminResolveUpgradeRequest: (requestId) => {
-        const { upgradeRequests } = get();
-        const updatedRequests = upgradeRequests.map((req) => 
-          req.id === requestId ? { ...req, status: 'resolved' as const } : req
-        );
-        set({ upgradeRequests: updatedRequests });
-      },
-      requestFeatureUpgrade: (userId, feature) => {
-        const { users, upgradeRequests } = get();
-        const user = users.find((u) => u.id === userId);
-        if (!user) {
-          return { success: false, error: "User not found." };
-        }
-        
-        const hasPending = upgradeRequests.some(
-          (req) => req.userId === userId && req.feature === feature && req.status === "pending"
-        );
-        if (hasPending) {
+
+        try {
+          await account().createEmailPasswordSession({ email, password });
+          const me = toUser(await account().get());
+
+          set({
+            currentUser: me,
+            authStatus: "authenticated",
+            profile: {
+              ...get().profile,
+              fullName: me.fullName,
+              email: me.email,
+              penName: get().profile.penName || me.fullName,
+            },
+          });
           return { success: true };
+        } catch (error) {
+          // Appwrite blocks a suspended account at the session call, so the
+          // message it returns is already the right one to show.
+          return { success: false, error: appwriteMessage(error, "Invalid email or password.") };
+        }
+      },
+
+      signup: async (fullName, email, password) => {
+        if (!appwriteBrowserConfigured()) {
+          return { success: false, error: "Sign-up is unavailable: Appwrite is not configured." };
         }
 
-        const newRequest: UpgradeRequest = {
-          id: Math.random().toString(36).substring(7),
-          userId,
-          userEmail: user.email,
-          userName: user.fullName,
-          feature,
-          timestamp: new Date().toISOString(),
-          status: "pending",
-        };
+        try {
+          await account().create({ userId: "unique()", email, password, name: fullName });
+          await account().createEmailPasswordSession({ email, password });
+          // Plan and feature gates start at their defaults; an admin changes
+          // them later through the Users API.
+          await account().updatePrefs({ prefs: defaultPrefs() });
 
-        set({ upgradeRequests: [...upgradeRequests, newRequest] });
+          const me = toUser(await account().get());
+          set({
+            currentUser: me,
+            authStatus: "authenticated",
+            profile: {
+              ...get().profile,
+              fullName: me.fullName,
+              email: me.email,
+              penName: me.fullName,
+            },
+          });
+          return { success: true };
+        } catch (error) {
+          return { success: false, error: appwriteMessage(error, "Could not create the account.") };
+        }
+      },
+
+      logout: async () => {
+        try {
+          await account().deleteSession({ sessionId: "current" });
+        } catch {
+          // Already gone server-side; clearing locally is still correct.
+        }
+        set({
+          currentUser: null,
+          authStatus: "anonymous",
+          users: [],
+          upgradeRequests: [],
+          // Campaign data belongs to the account that just left.
+          automations: [],
+          automationDestinations: [],
+          campaignPosts: [],
+          automationsLoaded: false,
+        });
+      },
+
+      /* ----------------------------------------------------------------
+         Administration — every call is server-checked, see requireAdmin
+         ---------------------------------------------------------------- */
+
+      loadUsers: async () => {
+        try {
+          const response = await fetch("/api/admin/users", {
+            headers: await backend.authHeaders(),
+          });
+          const body = await response.json();
+          if (!response.ok) throw new Error(body.error || "Could not load users.");
+          set({ users: body.users as User[] });
+        } catch {
+          // The admin screen renders an empty table rather than crashing.
+          set({ users: [] });
+        }
+      },
+
+      adminUpdateUser: async (userId, updates) => {
+        const result = await backend.patchUser(userId, updates);
+        if (result.user) {
+          set((state) => ({
+            users: state.users.map((user) => (user.id === userId ? result.user! : user)),
+            currentUser:
+              state.currentUser?.id === userId ? result.user! : state.currentUser,
+          }));
+        }
+        return result.error ? { success: false, error: result.error } : { success: true };
+      },
+
+      adminDeleteUser: async (userId) => {
+        const error = await backend.deleteUser(userId);
+        if (error) return { success: false, error };
+        set((state) => ({ users: state.users.filter((user) => user.id !== userId) }));
         return { success: true };
       },
+
+      adminAddUser: async (payload) => {
+        const result = await backend.createUser(payload);
+        if (result.error) return { success: false, error: result.error };
+        if (result.user) set((state) => ({ users: [...state.users, result.user!] }));
+        return { success: true };
+      },
+
+      adminSetUserPlanAndFeatures: async (userId, plan, features) => {
+        const result = await backend.patchUser(userId, { plan, allowedFeatures: features });
+        if (result.user) {
+          set((state) => ({
+            users: state.users.map((user) => (user.id === userId ? result.user! : user)),
+            currentUser:
+              state.currentUser?.id === userId ? result.user! : state.currentUser,
+          }));
+        }
+        return result.error ? { success: false, error: result.error } : { success: true };
+      },
+
+      loadUpgradeRequests: async () => {
+        try {
+          set({ upgradeRequests: await backend.fetchUpgradeRequests() });
+        } catch {
+          set({ upgradeRequests: [] });
+        }
+      },
+
+      adminResolveUpgradeRequest: async (requestId) => {
+        try {
+          await backend.resolveUpgradeRequest(requestId);
+          set((state) => ({
+            upgradeRequests: state.upgradeRequests.map((request) =>
+              request.id === requestId ? { ...request, status: "resolved" as const } : request,
+            ),
+          }));
+        } catch {
+          // Leave the row pending; the next load will show the truth.
+        }
+      },
+
+      requestFeatureUpgrade: async (_userId, feature) => {
+        try {
+          const raised = await backend.raiseUpgradeRequest(feature);
+          set((state) => ({
+            upgradeRequests: state.upgradeRequests.some((request) => request.id === raised.id)
+              ? state.upgradeRequests
+              : [raised, ...state.upgradeRequests],
+          }));
+          return { success: true };
+        } catch (error) {
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : "Could not send the request.",
+          };
+        }
+      },
+
       updateSettings: (payload) =>
         set((state) => ({
           settings: { ...state.settings, ...payload },
@@ -1721,41 +1879,93 @@ export const useAppStore = create<AppStore>()(
       automations: [],
       automationDestinations: [],
       campaignPosts: [],
+      automationsLoaded: false,
+      automationSync: { pending: false, error: null },
 
-      createAutomation: (name) => {
-        const automation: BlogAutomation = {
-          id: `auto-${Date.now().toString(36)}`,
+      loadAutomationData: async () => {
+        if (!appwriteBrowserConfigured()) {
+          set({ automationsLoaded: true });
+          return;
+        }
+
+        try {
+          // One round trip each, in parallel: the three lists are independent
+          // and the screen needs all of them before it can render a campaign.
+          const [automations, destinations, posts] = await Promise.all([
+            backend.fetchAutomations(),
+            backend.fetchDestinations(),
+            backend.fetchPosts(),
+          ]);
+
+          set({
+            automations: automations.map(fromWire),
+            automationDestinations: destinations.map(destinationFromWire),
+            campaignPosts: posts,
+            automationsLoaded: true,
+            automationSync: { pending: false, error: null },
+          });
+        } catch (error) {
+          set({
+            automationsLoaded: true,
+            automationSync: {
+              pending: false,
+              error: error instanceof Error ? error.message : "Could not load campaigns.",
+            },
+          });
+        }
+      },
+
+      createAutomation: async (name) => {
+        const draft = {
           name: name.trim() || "Untitled campaign",
           enabled: false,
-          sourceKind: "topic",
+          sourceKind: "topic" as const,
           sourceConfig: { topics: [], maxPerRun: 1, minWords: 150 },
           contentConfig: {
             tone: "Professional",
             audience: "",
             targetWords: 1000,
             language: "English",
-            keywords: [],
+            keywords: [] as string[],
             citeSource: true,
           },
           destinationId: null,
           // Draft is the safe default: nothing reaches a live site unreviewed.
-          publish: "draft",
-          frequency: "daily",
+          publish: "draft" as const,
+          frequency: "daily" as const,
           startDate: todayIso(),
           startTime: "09:00",
           scheduleCron: "0 9 * * *",
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
-          createdAt: new Date().toISOString(),
+          api: get().api,
         };
-        set((state) => ({ automations: [automation, ...state.automations] }));
-        return automation;
+
+        try {
+          // Awaited rather than optimistic: the row's Appwrite id is what the
+          // screen selects on, and inventing a temporary one would mean
+          // reconciling it away a moment later.
+          const created = fromWire(await backend.createAutomation(draft));
+          set((state) => ({
+            automations: [created, ...state.automations],
+            automationSync: { pending: false, error: null },
+          }));
+          return created;
+        } catch (error) {
+          set({
+            automationSync: {
+              pending: false,
+              error: error instanceof Error ? error.message : "Could not create the campaign.",
+            },
+          });
+          return null;
+        }
       },
 
-      updateAutomation: (id, payload) =>
+      updateAutomation: (id, payload) => {
         set((state) => ({
-          automations: state.automations.map((a) => {
-            if (a.id !== id) return a;
-            const next = { ...a, ...payload };
+          automations: state.automations.map((automation) => {
+            if (automation.id !== id) return automation;
+            const next = { ...automation, ...payload };
             // Frequency, date and time together define the cron, so any of the
             // three changing rewrites it. Custom keeps whatever was typed.
             const touchesSchedule =
@@ -1772,61 +1982,136 @@ export const useAppStore = create<AppStore>()(
             }
             return next;
           }),
-        })),
+          automationSync: { pending: true, error: state.automationSync.error },
+        }));
 
-      deleteAutomation: (id) =>
-        set((state) => ({
-          automations: state.automations.filter((a) => a.id !== id),
-          campaignPosts: (state.campaignPosts || []).filter((p) => p.automationId !== id),
-        })),
-
-      saveAutomationDestination: (destination) =>
-        set((state) => {
-          const exists = state.automationDestinations.some((d) => d.id === destination.id);
-          return {
-            automationDestinations: exists
-              ? state.automationDestinations.map((d) => (d.id === destination.id ? destination : d))
-              : [...state.automationDestinations, destination],
-          };
-        }),
-
-      deleteAutomationDestination: (id) =>
-        set((state) => ({
-          automationDestinations: state.automationDestinations.filter((d) => d.id !== id),
-          automations: state.automations.map((a) =>
-            a.destinationId === id ? { ...a, destinationId: null } : a,
-          ),
-        })),
-
-      saveCampaignPost: (post) => {
-        const newPost: CampaignPost = {
-          ...post,
-          id: post.id || `cpost-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
-          createdAt: post.createdAt || new Date().toISOString(),
-        };
-        set((state) => {
-          const current = state.campaignPosts || [];
-          const exists = current.some((p) => p.id === newPost.id);
-          return {
-            campaignPosts: exists
-              ? current.map((p) => (p.id === newPost.id ? newPost : p))
-              : [newPost, ...current],
-          };
-        });
-        return newPost;
+        // Every keystroke calls this, so the write is debounced rather than
+        // sent per character.
+        queueAutomationFlush(id, set, get);
       },
 
-      deleteCampaignPost: (id) =>
+      deleteAutomation: async (id) => {
+        const previous = get().automations;
         set((state) => ({
-          campaignPosts: (state.campaignPosts || []).filter((p) => p.id !== id),
-        })),
+          automations: state.automations.filter((automation) => automation.id !== id),
+          campaignPosts: (state.campaignPosts || []).filter((post) => post.automationId !== id),
+        }));
 
-      updateCampaignPost: (id, patch) =>
+        try {
+          await backend.removeAutomation(id);
+        } catch (error) {
+          // Put it back: a delete that did not happen must not look like it did.
+          set({
+            automations: previous,
+            automationSync: {
+              pending: false,
+              error: error instanceof Error ? error.message : "Could not delete the campaign.",
+            },
+          });
+        }
+      },
+
+      saveAutomationDestination: async (destination) => {
+        try {
+          const saved = destinationFromWire(
+            await backend.saveDestination({
+              // A destination the browser invented has a local id; one loaded
+              // from Appwrite has a real one. Only the latter is an update.
+              id: get().automationDestinations.some((d) => d.id === destination.id)
+                ? destination.id
+                : undefined,
+              name: destination.name,
+              kind: destination.kind,
+              config: destination.config,
+            }),
+          );
+
+          set((state) => ({
+            automationDestinations: state.automationDestinations.some((d) => d.id === saved.id)
+              ? state.automationDestinations.map((d) => (d.id === saved.id ? saved : d))
+              : [...state.automationDestinations, saved],
+            automationSync: { pending: false, error: null },
+          }));
+          return saved;
+        } catch (error) {
+          set({
+            automationSync: {
+              pending: false,
+              error: error instanceof Error ? error.message : "Could not save the destination.",
+            },
+          });
+          return null;
+        }
+      },
+
+      deleteAutomationDestination: async (id) => {
         set((state) => ({
-          campaignPosts: (state.campaignPosts || []).map((p) =>
-            p.id === id ? { ...p, ...patch } : p,
+          automationDestinations: state.automationDestinations.filter((d) => d.id !== id),
+          automations: state.automations.map((automation) =>
+            automation.destinationId === id ? { ...automation, destinationId: null } : automation,
           ),
-        })),
+        }));
+
+        try {
+          await backend.removeDestination(id);
+        } catch (error) {
+          set({
+            automationSync: {
+              pending: false,
+              error: error instanceof Error ? error.message : "Could not delete the destination.",
+            },
+          });
+        }
+      },
+
+      saveCampaignPost: async (post) => {
+        try {
+          const saved = await backend.savePost({ ...post, id: post.id });
+          set((state) => {
+            const current = state.campaignPosts || [];
+            return {
+              campaignPosts: current.some((entry) => entry.id === saved.id)
+                ? current.map((entry) => (entry.id === saved.id ? saved : entry))
+                : [saved, ...current],
+            };
+          });
+          return saved;
+        } catch (error) {
+          set({
+            automationSync: {
+              pending: false,
+              error: error instanceof Error ? error.message : "Could not save the post.",
+            },
+          });
+          return null;
+        }
+      },
+
+      deleteCampaignPost: async (id) => {
+        const previous = get().campaignPosts || [];
+        set((state) => ({
+          campaignPosts: (state.campaignPosts || []).filter((post) => post.id !== id),
+        }));
+
+        try {
+          await backend.removePost(id);
+        } catch {
+          set({ campaignPosts: previous });
+        }
+      },
+
+      updateCampaignPost: (id, patch) => {
+        set((state) => ({
+          campaignPosts: (state.campaignPosts || []).map((post) =>
+            post.id === id ? { ...post, ...patch } : post,
+          ),
+        }));
+
+        const updated = (get().campaignPosts || []).find((post) => post.id === id);
+        // Fire and forget: the local copy is already right, and a failed write
+        // shows up the next time the list is loaded.
+        if (updated) void backend.savePost(updated).catch(() => {});
+      },
 
       loadCampaignPostToEditor: (postId) => {
         const post = (get().campaignPosts || []).find((p) => p.id === postId);
@@ -1849,7 +2134,7 @@ export const useAppStore = create<AppStore>()(
     }),
     {
       name: "writerdost-app-store",
-      version: 7,
+      version: 8,
       migrate: (persisted, fromVersion) => {
         const state = persisted as Partial<AppStore> | undefined;
         if (!state) return persisted as AppStore;
@@ -1953,13 +2238,59 @@ export const useAppStore = create<AppStore>()(
           }
         }
 
+        // v8 moved accounts and campaigns to Appwrite. Drop what older saves
+        // kept locally: a stale user would survive sign-out, and stale
+        // campaigns would carry ids that no Appwrite row answers to.
+        if (from < 8) {
+          delete (state as Partial<AppStore>).currentUser;
+          delete (state as Partial<AppStore>).users;
+          delete (state as Partial<AppStore>).upgradeRequests;
+          delete (state as Partial<AppStore>).automations;
+          delete (state as Partial<AppStore>).automationDestinations;
+          delete (state as Partial<AppStore>).campaignPosts;
+        }
+
         return state as AppStore;
       },
       partialize: (state) => {
-        // isManuscriptFullView is a transient view mode; reloading should land
-        // the author back in the chapter editor.
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars -- omit-by-destructuring
-        const { generationStatus, cancelGeneration, isManuscriptFullView, ...rest } = state;
+        // Three groups never reach localStorage:
+        //
+        //  - isManuscriptFullView is a transient view mode; reloading should
+        //    land the author back in the chapter editor;
+        //  - currentUser / authStatus / users / upgradeRequests belong to
+        //    Appwrite. Persisting them would keep rendering a signed-in shell
+        //    after the session expired, and would leave one person's account
+        //    on disk for whoever opens the browser next;
+        //  - automations, destinations and campaignPosts now live in Appwrite
+        //    too. A stale copy here would flash the previous account's
+        //    campaigns before the fetch replaced them.
+        const {
+          generationStatus,
+          cancelGeneration,
+          isManuscriptFullView,
+          currentUser,
+          authStatus,
+          users,
+          upgradeRequests,
+          automations,
+          automationDestinations,
+          campaignPosts,
+          automationsLoaded,
+          automationSync,
+          ...rest
+        } = state;
+        void generationStatus;
+        void cancelGeneration;
+        void isManuscriptFullView;
+        void currentUser;
+        void authStatus;
+        void users;
+        void upgradeRequests;
+        void automations;
+        void automationDestinations;
+        void campaignPosts;
+        void automationsLoaded;
+        void automationSync;
         return rest;
       },
       storage: createJSONStorage(() => ({

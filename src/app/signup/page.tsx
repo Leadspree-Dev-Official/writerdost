@@ -16,14 +16,16 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !email || !password || !confirmPassword) {
       setError("Please fill in all fields.");
       return;
     }
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters long.");
+    // Appwrite's own floor. Asking for less here only moves the rejection to
+    // the server, where the message is less helpful.
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters long.");
       return;
     }
     if (password !== confirmPassword) {
@@ -34,16 +36,14 @@ export default function SignupPage() {
     setLoading(true);
     setError(null);
 
-    // Simulate delay for a premium interactive feel
-    setTimeout(() => {
-      const res = signup(fullName, email, password);
-      setLoading(false);
-      if (res.success) {
-        router.push("/dashboard");
-      } else {
-        setError(res.error || "Failed to create account.");
-      }
-    }, 800);
+    const res = await signup(fullName, email, password);
+    setLoading(false);
+
+    if (res.success) {
+      router.push("/dashboard");
+    } else {
+      setError(res.error || "Failed to create account.");
+    }
   };
 
   return (
@@ -125,7 +125,7 @@ export default function SignupPage() {
               </label>
               <input
                 type="password"
-                placeholder="At least 6 characters"
+                placeholder="At least 8 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full bg-[#0c0c14]/80 border border-slate-800 rounded-[var(--radius)] py-3 px-4 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-slate-200 text-sm font-semibold outline-none transition-all"

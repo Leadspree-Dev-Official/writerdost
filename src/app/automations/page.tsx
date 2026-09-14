@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/app-store";
 import {
@@ -127,8 +127,16 @@ export default function AutomationsPage() {
   const saveCampaignPost = useAppStore((s) => s.saveCampaignPost);
   const deleteCampaignPost = useAppStore((s) => s.deleteCampaignPost);
   const loadCampaignPostToEditor = useAppStore((s) => s.loadCampaignPostToEditor);
+  const loadAutomationData = useAppStore((s) => s.loadAutomationData);
+  const automationsLoaded = useAppStore((s) => s.automationsLoaded);
+  const automationSync = useAppStore((s) => s.automationSync);
 
   const [selectedId, setSelectedId] = useState<string | null>(automations[0]?.id ?? null);
+
+  // Campaigns live in Appwrite, so the screen starts empty and fills in.
+  useEffect(() => {
+    void loadAutomationData();
+  }, [loadAutomationData]);
   const [activeTab, setActiveTab] = useState<"posts" | "preview">("posts");
   const [preview, setPreview] = useState<PreviewState>({ loading: false });
   const [showDestForm, setShowDestForm] = useState(false);
@@ -185,11 +193,11 @@ export default function AutomationsPage() {
     router.push("/blog-generator");
   };
 
-  const handleSavePreviewAsDraft = () => {
+  const handleSavePreviewAsDraft = async () => {
     if (!preview.post || !selected) return null;
     const title = preview.post.title;
     const slug = preview.post.slug || title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-    const saved = saveCampaignPost({
+    const saved = await saveCampaignPost({
       automationId: selected.id,
       title,
       slug,
@@ -204,6 +212,9 @@ export default function AutomationsPage() {
       quality: preview.quality,
       tokens: preview.tokens,
     });
+    // A failed write is reported by the store; do not claim a draft was kept.
+    if (!saved) return null;
+
     setSaveFeedback(`Saved "${saved.title}" to campaign drafts!`);
     setTimeout(() => setSaveFeedback(null), 3500);
     setActiveTab("posts");
@@ -320,7 +331,7 @@ export default function AutomationsPage() {
       if (payload.post) {
         const title = payload.post.title;
         const slug = payload.post.slug || title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-        const saved = saveCampaignPost({
+        const saved = await saveCampaignPost({
           automationId: selected.id,
           title,
           slug,
@@ -338,8 +349,10 @@ export default function AutomationsPage() {
 
         updateAutomation(selected.id, { lastPreviewAt: new Date().toISOString() });
         setActiveTab("posts");
-        setSaveFeedback(`Successfully generated and saved "${saved.title}"!`);
-        setTimeout(() => setSaveFeedback(null), 4000);
+        if (saved) {
+          setSaveFeedback(`Successfully generated and saved "${saved.title}"!`);
+          setTimeout(() => setSaveFeedback(null), 4000);
+        }
       }
     } catch (error) {
       alert(error instanceof Error ? error.message : "Could not reach the server.");
@@ -365,8 +378,9 @@ export default function AutomationsPage() {
         <button
           type="button"
           className="btn btn-filled btn-sm"
-          onClick={() => {
-            const created = createAutomation(`Blog Campaign ${automations.length + 1}`);
+          onClick={async () => {
+            const created = await createAutomation(`Blog Campaign ${automations.length + 1}`);
+            if (!created) return;
             setSelectedId(created.id);
             setActiveTab("posts");
           }}
@@ -398,14 +412,35 @@ export default function AutomationsPage() {
         </div>
       )}
 
-      <div className="rounded-[var(--radius)] border border-[var(--hairline)] bg-surface-container-lowest px-3 py-2 text-[12.5px] text-on-surface-variant">
-        <span className="material-symbols-outlined text-[15px] align-middle mr-1">schedule</span>
-        Preview runs &amp; on-demand generation work right here in your workspace. <strong className="text-on-surface">Unattended background scheduling</strong> needs
-        the Appwrite backend — run <code>npm run appwrite:setup</code> and set the environment
-        variables in <code>.env.example</code>. See <code>appwrite/README.md</code>.
+      {automationSync.error && (
+        <div className="rounded-[var(--radius)] border border-red-500/40 bg-red-500/10 px-3 py-2 text-[12.5px] text-on-surface flex items-start gap-2">
+          <span className="material-symbols-outlined text-[15px] mt-0.5 shrink-0">cloud_off</span>
+          <span>{automationSync.error}</span>
+        </div>
+      )}
+
+      <div className="rounded-[var(--radius)] border border-[var(--hairline)] bg-surface-container-lowest px-3 py-2 text-[12.5px] text-on-surface-variant flex items-start gap-2">
+        <span className="material-symbols-outlined text-[15px] mt-0.5 shrink-0">
+          {automationSync.pending ? "cloud_sync" : "cloud_done"}
+        </span>
+        <span>
+          {automationSync.pending ? (
+            <>Saving to Appwrite&hellip;</>
+          ) : (
+            <>
+              Campaigns are stored in Appwrite, so the scheduler can run them unattended. The AI key
+              from <strong className="text-on-surface">AI settings</strong> is encrypted server-side
+              and saved with each campaign, because a background run has no browser to ask.
+            </>
+          )}
+        </span>
       </div>
 
-      {automations.length === 0 ? (
+      {!automationsLoaded ? (
+        <div className={`${card} text-center py-10`}>
+          <p className="text-[13px] text-on-surface-variant">Loading campaigns&hellip;</p>
+        </div>
+      ) : automations.length === 0 ? (
         <div className={`${card} text-center py-10`}>
           <p className="text-[13px] text-on-surface-variant">
             No blog campaigns yet. Create one to get started.
@@ -443,6 +478,13 @@ export default function AutomationsPage() {
                     )}
                   </div>
                   <span className="block text-[11px] text-on-surface-variant">
+                    <span
+                      className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 align-middle ${
+                        automation.enabled ? "bg-emerald-500" : "bg-on-surface/25"
+                      }`}
+                      aria-hidden="true"
+                    />
+                    {automation.enabled ? "Scheduled" : "Paused"} ·{" "}
                     {SOURCE_LABELS[automation.sourceKind]}
                   </span>
                 </button>
@@ -686,6 +728,32 @@ export default function AutomationsPage() {
                   {describeFrequency(schedule)} {describeNextRun(schedule)}
                 </p>
               )}
+
+              {/* Arming the campaign. Until this is on, the scheduler ignores
+                  it: a paused campaign is stored with no next run time, which
+                  is what keeps it out of the due query entirely. */}
+              <label
+                htmlFor="auto-enabled"
+                className="flex items-start gap-2.5 rounded-[var(--radius)] border border-[var(--hairline)] px-3 py-2.5 cursor-pointer"
+              >
+                <input
+                  id="auto-enabled"
+                  type="checkbox"
+                  className="mt-0.5 accent-[var(--primary)] w-4 h-4 shrink-0"
+                  checked={selected.enabled}
+                  onChange={(e) => patch({ enabled: e.target.checked })}
+                />
+                <span className="text-[12.5px] leading-snug">
+                  <span className="font-semibold text-on-surface block">
+                    Run this campaign on its schedule
+                  </span>
+                  <span className="text-on-surface-variant">
+                    {selected.enabled
+                      ? "Armed. The scheduler will pick this up unattended."
+                      : "Paused. Generate and preview still work; nothing runs on its own."}
+                  </span>
+                </span>
+              </label>
 
               <div className="flex items-center gap-2 pt-1 flex-wrap">
                 <button
@@ -952,8 +1020,8 @@ export default function AutomationsPage() {
                         <button
                           type="button"
                           className="btn btn-ghost btn-sm h-7 text-[11.5px]"
-                          onClick={() => {
-                            const saved = handleSavePreviewAsDraft();
+                          onClick={async () => {
+                            const saved = await handleSavePreviewAsDraft();
                             if (saved) handleOpenInEditor(saved);
                           }}
                         >
@@ -1199,8 +1267,8 @@ export default function AutomationsPage() {
             ))}
 
             <p className="text-[11px] text-on-surface-variant">
-              Stored in this browser for now. Once Appwrite is connected, credentials are encrypted
-              server-side and never sent back to the browser.
+              Credentials are encrypted server-side before they are stored and are never sent back
+              to the browser. Leave a secret field blank when editing to keep the stored one.
             </p>
 
             <div className="flex gap-2 justify-end pt-1">
@@ -1210,10 +1278,13 @@ export default function AutomationsPage() {
               <button
                 type="button"
                 className="btn btn-filled btn-sm"
-                onClick={() => {
+                onClick={async () => {
                   if (!draftDest.name.trim()) return;
-                  saveDestination(draftDest);
-                  if (selected) patch({ destinationId: draftDest.id });
+                  // The id comes back from Appwrite, so the campaign can only
+                  // be pointed at the destination once the write has landed.
+                  const saved = await saveDestination(draftDest);
+                  if (!saved) return;
+                  if (selected) patch({ destinationId: saved.id });
                   setShowDestForm(false);
                 }}
               >

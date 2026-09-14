@@ -8,11 +8,11 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const currentUser = useAppStore((state) => state.currentUser);
+  const authStatus = useAppStore((state) => state.authStatus);
+  const restoreSession = useAppStore((state) => state.restoreSession);
 
   // Wait for store hydration to avoid premature redirects.
-  // Zustand's persist middleware fills the store on the client only. Until
-  // that has happened `currentUser` is null everywhere, so redirecting before
-  // this flips would bounce a signed-in user to /login on every refresh.
+  // Zustand's persist middleware fills the store on the client only.
   // Subscribing to the real hydration event is more accurate than "an effect
   // has run", and keeps the server snapshot false so SSR matches first paint.
   const isHydrated = useSyncExternalStore(
@@ -21,8 +21,17 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     () => false,
   );
 
+  // The session is Appwrite's, not localStorage's, so it has to be asked for.
+  // Until that answer arrives `authStatus` is "unknown", and redirecting on it
+  // would bounce a signed-in user to /login on every refresh.
   useEffect(() => {
-    if (!isHydrated) return;
+    if (authStatus === "unknown") void restoreSession();
+  }, [authStatus, restoreSession]);
+
+  const isReady = isHydrated && authStatus !== "unknown";
+
+  useEffect(() => {
+    if (!isReady) return;
 
     const isAuthPage = pathname === "/login" || pathname === "/signup";
     const isPublicPage = pathname === "/" || isAuthPage;
@@ -34,9 +43,9 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     } else if (currentUser && pathname.startsWith("/admin") && currentUser.role !== "admin") {
       router.push("/dashboard");
     }
-  }, [currentUser, pathname, isHydrated, router]);
+  }, [currentUser, pathname, isReady, router]);
 
-  if (!isHydrated) {
+  if (!isReady) {
     return (
       <div className="min-h-screen bg-slate-955 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">

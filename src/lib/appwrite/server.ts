@@ -32,6 +32,7 @@ export const TABLES = {
   runs: "automation_runs",
   posts: "generated_posts",
   seen: "seen_sources",
+  upgrades: "upgrade_requests",
 } as const;
 
 export { ID, Permission, Query, Role };

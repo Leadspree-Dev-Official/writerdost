@@ -14,7 +14,7 @@
  */
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { Client, TablesDB, TablesDBIndexType, OrderBy } from "node-appwrite";
+import { Client, TablesDB, TablesDBIndexType, OrderBy, Permission, Role } from "node-appwrite";
 
 /* ------------------------------------------------------------------ */
 /* Environment                                                         */
@@ -82,13 +82,26 @@ const key = (name, columns, orders) => ({
 });
 
 /**
- * Row security is on for every table: rows carry per-user permissions so the
- * browser can read its own once Appwrite Auth is wired up. The scheduler's API
- * key ignores them, which is what lets one worker act for every user.
+ * Only `create` is granted at the table level, and only to signed-in users.
+ * Read, update and delete are deliberately absent: with row security on, a
+ * table-level grant would apply to EVERY row, which is exactly the leak the
+ * per-row permissions written by `ownerPermissions` exist to prevent. A user
+ * may therefore insert a row, and afterwards only reach the rows they own.
+ *
+ * Tables the scheduler alone writes (`automation_runs`, `seen_sources`) grant
+ * nothing at all: the worker's API key ignores permissions by design.
+ */
+const USER_CREATE = [Permission.create(Role.users())];
+
+/**
+ * Row security is on for every table: rows carry per-user permissions, so a
+ * browser session reads its own rows and nothing else. The scheduler's API key
+ * ignores them, which is what lets one worker act for every user.
  */
 const TABLES = [
   {
     id: "destinations",
+    permissions: USER_CREATE,
     name: "Destinations",
     // Where finished posts get sent.
     columns: [
@@ -108,6 +121,7 @@ const TABLES = [
   },
   {
     id: "automations",
+    permissions: USER_CREATE,
     name: "Automations",
     // One scheduled content job.
     columns: [
@@ -151,6 +165,7 @@ const TABLES = [
   },
   {
     id: "automation_runs",
+    permissions: [],
     name: "Automation runs",
     // One execution, successful or not. This is the audit trail.
     columns: [
@@ -169,6 +184,7 @@ const TABLES = [
   },
   {
     id: "generated_posts",
+    permissions: USER_CREATE,
     name: "Generated posts",
     columns: [
       s("automationId", 64),
@@ -194,7 +210,24 @@ const TABLES = [
     ],
   },
   {
+    id: "upgrade_requests",
+    permissions: USER_CREATE,
+    name: "Upgrade requests",
+    // A user asking for a locked feature. Shared rather than per-browser: the
+    // admin reviewing the request is not the person who raised it, so this
+    // cannot live in localStorage the way it used to.
+    columns: [
+      s("userId", 64, { required: true }),
+      s("userEmail", 320, { required: true }),
+      s("userName", 255),
+      s("feature", 64, { required: true }),
+      oneOf("status", ["pending", "resolved"], { xdefault: "pending" }),
+    ],
+    indexes: [key("requests_by_status", ["status", "userId"], [OrderBy.Asc, OrderBy.Asc])],
+  },
+  {
     id: "seen_sources",
+    permissions: [],
     name: "Seen sources",
     // Dedupe: never rewrite the same source article twice. The row id is
     // sha256(automationId, urlHash), which stands in for the composite primary
@@ -291,23 +324,53 @@ async function waitForColumns(tableId, expected) {
 async function main() {
   console.log(`Appwrite ${ENDPOINT} · project ${PROJECT_ID} · database ${DATABASE_ID}\n`);
 
-  await ensure(`database ${DATABASE_ID}`, () =>
-    tablesDB.create({ databaseId: DATABASE_ID, name: "Writerdost AI", enabled: true }),
-  );
+  // Not `ensure`: on a plan whose database quota is already spent, creating an
+  // existing database answers 403 "limit reached" rather than 409 "exists", so
+  // re-running would fail on a database that is in fact perfectly fine. Ask
+  // first, and only create when it is genuinely missing.
+  let databaseExists = true;
+  try {
+    await tablesDB.get({ databaseId: DATABASE_ID });
+    console.log(`  = database ${DATABASE_ID} (already there)`);
+  } catch (error) {
+    if (error?.code !== 404) throw error;
+    databaseExists = false;
+  }
+
+  if (!databaseExists) {
+    await tablesDB.create({ databaseId: DATABASE_ID, name: "Writerdost AI", enabled: true });
+    console.log(`  + database ${DATABASE_ID}`);
+  }
 
   for (const table of TABLES) {
     console.log(`\n${table.id}`);
 
-    await ensure(`table ${table.id}`, () =>
+    const outcome = await ensure(`table ${table.id}`, () =>
       tablesDB.createTable({
         databaseId: DATABASE_ID,
         tableId: table.id,
         name: table.name,
+        permissions: table.permissions,
         // Per-row permissions, written by ownerPermissions() on the server.
         rowSecurity: true,
         enabled: true,
       }),
     );
+
+    // createTable is a no-op on a table that already exists, so a permission
+    // added here after the first run would never reach the server. Reconcile
+    // it explicitly — this is what makes the script safe to re-run.
+    if (outcome === "existing") {
+      await tablesDB.updateTable({
+        databaseId: DATABASE_ID,
+        tableId: table.id,
+        name: table.name,
+        permissions: table.permissions,
+        rowSecurity: true,
+        enabled: true,
+      });
+      console.log(`  ~ permissions on ${table.id} reconciled`);
+    }
 
     for (const column of table.columns) {
       await ensure(`column ${column.key}`, () => createColumn(table.id, column));

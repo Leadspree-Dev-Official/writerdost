@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAppStore } from "@/lib/app-store";
 
 interface AccessLockedProps {
@@ -12,7 +12,15 @@ export default function AccessLocked({ featureName, featureKey }: AccessLockedPr
   const currentUser = useAppStore((state) => state.currentUser);
   const upgradeRequests = useAppStore((state) => state.upgradeRequests);
   const requestFeatureUpgrade = useAppStore((state) => state.requestFeatureUpgrade);
+  const loadUpgradeRequests = useAppStore((state) => state.loadUpgradeRequests);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Requests live in Appwrite so an admin can see them, which means this
+  // screen has to ask whether one is already outstanding.
+  useEffect(() => {
+    void loadUpgradeRequests();
+  }, [loadUpgradeRequests]);
 
   if (!currentUser) return null;
 
@@ -21,9 +29,14 @@ export default function AccessLocked({ featureName, featureKey }: AccessLockedPr
     (req) => req.userId === currentUser.id && req.feature === featureKey && req.status === "pending"
   );
 
-  const handleRequest = () => {
-    requestFeatureUpgrade(currentUser.id, featureKey);
-    setSuccess(true);
+  const handleRequest = async () => {
+    const result = await requestFeatureUpgrade(currentUser.id, featureKey);
+    if (result.success) {
+      setSuccess(true);
+      setError(null);
+    } else {
+      setError(result.error || "Could not send the request.");
+    }
   };
 
   const planFeatures = [
@@ -102,6 +115,9 @@ export default function AccessLocked({ featureName, featureKey }: AccessLockedPr
               >
                 Request Access from Admin
               </button>
+            )}
+            {error && (
+              <p className="mt-3 text-xs font-semibold text-red-400">{error}</p>
             )}
           </div>
 

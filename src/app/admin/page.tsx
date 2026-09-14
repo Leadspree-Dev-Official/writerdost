@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppStore } from "@/lib/app-store";
 import { User, UserPlan, UserFeatures, UpgradeRequest } from "@/lib/store-types";
 
@@ -13,6 +13,15 @@ export default function AdminDashboard() {
   const upgradeRequests = useAppStore((state) => state.upgradeRequests);
   const adminSetUserPlanAndFeatures = useAppStore((state) => state.adminSetUserPlanAndFeatures);
   const adminResolveUpgradeRequest = useAppStore((state) => state.adminResolveUpgradeRequest);
+  const loadUsers = useAppStore((state) => state.loadUsers);
+  const loadUpgradeRequests = useAppStore((state) => state.loadUpgradeRequests);
+
+  // Accounts and requests come from Appwrite, so the screen starts empty and
+  // fills in. Both calls are admin-guarded server-side.
+  useEffect(() => {
+    void loadUsers();
+    void loadUpgradeRequests();
+  }, [loadUsers, loadUpgradeRequests]);
 
   // Tab State
   const [activeTab, setActiveTab] = useState<"users" | "requests">("users");
@@ -44,6 +53,9 @@ export default function AdminDashboard() {
   // Confirm delete state
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
+  // Server-side failures from the row actions (suspend, promote, delete).
+  const [actionError, setActionError] = useState<string | null>(null);
+
   // Calculate Metrics
   const totalUsers = users.length;
   const activeUsers = users.filter((u) => u.status === "active").length;
@@ -60,7 +72,7 @@ export default function AdminDashboard() {
     return matchesSearch && matchesRole && matchesStatus;
   });
 
-  const handleAddUser = (e: React.FormEvent) => {
+  const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
     setFormSuccess(null);
@@ -70,7 +82,7 @@ export default function AdminDashboard() {
       return;
     }
 
-    const res = adminAddUser({
+    const res = await adminAddUser({
       fullName: newFullName,
       email: newEmail,
       role: newRole,
@@ -101,19 +113,21 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleToggleStatus = (user: User) => {
+  const handleToggleStatus = async (user: User) => {
     const newStatus = user.status === "active" ? "suspended" : "active";
-    adminUpdateUser(user.id, { status: newStatus });
+    const res = await adminUpdateUser(user.id, { status: newStatus });
+    if (!res.success) setActionError(res.error || "Could not update the account.");
   };
 
-  const handleToggleRole = (user: User) => {
+  const handleToggleRole = async (user: User) => {
     const newRole = user.role === "admin" ? "user" : "admin";
     // Prevent locking yourself out as admin
     if (currentUser?.id === user.id) {
       alert("You cannot change your own admin role.");
       return;
     }
-    adminUpdateUser(user.id, { role: newRole });
+    const res = await adminUpdateUser(user.id, { role: newRole });
+    if (!res.success) setActionError(res.error || "Could not update the account.");
   };
 
   const handleDeleteClick = (userId: string) => {
@@ -124,8 +138,9 @@ export default function AdminDashboard() {
     setConfirmDeleteId(userId);
   };
 
-  const confirmDelete = (userId: string) => {
-    adminDeleteUser(userId);
+  const confirmDelete = async (userId: string) => {
+    const res = await adminDeleteUser(userId);
+    if (!res.success) setActionError(res.error || "Could not delete the account.");
     setConfirmDeleteId(null);
   };
 
@@ -165,13 +180,14 @@ export default function AdminDashboard() {
     });
   };
 
-  const handleSaveAccess = () => {
+  const handleSaveAccess = async () => {
     if (!editingUser) return;
-    adminSetUserPlanAndFeatures(editingUser.id, selectedPlan, selectedFeatures);
+    const res = await adminSetUserPlanAndFeatures(editingUser.id, selectedPlan, selectedFeatures);
+    if (!res.success) setActionError(res.error || "Could not save the plan.");
     setEditingUser(null);
   };
 
-  const handleApproveRequest = (req: UpgradeRequest) => {
+  const handleApproveRequest = async (req: UpgradeRequest) => {
     const user = users.find((u) => u.id === req.userId);
     if (user) {
       const nextFeatures = {
@@ -183,9 +199,9 @@ export default function AdminDashboard() {
       const isPro = nextFeatures.createEbook && nextFeatures.rewriteEbook && nextFeatures.blogGenerator && !nextFeatures.advancedModels;
       const planName = isEnterprise ? "Enterprise" : (isPro ? "Pro" : "Custom");
 
-      adminSetUserPlanAndFeatures(user.id, planName, nextFeatures);
+      await adminSetUserPlanAndFeatures(user.id, planName, nextFeatures);
     }
-    adminResolveUpgradeRequest(req.id);
+    await adminResolveUpgradeRequest(req.id);
   };
 
   const formatDate = (isoString: string) => {
@@ -215,6 +231,18 @@ export default function AdminDashboard() {
           {showAddForm ? "View users" : "New user"}
         </button>
       </div>
+
+      {actionError && (
+        <div className="mb-4 p-4 rounded-[var(--radius)] bg-red-950/50 border border-red-800/40 text-red-400 text-xs font-semibold flex items-start justify-between gap-3">
+          <span className="flex items-start gap-2.5">
+            <span className="material-symbols-outlined text-sm mt-0.5 shrink-0">error</span>
+            <span>{actionError}</span>
+          </span>
+          <button type="button" onClick={() => setActionError(null)} className="shrink-0 underline">
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Metrics Row */}
       <section className="metrics !grid-cols-2 lg:!grid-cols-4 mb-4">

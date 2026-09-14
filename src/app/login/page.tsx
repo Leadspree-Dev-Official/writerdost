@@ -14,7 +14,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       setError("Please fill in all fields.");
@@ -24,33 +24,14 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    // Simulate small network delay for premium feel / micro-interactions
-    setTimeout(() => {
-      const res = login(email, password);
-      setLoading(false);
-      if (res.success) {
-        router.push("/dashboard");
-      } else {
-        setError(res.error || "Authentication failed.");
-      }
-    }, 800);
-  };
+    const res = await login(email, password);
+    setLoading(false);
 
-  const handleQuickAccess = (presetEmail: string, presetPass: string) => {
-    setEmail(presetEmail);
-    setPassword(presetPass);
-    setError(null);
-    setLoading(true);
-
-    setTimeout(() => {
-      const res = login(presetEmail, presetPass);
-      setLoading(false);
-      if (res.success) {
-        router.push("/dashboard");
-      } else {
-        setError(res.error || "Authentication failed.");
-      }
-    }, 600);
+    if (res.success) {
+      router.push("/dashboard");
+    } else {
+      setError(res.error || "Authentication failed.");
+    }
   };
 
   return (
@@ -156,30 +137,6 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Demo Accounts Panel */}
-        <div className="mt-6 bg-slate-900/30 border border-slate-800/40 rounded-[var(--radius-lg)] p-5 text-center">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
-            Quick Demo Accounts
-          </p>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={() => handleQuickAccess("admin@leadspree.com", "admin123")}
-              disabled={loading}
-              className="px-3 py-2 rounded-[var(--radius)] bg-indigo-950/30 border border-indigo-900/30 text-indigo-300 text-xs font-bold hover:bg-indigo-900/30 active:scale-95 transition-all text-left flex flex-col gap-0.5"
-            >
-              <span className="text-[10px] text-indigo-400/70 font-semibold uppercase">Super Admin</span>
-              <span className="truncate">admin@leadspree.com</span>
-            </button>
-            <button
-              onClick={() => handleQuickAccess("julian@example.com", "password")}
-              disabled={loading}
-              className="px-3 py-2 rounded-[var(--radius)] bg-amber-950/20 border border-amber-900/20 text-amber-300 text-xs font-bold hover:bg-amber-900/20 active:scale-95 transition-all text-left flex flex-col gap-0.5"
-            >
-              <span className="text-[10px] text-amber-400/70 font-semibold uppercase">Author</span>
-              <span className="truncate">julian@example.com</span>
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );
