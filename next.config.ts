@@ -21,6 +21,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   // Silences the multi-lockfile warning by pinning the workspace root here.
   turbopack: {
     root: __dirname,
