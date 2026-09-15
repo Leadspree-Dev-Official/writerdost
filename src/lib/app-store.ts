@@ -7,6 +7,13 @@ import { account, appwriteBrowserConfigured, appwriteMessage } from "@/lib/appwr
 import { defaultPrefs, toUser } from "@/lib/auth/profile";
 import * as backend from "./automation/client-api";
 import type { AutomationWire, DestinationWire } from "./automation/wire";
+import { DEFAULT_LANGUAGE } from "@/lib/languages";
+import {
+  ANON_WORKSPACE_KEY,
+  adoptLegacyWorkspace,
+  workspaceExists,
+  workspaceKey,
+} from "@/lib/workspace-scope";
 import { providerDefaults } from "@/lib/ai-providers";
 import { MARKETPLACE, generateApiToken } from "@/lib/marketplace";
 import type {
@@ -189,6 +196,8 @@ export type Project = {
   description: string;
   audience: string;
   tone: string;
+  /** The language the manuscript is written in. Absent on pre-language projects. */
+  language?: string;
   type: "ebook" | "rewrite";
   progress: number;
   status: ProjectStatus;
@@ -217,6 +226,8 @@ type CreateDraft = {
   audience: string;
   length: number;
   tone: string;
+  /** The language the agents write the manuscript in. */
+  language: string;
   researchSources: ResearchSource[];
 };
 
@@ -567,6 +578,7 @@ const defaultCreateDraft: CreateDraft = {
   audience: "",
   length: 20000,
   tone: "Professional",
+  language: DEFAULT_LANGUAGE,
   researchSources: [],
 };
 
@@ -690,6 +702,19 @@ const defaultUsage: UsageState = {
   timingHistory: [],
 };
 
+const defaultBlog: BlogComposer = {
+  source: "none",
+  projectId: "",
+  topic: "",
+  title: "",
+  draft: "",
+  metaDescription: "",
+  keywords: [],
+  suggestions: [],
+  targetWords: 1000,
+  lastSavedLabel: "",
+};
+
 const createBlogSuggestions = (subject: string) => [
   `Why ${subject} Could Become Your Strongest Content Asset`,
   `How ${subject} Turns Long-Form Ideas Into Reach`,
@@ -722,6 +747,67 @@ const buildRewrite = (text: string, tone: string, humanize: boolean, avoidPlagia
 const contentToWordCount = (content: string) =>
   Math.max(0, content.replace(/<[^>]+>/g, " ").trim().split(/\s+/).filter(Boolean).length);
 
+/* ------------------------------------------------------------------
+   Account-scoped local workspace
+   ------------------------------------------------------------------ */
+
+/**
+ * The slices that belong to one account and live only in this browser:
+ * manuscripts, the work in flight, the pen name, the BYO AI key. This is what
+ * a brand-new workspace looks like.
+ */
+function blankWorkspace() {
+  return {
+    projects: starterProjects,
+    currentProjectId: starterProjects[0].id,
+    activeChapterId: starterProjects[0].chapters[1].id,
+    createDraft: defaultCreateDraft,
+    rewrite: defaultRewrite,
+    blog: defaultBlog,
+    outlineGenerator: defaultOutlineGenerator,
+    profile: defaultProfile,
+    settings: defaultSettings,
+    api: defaultApiSettings,
+    platform: defaultPlatformApi,
+    usage: defaultUsage,
+  };
+}
+
+/** The key the persist middleware is writing to right now. */
+let activeWorkspaceKey = ANON_WORKSPACE_KEY;
+
+/**
+ * Points persistence at one account's workspace, or at the signed-out one.
+ *
+ * Call this before flipping `authStatus`, so the app never renders a signed-in
+ * shell over the previous account's manuscripts.
+ *
+ * The order below is load-bearing. `setOptions` comes first, because every
+ * `setState` writes through to the current key and a reset done too early
+ * would blank the workspace of the account on its way out. And the reset only
+ * happens when the target has nothing saved: `rehydrate()` merges over the
+ * current state rather than replacing it, so a fresh key needs the explicit
+ * blank, while an existing one must not be overwritten before it is read.
+ */
+async function openWorkspace(userId: string | null): Promise<void> {
+  const target = userId ? workspaceKey(userId) : ANON_WORKSPACE_KEY;
+  if (target === activeWorkspaceKey) return;
+
+  // A save from before workspaces were scoped goes to whoever signs in first.
+  if (userId) adoptLegacyWorkspace(target);
+  const saved = workspaceExists(target);
+
+  activeWorkspaceKey = target;
+  useAppStore.persist.setOptions({ name: target });
+
+  if (saved) {
+    // Runs the version migration on the way in.
+    await useAppStore.persist.rehydrate();
+  } else {
+    useAppStore.setState(blankWorkspace());
+  }
+}
+
 export const useAppStore = create<AppStore>()(
   persist(
     (set, get) => ({
@@ -730,18 +816,7 @@ export const useAppStore = create<AppStore>()(
       activeChapterId: starterProjects[0].chapters[1].id,
       createDraft: defaultCreateDraft,
       rewrite: defaultRewrite,
-      blog: {
-        source: "none",
-        projectId: "",
-        topic: "",
-        title: "",
-        draft: "",
-        metaDescription: "",
-        keywords: [],
-        suggestions: [],
-        targetWords: 1000,
-        lastSavedLabel: "",
-      },
+      blog: defaultBlog,
       profile: defaultProfile,
       settings: defaultSettings,
       api: defaultApiSettings,
@@ -806,6 +881,7 @@ export const useAppStore = create<AppStore>()(
           description: createDraft.vision || "A new ebook project drafted in Writerdost AI.",
           audience: createDraft.audience || "General readers",
           tone: createDraft.tone,
+          language: createDraft.language || DEFAULT_LANGUAGE,
           type: "ebook",
           progress: 12,
           status: "Planning",
@@ -869,6 +945,7 @@ export const useAppStore = create<AppStore>()(
           description: payload.description,
           audience: payload.audience,
           tone: payload.tone,
+          language: payload.language || DEFAULT_LANGUAGE,
           type: "ebook",
           progress: 25,
           status: "Planning",
@@ -1441,12 +1518,16 @@ export const useAppStore = create<AppStore>()(
 
         try {
           const me = toUser(await account().get());
+          // Before authStatus flips, so the shell never paints over someone
+          // else's manuscripts.
+          await openWorkspace(me.id);
           set({
             currentUser: me,
             authStatus: "authenticated",
             profile: { ...get().profile, fullName: me.fullName, email: me.email },
           });
         } catch {
+          await openWorkspace(null);
           set({ currentUser: null, authStatus: "anonymous" });
         }
       },
@@ -1459,6 +1540,7 @@ export const useAppStore = create<AppStore>()(
         try {
           await account().createEmailPasswordSession({ email, password });
           const me = toUser(await account().get());
+          await openWorkspace(me.id);
 
           set({
             currentUser: me,
@@ -1491,6 +1573,9 @@ export const useAppStore = create<AppStore>()(
           await account().updatePrefs({ prefs: defaultPrefs() });
 
           const me = toUser(await account().get());
+          // A new account gets a new workspace, never the last signer-in's.
+          await openWorkspace(me.id);
+
           set({
             currentUser: me,
             authStatus: "authenticated",
@@ -1513,6 +1598,11 @@ export const useAppStore = create<AppStore>()(
         } catch {
           // Already gone server-side; clearing locally is still correct.
         }
+
+        // Back to the signed-out workspace. The account's own manuscripts stay
+        // under their key, so signing in again brings them back.
+        await openWorkspace(null);
+
         set({
           currentUser: null,
           authStatus: "anonymous",
@@ -2133,8 +2223,9 @@ export const useAppStore = create<AppStore>()(
       },
     }),
     {
-      name: "writerdost-app-store",
-      version: 8,
+      // Replaced per account by openWorkspace(); see workspace-scope.ts.
+      name: ANON_WORKSPACE_KEY,
+      version: 9,
       migrate: (persisted, fromVersion) => {
         const state = persisted as Partial<AppStore> | undefined;
         if (!state) return persisted as AppStore;
@@ -2248,6 +2339,23 @@ export const useAppStore = create<AppStore>()(
           delete (state as Partial<AppStore>).automations;
           delete (state as Partial<AppStore>).automationDestinations;
           delete (state as Partial<AppStore>).campaignPosts;
+        }
+
+        // v9 added a per-book output language. Older saves have no language on
+        // the create draft or on existing projects; seed both from the
+        // workspace default so the picker never opens empty.
+        if (from < 9) {
+          if (state.createDraft && !state.createDraft.language) {
+            state.createDraft = {
+              ...state.createDraft,
+              language: state.profile?.language || DEFAULT_LANGUAGE,
+            };
+          }
+          if (Array.isArray(state.projects)) {
+            state.projects = state.projects.map((project: Project) =>
+              project.language ? project : { ...project, language: DEFAULT_LANGUAGE },
+            );
+          }
         }
 
         return state as AppStore;

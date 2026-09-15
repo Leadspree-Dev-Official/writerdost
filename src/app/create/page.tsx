@@ -6,6 +6,7 @@ import { useAppStore } from "@/lib/app-store";
 import { robustParseJson, STREAM_DELIMITER } from "@/lib/app-utils";
 
 import { TONES, TONE_GUIDE } from "@/lib/tone-standards";
+import { LANGUAGE_GROUPS, DEFAULT_LANGUAGE } from "@/lib/languages";
 
 
 export default function IdeaAndInput() {
@@ -317,6 +318,31 @@ export default function IdeaAndInput() {
                   <span>100k</span>
                 </div>
               </div>
+            </div>
+
+            <div className="panel panel-pad">
+              <label htmlFor="language" className="label">
+                Language
+              </label>
+              <select
+                id="language"
+                className="input max-w-xs"
+                value={createDraft.language || DEFAULT_LANGUAGE}
+                onChange={(event) => updateCreateDraft({ language: event.target.value })}
+              >
+                {LANGUAGE_GROUPS.map((group) => (
+                  <optgroup key={group.label} label={group.label}>
+                    {group.options.map((language) => (
+                      <option key={language} value={language}>
+                        {language}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+              <p className="hint">
+                Every chapter, heading and outline is written in this language.
+              </p>
             </div>
 
             <div className="panel panel-pad">

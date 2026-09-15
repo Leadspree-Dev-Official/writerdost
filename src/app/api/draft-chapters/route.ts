@@ -2,6 +2,7 @@ import { sendStreamEvent, type StreamEvent } from "@/lib/app-utils";
 import { mdToHtml } from "@/lib/markdown-utils";
 import { EBOOK_FORMATTING_STANDARDS } from "@/lib/ebook-standards";
 import { getToneDirective } from "@/lib/tone-standards";
+import { getLanguageDirective } from "@/lib/languages";
 import { callModel } from "@/lib/ai-server-utils";
 import { guardRequest } from "@/lib/api-guard";
 
@@ -25,6 +26,8 @@ export async function POST(req: Request) {
       const heartbeat = setInterval(() => sendEvent({ type: "ping" }), 20000);
 
       try {
+        const languageDirective = getLanguageDirective(project.language);
+
         sendEvent({ type: "active_agent", agent: "Writing Agent" });
         sendEvent({ type: "log", agent: "Writing Agent", message: `Beginning drafting phase for ${project.chapters.length} chapters...`, status: "pending" });
 
@@ -81,7 +84,7 @@ export async function POST(req: Request) {
             
             const isLastSection = sectionIndex === SECTIONS_PER_CHAPTER;
             const wrapUpInstruction = isLastSection ? `
-              Since this is the final section of the chapter, conclude your prose with a "Chapter Wrap-Up" structured exactly as follows:
+              Since this is the final section of the chapter, conclude your prose with a "Chapter Wrap-Up" structured exactly as follows (translate these labels into the output language):
               ### Chapter Wrap-Up
               **Key Takeaways:**
               * [Point 1]
@@ -97,6 +100,7 @@ export async function POST(req: Request) {
               Current Goal: ${adjustedSectionGoal} words.
               Context: This is Section ${sectionIndex} of ${SECTIONS_PER_CHAPTER} for the chapter "${chapter.title}".
               ${getToneDirective(project.tone)}
+              ${languageDirective}
               ${lastSectionTail ? "PREVIOUS CONTEXT (Bridge from here): " + lastSectionTail : ""}
               DO NOT use summaries. Use vivid examples, case studies, and detailed arguments.
               
@@ -132,6 +136,7 @@ export async function POST(req: Request) {
                 Target: ${adjustedSectionGoal} words. Current: ${sectionWords} words.
                 Your task: Expand the provided text by adding more granular details, examples, and deep analysis. 
                 Do NOT summarize. Broaden the scope of the discussion to meet the length requirement while maintaining the professional tone.
+                ${languageDirective}
                 
                 CRITICAL FORMATTING INSTRUCTIONS:
                 You MUST apply mandatory eBook formatting to your expanded output.

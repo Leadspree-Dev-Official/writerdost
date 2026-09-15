@@ -10,8 +10,6 @@ import TextAlign from "@tiptap/extension-text-align";
 import { Extension } from '@tiptap/core';
 import { TextStyle, FontSize, FontFamily } from '@tiptap/extension-text-style';
 import {
-  FONTS_BY_CATEGORY,
-  FONT_OPTIONS,
   findFont,
   loadGoogleFont,
   DEFAULT_BODY_FONT,

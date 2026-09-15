@@ -2,6 +2,7 @@ import type { ApiSettings, GeneratedProjectPayload, OutlinePoint } from "@/lib/s
 import { robustParseJson, slugify, sendStreamEvent, type StreamEvent } from "@/lib/app-utils";
 import { mdToHtml } from "@/lib/markdown-utils";
 import { getToneDirective } from "@/lib/tone-standards";
+import { getLanguageDirective, DEFAULT_LANGUAGE } from "@/lib/languages";
 import { callModel } from "@/lib/ai-server-utils";
 import { guardRequest } from "@/lib/api-guard";
 
@@ -18,6 +19,7 @@ type RequestPayload = {
     audience: string;
     length: number;
     tone: string;
+    language?: string;
     researchSources: Array<{ type: string; value: string; label: string }>;
   };
 };
@@ -54,6 +56,7 @@ function buildFallbackProject(draft: RequestPayload["draft"]): GeneratedProjectP
     description: baseDescription,
     audience: draft.audience || "General readers",
     tone: draft.tone,
+    language: draft.language || DEFAULT_LANGUAGE,
     targetLength: draft.length,
     positioning: `A ${draft.tone.toLowerCase()} long-form guide developed from the user's initial concept.`,
     chapterCount,
@@ -111,9 +114,12 @@ export async function POST(request: Request) {
           .map((s) => `- [${s.type.toUpperCase()}] ${s.label}${s.type !== 'file' ? `: ${s.value}` : ''}`)
           .join("\n") || "None";
 
+        const languageDirective = getLanguageDirective(draft.language);
+
         const sharedPrompt = `Vision: ${draft.vision}
 Audience: ${draft.audience || "General readers"}
 Tone: ${draft.tone}
+Language: ${draft.language || DEFAULT_LANGUAGE}
 Target length: ${draft.length} words
 Research Bibliography:
 ${bibliography}
@@ -127,6 +133,7 @@ ${bibliography}
           api,
           systemPrompt: `You are the Writerdost Research Agent. Your task is to extract relevant facts, keywords, and semantic concepts for a specific book concept.
           ${settings.creativeMode ? "CREATIVE MODE ACTIVE: Look for interesting, surprising connections and unconventional research angles." : ""}
+          ${languageDirective}
           You must respond in valid JSON format.`,
           userPrompt: `Title/Topic: ${draft.vision}\nAudience: ${draft.audience}\nTone: ${draft.tone}\n\nBibliography:\n${bibliography}\n\nGenerate deep research notes and structural insights derived from these specific sources to support a ${draft.length} word manuscript.`,
           temperature: settings.temperature,
@@ -144,6 +151,7 @@ ${bibliography}
           IF THE USER PROVIDES AN EXISTING OUTLINE OR TABLE OF CONTENTS: You must use it as inspiration but completely rewrite and rebrand the titles, descriptions, and structure. Do not copy their exact phrasing. Create a unique, original blueprint that follows the same winning logic without plagiarizing the source.
           ${settings.creativeMode ? "CREATIVE MODE ACTIVE: Propose unique, non-obvious chapter topics and hooks." : ""}
           ${settings.longFormFocus ? "LONG-FORM FOCUS ACTIVE: Ensure chapter transitions and logical flow are optimized for a continuous book-length experience." : ""}
+          ${languageDirective}
           You must respond in valid JSON format exactly matching this structure:
           {
             "title": "A strong, marketable title",
@@ -217,6 +225,7 @@ IF THE USER PROVIDED AN EXISTING OUTLINE AS INSPIRATION: You must rewrite the bu
 ${settings.creativeMode ? "CREATIVE MODE ACTIVE: Design experimental structures and non-linear narrative arcs." : ""}
 ${settings.longFormFocus ? "LONG-FORM FOCUS ACTIVE: Ensure this chapter bridges perfectly with the previously generated chapters." : ""}
 ${getToneDirective(draft.tone)}
+${languageDirective}
 You must return a single JSON object (NOT an array). Return raw JSON. Do NOT wrap it in a markdown block. Do NOT use H2/H3 headings. Just output the JSON.
 It must contain exactly: { "title": "...", "summary": "...", "outline": [ { "point": "...", "subpoints": ["...", "...", "..."] } ] }.`,
             userPrompt: `${sharedPrompt}\n\n${previousChaptersContext ? `PREVIOUSLY PLANNED CHAPTERS:\n${previousChaptersContext}\n\n` : ''}Task: Generate the complete architectural plan for Chapter ${i}.
@@ -320,6 +329,7 @@ CRITICAL DEPTH REQUIREMENT: You MUST generate ${bulletPointTarget} and for every
           description: planning.description || draft.vision,
           audience: planning.audience || draft.audience || "General readers",
           tone: planning.tone || draft.tone,
+          language: draft.language || DEFAULT_LANGUAGE,
           targetLength: draft.length,
           positioning: planning.positioning || "Standard Authoritative positioning",
           chapterCount: planning.chapterCount || chapterPlan.length || 0,

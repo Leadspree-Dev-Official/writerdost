@@ -64,9 +64,10 @@ export const DesignSettings: React.FC<DesignSettingsProps> = ({ projectId }) => 
   const project = projects.find((p) => p.id === projectId);
   const [isOpen, setIsOpen] = useState(false);
 
-  if (!project) return null;
-
-  const settings: ProjectDesignSettings = { ...DEFAULTS, ...project.designSettings };
+  // Defaults stand in while the project is missing, so the effect below runs on
+  // every render. Returning early above it would make the hook conditional,
+  // and React would lose the hook order the first time a project disappeared.
+  const settings: ProjectDesignSettings = { ...DEFAULTS, ...project?.designSettings };
 
   useEffect(() => {
     const bodyFont = findFont(settings.bodyFont, DEFAULT_BODY_FONT);
@@ -74,6 +75,8 @@ export const DesignSettings: React.FC<DesignSettingsProps> = ({ projectId }) => 
     if (bodyFont?.isGoogleFont) loadGoogleFont(bodyFont.family);
     if (headingFont?.isGoogleFont) loadGoogleFont(headingFont.family);
   }, [settings.bodyFont, settings.headingFont]);
+
+  if (!project) return null;
 
   const handleChange = (key: keyof ProjectDesignSettings, value: string) => {
     const font = findFont(value, DEFAULT_BODY_FONT);

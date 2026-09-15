@@ -26,6 +26,8 @@ export type GeneratedProjectPayload = {
   description: string;
   audience: string;
   tone: string;
+  /** The language the manuscript is written in. */
+  language?: string;
   targetLength: number;
   positioning: string;
   chapterCount: number;
