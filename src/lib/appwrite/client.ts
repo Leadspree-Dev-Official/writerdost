@@ -12,8 +12,10 @@
  */
 import { Account, Client } from "appwrite";
 
-const ENDPOINT = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "";
-const PROJECT_ID = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "";
+const ENDPOINT =
+  process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "https://sgp.cloud.appwrite.io/v1";
+const PROJECT_ID =
+  process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "6aa84ecb00304c7935ad";
 
 /** True when the browser has enough configuration to reach Appwrite. */
 export function appwriteBrowserConfigured(): boolean {
