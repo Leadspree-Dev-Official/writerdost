@@ -456,7 +456,7 @@ export function AiSettingsTab() {
               )}
 
               <p className="hint !mt-0 ml-auto max-w-xs text-right">
-                Keys are held in this browser only. Fine for local use, not for production.
+                Keys are encrypted and stored with your account, never in this browser.
               </p>
             </div>
           </section>

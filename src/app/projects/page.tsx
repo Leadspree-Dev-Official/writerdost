@@ -199,10 +199,6 @@ export default function ProjectsPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    if (apiBlocker) {
-                      router.push("/settings?tab=api");
-                      return;
-                    }
                     setProjectToPublish(project.id);
                   }}
                   title={

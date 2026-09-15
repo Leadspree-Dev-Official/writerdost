@@ -226,6 +226,42 @@ const TABLES = [
     indexes: [key("requests_by_status", ["status", "userId"], [OrderBy.Asc, OrderBy.Asc])],
   },
   {
+    id: "workspaces",
+    permissions: USER_CREATE,
+    name: "Workspaces",
+    // Everything one account's workspace holds except the manuscripts: the
+    // create/rewrite/blog drafts, profile, editor settings and usage totals.
+    // It replaces what the browser used to keep in localStorage, so the work
+    // follows the account instead of the machine.
+    columns: [
+      s("userId", 64, { required: true }),
+      // JSON blob. Secrets inside it (the BYO AI key, marketplace key) are
+      // AES-256-GCM encrypted by the route before they ever reach this row.
+      text("data"),
+      when("savedAt"),
+    ],
+    indexes: [key("workspace_by_user", ["userId"], [OrderBy.Asc])],
+  },
+  {
+    id: "workspace_projects",
+    permissions: USER_CREATE,
+    name: "Workspace projects",
+    // One manuscript per row rather than one blob per account: a book runs to
+    // megabytes, and an autosave must not rewrite the whole shelf to record a
+    // single edited chapter.
+    columns: [
+      s("userId", 64, { required: true }),
+      s("projectId", 128, { required: true }),
+      s("title", 512),
+      text("data"),
+      when("savedAt"),
+    ],
+    indexes: [
+      key("workspace_projects_by_user", ["userId"], [OrderBy.Asc]),
+      key("workspace_projects_by_key", ["userId", "projectId"], [OrderBy.Asc, OrderBy.Asc]),
+    ],
+  },
+  {
     id: "seen_sources",
     permissions: [],
     name: "Seen sources",

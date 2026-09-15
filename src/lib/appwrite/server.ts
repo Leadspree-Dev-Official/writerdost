@@ -33,6 +33,8 @@ export const TABLES = {
   posts: "generated_posts",
   seen: "seen_sources",
   upgrades: "upgrade_requests",
+  workspaces: "workspaces",
+  workspaceProjects: "workspace_projects",
 } as const;
 
 export { ID, Permission, Query, Role };

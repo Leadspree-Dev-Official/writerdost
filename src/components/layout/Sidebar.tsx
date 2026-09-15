@@ -11,7 +11,14 @@ type FeatureKey = "createEbook" | "rewriteEbook" | "blogGenerator" | "advancedMo
 /** Grouped so the nav reads as three short lists rather than one long one. */
 const NAV_GROUPS: Array<{
   label: string;
-  items: Array<{ name: string; href: string; icon: string; feature?: FeatureKey; beta?: boolean }>;
+  items: Array<{
+    name: string;
+    href: string;
+    icon: string;
+    feature?: FeatureKey;
+    beta?: boolean;
+    badge?: string;
+  }>;
 }> = [
   {
     label: "Workspace",
@@ -27,6 +34,17 @@ const NAV_GROUPS: Array<{
       { name: "Rewrite", href: "/rewrite", icon: "book_5", feature: "rewriteEbook" },
       { name: "Blog draft", href: "/blog-generator", icon: "edit_note", feature: "blogGenerator" },
       { name: "BlogGen", href: "/automations", icon: "schedule_send", feature: "blogGenerator", beta: true },
+    ],
+  },
+  {
+    label: "Publishing",
+    items: [
+      {
+        name: "BundleKart Marketplace",
+        href: "/marketplace",
+        icon: "storefront",
+        badge: "Marketplace",
+      },
     ],
   },
   {
@@ -165,6 +183,11 @@ export default function Sidebar() {
                     {item.beta && !collapsed && (
                       <span className="shrink-0 rounded-full bg-primary/10 px-1.5 py-px text-[9.5px] font-semibold uppercase tracking-[0.04em] text-primary dark:bg-primary/20 dark:text-indigo-300">
                         Beta
+                      </span>
+                    )}
+                    {item.badge && !collapsed && (
+                      <span className="shrink-0 rounded-full bg-emerald-500/10 dark:bg-emerald-500/20 px-1.5 py-px text-[9.5px] font-semibold tracking-[0.02em] text-emerald-600 dark:text-emerald-400">
+                        {item.badge}
                       </span>
                     )}
                     {locked && (

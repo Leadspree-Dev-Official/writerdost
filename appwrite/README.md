@@ -1,9 +1,10 @@
 # Appwrite 2.0 backend
 
-Appwrite is not optional. It holds **the accounts people sign in with** and
-**the blog campaigns the scheduler runs**. Ebook drafting still spends a BYO AI
-key held in the browser, but nobody gets as far as the workspace without an
-Appwrite account.
+Appwrite is not optional. It holds **the accounts people sign in with**, **the
+whole authoring workspace** — manuscripts, drafts, settings and the BYO AI key
+— and **the blog campaigns the scheduler runs**. Nothing is kept in the
+browser: no workspace, no localStorage, so a book written on one machine opens
+on the next one signed in.
 
 Three pieces:
 
@@ -23,7 +24,7 @@ Three pieces:
 
    | Scope | Why |
    | --- | --- |
-   | `databases.read`, `databases.write` | The campaign tables. |
+   | `databases.read`, `databases.write` | The workspace and campaign tables. |
    | `users.read`, `users.write` | The admin screen, and the `admin` label that grants the administrator role. |
 
 ## 2. Fill in the environment
@@ -99,6 +100,8 @@ firing a real run, which is the quickest way to confirm the secret matches.
 | `generated_posts` | What was written, and where it ended up. |
 | `seen_sources` | Dedupe marks, so the same article is never rewritten twice. |
 | `upgrade_requests` | A user asking for a locked feature. Shared, because the admin reviewing a request is not the person who raised it. |
+| `workspaces` | One row per account: the create/rewrite/blog drafts, profile, editor settings, usage totals. API keys inside it are AES-256-GCM encrypted before the row is written. |
+| `workspace_projects` | One row per manuscript. Split out from `workspaces` so an autosave rewrites the book that changed, not the whole shelf. |
 
 Two details worth knowing before you edit `setup.mjs`:
 
@@ -106,6 +109,10 @@ Two details worth knowing before you edit `setup.mjs`:
   free-form blobs (`sourceConfig`, `contentConfig`, `aiConfig`, `quality`) are
   stored as JSON strings. `encodeJson` / `decodeJson` in
   `src/lib/appwrite/server.ts` are the only code that knows this.
+- **The workspace is JSON too.** `workspaces.data` and `workspace_projects.data`
+  hold the store's own shapes, so adding a field to the store needs no
+  migration here. Row ids are derived — `sha256("workspace", userId)` and
+  `sha256("project", userId, projectId)` — so a save upserts without a lookup.
 - **`seen_sources` has no composite key.** Its row id is
   `sha256(automationId, urlHash)` truncated to 32 characters, so re-seeing a
   source upserts instead of duplicating.

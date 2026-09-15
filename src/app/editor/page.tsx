@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import Editor from "@/components/ui/Editor";
 import { CoverSettings } from "@/components/CoverSettings";
 import { StageBar } from "@/components/StageBar";
@@ -367,7 +368,36 @@ export default function EditorPage() {
   const listed = project?.publish?.status === "published";
  
   if (!project || !chapter) {
-    return <div className="p-8">No project loaded.</div>;
+    // The ordinary state for a new account: there is nothing to edit until a
+    // book exists, so point at the two ways to make one.
+    return (
+      <div className="page">
+        <div className="panel panel-pad text-center py-12">
+          <span className="material-symbols-outlined text-[28px] text-on-surface-variant">
+            menu_book
+          </span>
+          <h1 className="page-title mt-2">
+            {projects.length === 0 ? "No ebooks yet" : "No ebook open"}
+          </h1>
+          <p className="page-sub mx-auto max-w-md">
+            {projects.length === 0
+              ? "Describe a book on the New ebook page and the agents will research, plan and draft it for you."
+              : "Pick a project to carry on writing, or start a new one."}
+          </p>
+          <div className="flex items-center justify-center gap-2 mt-5">
+            <Link href="/create" className="btn btn-primary btn-lg">
+              <span className="material-symbols-outlined">auto_awesome</span>
+              New ebook
+            </Link>
+            {projects.length > 0 && (
+              <Link href="/projects" className="btn btn-secondary btn-lg">
+                Open a project
+              </Link>
+            )}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const handleFinish = () => {

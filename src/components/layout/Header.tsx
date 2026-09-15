@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useAppStore } from "@/lib/app-store";
+import WorkspaceStatus from "@/components/WorkspaceStatus";
 import { useState, useEffect, useRef } from "react";
 import { calculateProjectWords } from "@/lib/app-utils";
 import { AnimatePresence, motion } from "framer-motion";
@@ -176,6 +177,8 @@ export default function Header() {
       </div>
 
       <div className="flex items-center gap-1.5">
+        <WorkspaceStatus />
+
         {pathname === "/editor" && currentProject && (
           <>
             <span className="hidden sm:inline text-[12px] text-on-surface-variant num tabular-nums mr-1">

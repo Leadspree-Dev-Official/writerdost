@@ -42,14 +42,28 @@ export function account(): Account {
 }
 
 /**
- * A fresh JWT for calling this app's API routes.
+ * A JWT for calling this app's API routes.
  *
- * Appwrite JWTs are short-lived (15 minutes) and cheap to mint, so one is
- * fetched per request rather than cached and refreshed. That avoids the whole
- * class of bug where a cached token expires mid-session.
+ * Appwrite JWTs last 15 minutes. One is reused for five, which keeps the
+ * workspace autosave from minting a token every time the author pauses typing
+ * while staying far enough inside the lifetime that a cached token cannot
+ * expire in flight. `clearAuthCache` drops it whenever the account changes.
  */
+const JWT_REUSE_MS = 5 * 60_000;
+
+let cachedJwt: { token: string; mintedAt: number } | null = null;
+
+export function clearAuthCache(): void {
+  cachedJwt = null;
+}
+
 export async function authHeader(): Promise<Record<string, string>> {
+  if (cachedJwt && Date.now() - cachedJwt.mintedAt < JWT_REUSE_MS) {
+    return { authorization: `Bearer ${cachedJwt.token}` };
+  }
+
   const { jwt } = await account().createJWT();
+  cachedJwt = { token: jwt, mintedAt: Date.now() };
   return { authorization: `Bearer ${jwt}` };
 }
 

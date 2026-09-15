@@ -3,45 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useAppStore } from "@/lib/app-store";
-
-const LANGUAGE_GROUPS: Array<{ label: string; options: string[] }> = [
-  {
-    label: "India",
-    options: [
-      "English (India)",
-      "Hindi",
-      "Bengali",
-      "Telugu",
-      "Marathi",
-      "Tamil",
-      "Gujarati",
-      "Urdu",
-      "Kannada",
-      "Odia",
-      "Malayalam",
-      "Punjabi",
-      "Assamese",
-    ],
-  },
-  {
-    label: "International",
-    options: [
-      "American English",
-      "British English",
-      "Spanish",
-      "French",
-      "German",
-      "Italian",
-      "Portuguese",
-      "Russian",
-      "Chinese (Simplified)",
-      "Japanese",
-      "Korean",
-      "Arabic",
-      "Turkish",
-    ],
-  },
-];
+import { LANGUAGE_GROUPS } from "@/lib/languages";
 
 /**
  * Settings → Application. Preferences that apply to the whole workspace rather
@@ -169,12 +131,13 @@ export function ApplicationTab() {
           <section className="panel overflow-hidden">
             <div className="panel-head">
               <span className="panel-title">Workspace data</span>
-              <span className="row-meta">Stored in this browser</span>
+              <span className="row-meta">Stored in your account</span>
             </div>
             <div className="panel-pad space-y-3">
               <p className="text-[12.5px] text-on-surface-variant">
-                Projects, keys and usage all live in this browser&rsquo;s local storage. Clearing site data removes
-                them, and nothing syncs to another device.
+                Projects, settings and usage are saved to your Writerdost account, not to this browser, so
+                they follow you to any device you sign in on. Clearing site data here changes nothing. API
+                keys are encrypted before they are stored.
               </p>
               <div className="flex flex-wrap gap-2">
                 <button

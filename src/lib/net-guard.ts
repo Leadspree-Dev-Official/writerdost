@@ -79,7 +79,11 @@ export async function assertPublicHost(
  */
 export async function assertSafeUrl(
   raw: string,
-  { label = "URL", allowHttp = false }: { label?: string; allowHttp?: boolean } = {},
+  {
+    label = "URL",
+    allowHttp = false,
+    allowLoopback = false,
+  }: { label?: string; allowHttp?: boolean; allowLoopback?: boolean } = {},
 ): Promise<URL> {
   const trimmed = (raw || "").trim();
   if (!trimmed) denyRequest(`A ${label} is required.`);
@@ -95,11 +99,16 @@ export async function assertSafeUrl(
     denyRequest(`The ${label} must use http or https.`);
   }
 
-  if (url.protocol === "http:" && !allowHttp) {
+  const isDev = process.env.NODE_ENV !== "production";
+  const effectiveAllowHttp =
+    allowHttp || (isDev && (url.hostname === "localhost" || url.hostname === "127.0.0.1"));
+  const effectiveAllowLoopback = allowLoopback || isDev;
+
+  if (url.protocol === "http:" && !effectiveAllowHttp) {
     denyRequest(`The ${label} must use https.`);
   }
 
-  await assertPublicHost(url.hostname.toLowerCase(), { label });
+  await assertPublicHost(url.hostname.toLowerCase(), { label, allowLoopback: effectiveAllowLoopback });
   return url;
 }
 
@@ -113,11 +122,24 @@ export const MAX_FETCH_BYTES = 3_000_000;
  */
 export async function safeFetch(
   rawUrl: string,
-  init: RequestInit & { timeoutMs?: number; maxBytes?: number; label?: string } = {},
+  init: RequestInit & {
+    timeoutMs?: number;
+    maxBytes?: number;
+    label?: string;
+    allowHttp?: boolean;
+    allowLoopback?: boolean;
+  } = {},
 ): Promise<{ url: string; status: number; contentType: string; body: string }> {
-  const { timeoutMs = 20_000, maxBytes = MAX_FETCH_BYTES, label = "URL", ...requestInit } = init;
+  const {
+    timeoutMs = 20_000,
+    maxBytes = MAX_FETCH_BYTES,
+    label = "URL",
+    allowHttp,
+    allowLoopback,
+    ...requestInit
+  } = init;
 
-  let current = await assertSafeUrl(rawUrl, { label });
+  let current = await assertSafeUrl(rawUrl, { label, allowHttp, allowLoopback });
   let response: Response | null = null;
 
   for (let hop = 0; hop < 5; hop++) {

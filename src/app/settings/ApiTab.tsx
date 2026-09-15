@@ -12,6 +12,7 @@ import {
   MARKETPLACE_LICENSES,
   isMarketplaceReady,
   maskToken,
+  testBundleKartConnection,
   testMarketplaceConnection,
 } from "@/lib/marketplace";
 import type { ApiScope, ListingFormat, ListingVisibility, MarketplaceLicense } from "@/lib/store-types";
@@ -55,7 +56,7 @@ export function ApiTab() {
     statusText = "Connection failed";
     statusDotClass = "bg-rose-500";
     statusTextClass = "text-rose-500 dark:text-rose-400";
-  } else if (platform.marketplaceApiKey && platform.sellerId) {
+  } else if (platform.marketplaceApiKey) {
     statusText = "Ready to test";
     statusDotClass = "bg-blue-500";
     statusTextClass = "text-blue-500 dark:text-blue-400";
@@ -65,15 +66,32 @@ export function ApiTab() {
     setTesting(true);
     setMessage("");
     try {
-      const result = await testMarketplaceConnection(platform);
-      updatePlatformApi({
-        connectionState: "connected",
-        connectionMessage: `Connected as ${result.seller.displayName}.`,
-        seller: result.seller,
-        lastCheckedAt: Date.now(),
-        marketplaceEnabled: true,
-      });
-      setMessage(`Connected to ${MARKETPLACE.name} as ${result.seller.displayName}.`);
+      const isBkKey =
+        platform.marketplaceApiKey.startsWith("bk_live_sk_") ||
+        platform.marketplaceApiKey.startsWith("bk_test_sk_") ||
+        platform.marketplaceBaseUrl.includes("bundlekart");
+
+      if (isBkKey) {
+        const result = await testBundleKartConnection(platform);
+        updatePlatformApi({
+          connectionState: "connected",
+          connectionMessage: `Connected as ${result.seller.displayName}.`,
+          seller: result.seller,
+          lastCheckedAt: Date.now(),
+          marketplaceEnabled: true,
+        });
+        setMessage(`Connected to ${MARKETPLACE.name} as ${result.seller.displayName}.`);
+      } else {
+        const result = await testMarketplaceConnection(platform);
+        updatePlatformApi({
+          connectionState: "connected",
+          connectionMessage: `Connected as ${result.seller.displayName}.`,
+          seller: result.seller,
+          lastCheckedAt: Date.now(),
+          marketplaceEnabled: true,
+        });
+        setMessage(`Connected to ${MARKETPLACE.name} as ${result.seller.displayName}.`);
+      }
     } catch (error) {
       const text = error instanceof Error ? error.message : "Could not reach the marketplace.";
       updatePlatformApi({
@@ -162,7 +180,7 @@ export function ApiTab() {
                   <input
                     id="mk-key"
                     className="input font-mono text-[12px]"
-                    placeholder="ig_live_…"
+                    placeholder="bk_live_sk_…"
                     type={showKey ? "text" : "password"}
                     autoComplete="off"
                     spellCheck={false}
@@ -170,11 +188,21 @@ export function ApiTab() {
                     onChange={(event) => updatePlatformApi({ marketplaceApiKey: event.target.value })}
                   />
                 </div>
-                <p className="hint">From your seller dashboard. Keys begin with ig_.</p>
+                <p className="hint flex flex-col gap-0.5 mt-1">
+                  <span>From your BundleKart Creator dashboard. Keys begin with <code className="font-mono text-xs">bk_live_sk_</code> or <code className="font-mono text-xs">bk_test_sk_</code>.</span>
+                  <a
+                    href="https://bundlekart.in/seller/onboard"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-primary font-semibold hover:underline"
+                  >
+                    Don&rsquo;t have an account? Register on BundleKart →
+                  </a>
+                </p>
               </div>
 
               <div>
-                <label htmlFor="mk-seller" className="label">Seller ID</label>
+                <label htmlFor="mk-seller" className="label">Seller ID / Studio Name</label>
                 <input
                   id="mk-seller"
                   className="input font-mono text-[12px]"
@@ -182,7 +210,7 @@ export function ApiTab() {
                   value={platform.sellerId}
                   onChange={(event) => updatePlatformApi({ sellerId: event.target.value })}
                 />
-                <p className="hint">The store your listings appear under.</p>
+                <p className="hint">The store or studio your listings appear under.</p>
               </div>
 
               <div className="md:col-span-2">
@@ -195,9 +223,7 @@ export function ApiTab() {
                   onChange={(event) => updatePlatformApi({ marketplaceBaseUrl: event.target.value })}
                 />
                 <p className="hint">
-                  {MARKETPLACE.isMock
-                    ? `${MARKETPLACE.name} is not live yet, so requests go to this app's local mock. The URL is stored and used as soon as the service ships.`
-                    : "Base URL for the marketplace API."}
+                  Production is <code className="font-mono text-xs">https://bundlekart.in</code>. Use <code className="font-mono text-xs">http://localhost:3000</code> for local dev testing.
                 </p>
               </div>
 
@@ -240,7 +266,7 @@ export function ApiTab() {
                 </button>
               )}
               <p className="hint !mt-0 ml-auto max-w-xs text-right">
-                Credentials are held in this browser only, like your AI keys.
+                Credentials are encrypted and stored with your account, like your AI keys.
               </p>
             </div>
           </section>
@@ -577,8 +603,8 @@ export function ApiTab() {
             ))}
             <p className="panel-pad border-t border-[var(--hairline)] hint !mt-0">
               Send the token as <code className="font-mono">Authorization: Bearer &lt;token&gt;</code>. These
-              routes are the contract we are building against — projects currently live in this browser, so a
-              real deployment needs the WriterDost backend behind them.
+              routes are the contract we are building against: the data behind them is your Writerdost
+              workspace, and issuing a token does not open them up on its own yet.
             </p>
           </section>
         </div>

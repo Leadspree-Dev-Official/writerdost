@@ -8,10 +8,9 @@ interface CoverSettingsProps {
 }
 
 /**
- * Covers are persisted as data URLs inside the same localStorage bucket as the
- * manuscripts, so a large upload can push the whole store past the browser
- * quota. 1.5 MB of source file is roughly 2 MB once base64-encoded, which
- * leaves room for the prose.
+ * Covers are stored as data URLs inside the project row, so a large upload
+ * inflates every autosave of that manuscript. 1.5 MB of source file is roughly
+ * 2 MB once base64-encoded, which leaves room for the prose.
  */
 const MAX_COVER_BYTES = 1.5 * 1024 * 1024;
 

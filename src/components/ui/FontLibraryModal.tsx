@@ -1,14 +1,8 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import {
-  FontCategory,
-  FontOption,
-  getAllFonts,
-  loadGoogleFont,
-  addCustomFont,
-  removeCustomFont,
-} from "@/lib/fonts";
+import { FontCategory, FontOption, getAllFonts, loadGoogleFont } from "@/lib/fonts";
+import { useAppStore } from "@/lib/app-store";
 
 interface FontLibraryModalProps {
   isOpen: boolean;
@@ -39,14 +33,14 @@ export default function FontLibraryModal({
   const [customFontInput, setCustomFontInput] = useState("");
   const [customFontStatus, setCustomFontStatus] = useState<string | null>(null);
   const [sampleText, setSampleText] = useState("");
-  const [fontsList, setFontsList] = useState<FontOption[]>([]);
 
-  // Refresh list on open or change
-  useEffect(() => {
-    if (isOpen) {
-      setFontsList(getAllFonts());
-    }
-  }, [isOpen]);
+  // Custom fonts belong to the workspace, so they come from the store and are
+  // saved with it — nothing about them is kept in this browser.
+  const customFonts = useAppStore((state) => state.customFonts);
+  const addCustomFont = useAppStore((state) => state.addCustomFont);
+  const removeCustomFont = useAppStore((state) => state.removeCustomFont);
+
+  const fontsList = useMemo(() => getAllFonts(customFonts), [customFonts]);
 
   const filteredFonts = useMemo(() => {
     return fontsList.filter((font) => {
@@ -82,7 +76,6 @@ export default function FontLibraryModal({
 
     try {
       const added = addCustomFont(clean);
-      setFontsList(getAllFonts());
       setSelectedCategory("Custom");
       setCustomFontInput("");
       setCustomFontStatus(`Added "${added.label}"! Loaded from Google Fonts.`);
@@ -96,7 +89,6 @@ export default function FontLibraryModal({
   const handleRemoveCustom = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     removeCustomFont(id);
-    setFontsList(getAllFonts());
   };
 
   return (

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { generateAiText } from "@/lib/ai-client";
 import { useAppStore, type RewriteFlow } from "@/lib/app-store";
+import { LANGUAGE_GROUPS } from "@/lib/languages";
 import { STREAM_DELIMITER, robustParseJson } from "@/lib/app-utils";
 import { TONES } from "@/lib/tone-standards";
 
@@ -647,8 +648,12 @@ export default function RewritePage() {
                               value={rewrite.targetLanguage || "Spanish"}
                               onChange={(e) => updateRewrite({ targetLanguage: e.target.value })}
                             >
-                              {["Spanish", "French", "German", "Hindi", "Bengali", "Gujarati", "Portuguese", "Chinese", "Japanese", "Arabic", "Russian"].map((lang) => (
-                                <option key={lang} value={lang}>{lang}</option>
+                              {LANGUAGE_GROUPS.map((group) => (
+                                <optgroup key={group.label} label={group.label}>
+                                  {group.options.map((lang) => (
+                                    <option key={lang} value={lang}>{lang}</option>
+                                  ))}
+                                </optgroup>
                               ))}
                             </select>
                           </div>

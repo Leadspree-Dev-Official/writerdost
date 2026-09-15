@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect } from "react";
 import { useAppStore } from "@/lib/app-store";
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -11,24 +11,17 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const authStatus = useAppStore((state) => state.authStatus);
   const restoreSession = useAppStore((state) => state.restoreSession);
 
-  // Wait for store hydration to avoid premature redirects.
-  // Zustand's persist middleware fills the store on the client only.
-  // Subscribing to the real hydration event is more accurate than "an effect
-  // has run", and keeps the server snapshot false so SSR matches first paint.
-  const isHydrated = useSyncExternalStore(
-    (onChange) => useAppStore.persist.onFinishHydration(onChange),
-    () => useAppStore.persist.hasHydrated(),
-    () => false,
-  );
-
-  // The session is Appwrite's, not localStorage's, so it has to be asked for.
+  // Nothing is stored in this browser, so there is no local hydration to wait
+  // for: the session comes from Appwrite and the workspace comes with it.
   // Until that answer arrives `authStatus` is "unknown", and redirecting on it
   // would bounce a signed-in user to /login on every refresh.
   useEffect(() => {
     if (authStatus === "unknown") void restoreSession();
   }, [authStatus, restoreSession]);
 
-  const isReady = isHydrated && authStatus !== "unknown";
+  // `restoreSession` loads the workspace before it flips authStatus, so this
+  // single check covers both the session and the manuscripts.
+  const isReady = authStatus !== "unknown";
 
   useEffect(() => {
     if (!isReady) return;

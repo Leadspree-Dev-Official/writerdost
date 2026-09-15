@@ -146,6 +146,96 @@ export type PublishState = {
   formats?: ListingFormat[];
   visibility?: ListingVisibility;
   error?: string;
+
+  /* BundleKart specific publishing metadata */
+  bundlekartProductId?: string;
+  bundlekartStoreUrl?: string;
+  bundlekartLandingUrl?: string;
+  bundlekartRevision?: number;
+  bundlekartSlug?: string;
+  bundlekartInr?: number;
+  bundlekartUsd?: number;
+  landingPageConfig?: BundleKartLandingPageConfig;
+};
+
+export type BundleKartDeliverableFile = {
+  format: string;
+  name: string;
+  size: string;
+  version: string;
+};
+
+export type BundleKartBonus = {
+  title: string;
+  description: string;
+  valueInr: number;
+  valueUsd: number;
+};
+
+export type BundleKartFaq = {
+  q: string;
+  a: string;
+};
+
+export type BundleKartLandingBlock = {
+  id: string;
+  enabled: boolean;
+  headlineOverride?: string;
+};
+
+export type BundleKartTemplateId = "high_conversion" | "minimal" | "curriculum" | "toolkit";
+
+export type BundleKartLandingPageConfig = {
+  templateId: BundleKartTemplateId;
+  customAccentColor: string;
+  showUrgencyBanner: boolean;
+  urgencyTimerMinutes: number;
+  showLiveViewers: boolean;
+  showRecentSales: boolean;
+  blocks: BundleKartLandingBlock[];
+};
+
+export type BundleKartPublishPayload = {
+  title: string;
+  type: "ebook" | "prompts" | "template";
+  subtitle: string;
+  hook: string;
+  promise: string;
+  cat: string;
+  inr: number;
+  usd: number;
+  pages: number;
+  units: string;
+  chargeGst: boolean;
+  routeMode: "both" | "landing" | "store";
+  cover?: string;
+  imageUrl?: string;
+  downloadUrl?: string;
+  sampleExcerpt?: string;
+  bullets: string[];
+  about: string[];
+  toc: string[];
+  files: BundleKartDeliverableFile[];
+  faqs: BundleKartFaq[];
+  bonuses: BundleKartBonus[];
+  landingPageConfig: BundleKartLandingPageConfig;
+};
+
+export type BundleKartPublishResponse = {
+  success: boolean;
+  message?: string;
+  error?: string;
+  data?: {
+    id: string;
+    title: string;
+    slug: string;
+    status: string;
+    inr: number;
+    usd: number;
+  };
+  storeUrl?: string;
+  landingUrl?: string;
+  timestamp?: string;
 };
 
 /* --------------------------------------------------------------------------

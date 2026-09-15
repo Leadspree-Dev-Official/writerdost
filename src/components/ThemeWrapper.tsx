@@ -30,7 +30,8 @@ export default function ThemeWrapper() {
     }
   }, [updateApiSettings]);
 
-  // Optionally, persist the initial dark mode state to localStorage or system preference later.
+  // The choice is part of the workspace, so it is saved to Appwrite with the
+  // rest of it and follows the account to the next device.
 
   return null;
 }

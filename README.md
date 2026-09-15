@@ -47,7 +47,7 @@ WriterDost AI is a modern, high-performance platform engineered for creators, au
 - **Framework**: [Next.js 16 (App Router)](https://nextjs.org/) with React 19 & Turbopack.
 - **Styling**: [Tailwind CSS v4](https://tailwindcss.com/) with typography plugin and modern design tokens.
 - **Editor**: [TipTap 3](https://tiptap.dev/) ecosystem (`@tiptap/react`, `@tiptap/starter-kit`).
-- **State Management**: [Zustand](https://github.com/pmndrs/zustand) with local storage persistence.
+- **State Management**: [Zustand](https://github.com/pmndrs/zustand), persisted to Appwrite (never to browser storage).
 - **Backend & Database**: [Appwrite 2.0](https://appwrite.io/) (TablesDB for automated campaigns, runs, destinations, and logs).
 - **Security & Networking**: Outbound SSRF guard (`net-guard`), AES-256-GCM encrypted credential vault (`secure-store`), HMAC-SHA256 signature verification.
 - **AI Integrations**: BYO (Bring Your Own) Keys supporting **OpenAI**, **OpenRouter**, and **Ollama** (localhost).

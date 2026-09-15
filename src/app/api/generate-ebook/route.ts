@@ -1,6 +1,5 @@
 import type { ApiSettings, GeneratedProjectPayload, OutlinePoint } from "@/lib/store-types";
 import { robustParseJson, slugify, sendStreamEvent, type StreamEvent } from "@/lib/app-utils";
-import { mdToHtml } from "@/lib/markdown-utils";
 import { getToneDirective } from "@/lib/tone-standards";
 import { getLanguageDirective, DEFAULT_LANGUAGE } from "@/lib/languages";
 import { callModel } from "@/lib/ai-server-utils";
@@ -27,47 +26,6 @@ type RequestPayload = {
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 
-function buildFallbackProject(draft: RequestPayload["draft"]): GeneratedProjectPayload {
-  const chapterCount = Math.max(3, Math.min(30, Math.round(draft.length / 1000)));
-  const title = draft.vision.split(".")[0].slice(0, 80) || "Untitled Writerdost Project";
-  const baseDescription = `${title} is a ${draft.tone.toLowerCase()} ebook for ${draft.audience || "general readers"} that turns a core idea into a structured, publication-ready manuscript.`;
-  const chapters = Array.from({ length: chapterCount }, (_, index) => {
-    const chapterTitle = `Chapter ${index + 1}: ${index === 0 ? "Foundations" : index === chapterCount - 1 ? "Execution and Next Steps" : `Key Insight ${index}`}`;
-    const outline = [
-      "Introduce the core problem or idea.",
-      "Develop a practical or narrative insight.",
-      "End with a transition into the next chapter.",
-    ];
-    const plainText = `${chapterTitle}\n\n${draft.vision}\n\nThis chapter expands the book for ${draft.audience || "general readers"} in a ${draft.tone.toLowerCase()} voice. It introduces the key idea, adds practical detail, and sets up the next chapter with continuity.`;
-
-    return {
-      id: slugify(chapterTitle),
-      title: chapterTitle,
-      outline,
-      content: mdToHtml(plainText),
-      summary: `A focused section about ${chapterTitle.toLowerCase()}.`,
-      status: "Done" as const,
-      wordCount: plainText.split(/\s+/).filter(Boolean).length,
-    };
-  });
-
-  return {
-    title,
-    description: baseDescription,
-    audience: draft.audience || "General readers",
-    tone: draft.tone,
-    language: draft.language || DEFAULT_LANGUAGE,
-    targetLength: draft.length,
-    positioning: `A ${draft.tone.toLowerCase()} long-form guide developed from the user's initial concept.`,
-    chapterCount,
-    chapters,
-    seoKeywords: [title, draft.tone, "ebook writing"],
-    metaDescription: baseDescription.slice(0, 155),
-    blogTitle: `Why ${title} Matters Right Now`,
-    blogDraft: `This post introduces ${title} and explains why its ideas matter for ${draft.audience || "today's readers"}.`,
-  };
-}
-
 type Blueprint = {
   title: string;
   description: string;
@@ -91,8 +49,6 @@ export async function POST(request: Request) {
   const blocked = guardRequest(request, { limit: 6 });
   if (blocked) return blocked;
 
-  let draftForFallback: RequestPayload["draft"] | null = null;
-
   const stream = new ReadableStream({
     async start(controller) {
       const sendEvent = (data: StreamEvent) => sendStreamEvent(controller, data);
@@ -100,12 +56,13 @@ export async function POST(request: Request) {
       try {
         const body = (await request.json()) as RequestPayload;
         const { api, settings, draft } = body;
-        draftForFallback = draft;
-
         const readyForLiveAi = Boolean(api.baseUrl && api.model && (api.apiKey || api.provider === "ollama" || api.provider === "ollama_cloud"));
         if (!readyForLiveAi) {
-          sendEvent({ type: "log", agent: "System", message: "API key not configured. Using fallback generation mode.", status: "success" });
-          sendEvent({ type: "final", project: buildFallbackProject(draft), mode: "fallback" });
+          sendEvent({
+            type: "error",
+            message:
+              "No AI provider is configured. Add a provider, model and API key in Settings → API, then run the agents again.",
+          });
           controller.close();
           return;
         }
@@ -345,10 +302,9 @@ CRITICAL DEPTH REQUIREMENT: You MUST generate ${bulletPointTarget} and for every
         controller.close();
       } catch (error) {
         console.error("Stream error:", error);
-        sendEvent({ 
-          type: "error", 
+        sendEvent({
+          type: "error",
           message: error instanceof Error ? error.message : "Generation failed.",
-          fallback: buildFallbackProject(draftForFallback ?? { vision: "", audience: "", length: 15000, tone: "Professional", researchSources: [] })
         });
         controller.close();
       }

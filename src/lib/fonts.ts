@@ -1001,27 +1001,19 @@ export function loadGoogleFont(family: string): void {
   }
 }
 
-// ─── CUSTOM FONTS STORAGE (localStorage) ────────────────────────────────────
-const CUSTOM_FONTS_STORAGE_KEY = "writerdost_custom_fonts";
+// ─── CUSTOM FONTS ───────────────────────────────────────────────────────────
+//
+// A custom font is a Google Fonts family the author named themselves. The list
+// belongs to the workspace, so it is held in the store and saved with it —
+// nothing about it is kept on this machine.
 
-export function getCustomFonts(): FontOption[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(CUSTOM_FONTS_STORAGE_KEY);
-    if (!raw) return [];
-    return JSON.parse(raw);
-  } catch {
-    return [];
-  }
-}
-
-export function addCustomFont(familyName: string): FontOption {
+/** Builds the entry for a family name. Throws when the name is empty. */
+export function buildCustomFont(familyName: string): FontOption {
   const clean = familyName.trim().replace(/^["']|["']$/g, "");
   if (!clean) throw new Error("Font name cannot be empty.");
 
-  const id = `custom-${clean.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
-  const customFont: FontOption = {
-    id,
+  return {
+    id: `custom-${clean.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
     label: clean,
     category: "Custom",
     family: clean,
@@ -1029,28 +1021,6 @@ export function addCustomFont(familyName: string): FontOption {
     note: "Custom Google Font added by you.",
     isGoogleFont: true,
   };
-
-  if (typeof window !== "undefined") {
-    try {
-      const existing = getCustomFonts().filter((f) => f.id !== id && f.family.toLowerCase() !== clean.toLowerCase());
-      localStorage.setItem(CUSTOM_FONTS_STORAGE_KEY, JSON.stringify([...existing, customFont]));
-    } catch {
-      // Storage unavailable or quota exceeded
-    }
-  }
-
-  loadGoogleFont(clean);
-  return customFont;
-}
-
-export function removeCustomFont(id: string): void {
-  if (typeof window === "undefined") return;
-  try {
-    const existing = getCustomFonts().filter((f) => f.id !== id);
-    localStorage.setItem(CUSTOM_FONTS_STORAGE_KEY, JSON.stringify(existing));
-  } catch {
-    // Ignore storage errors
-  }
 }
 
 // ─── CATEGORIZED FONT ACCESSORS ─────────────────────────────────────────────
@@ -1063,8 +1033,7 @@ const BASE_CATEGORIES: FontCategory[] = [
   "System",
 ];
 
-export function getAllFonts(): FontOption[] {
-  const custom = getCustomFonts();
+export function getAllFonts(custom: FontOption[] = []): FontOption[] {
   return [...FONT_OPTIONS, ...custom];
 }
 
@@ -1074,8 +1043,9 @@ export const FONTS_BY_CATEGORY: { category: FontCategory; fonts: FontOption[] }[
     fonts: FONT_OPTIONS.filter((font) => font.category === category),
   }));
 
-export function getDynamicFontsByCategory(): { category: FontCategory; fonts: FontOption[] }[] {
-  const custom = getCustomFonts();
+export function getDynamicFontsByCategory(
+  custom: FontOption[] = [],
+): { category: FontCategory; fonts: FontOption[] }[] {
   const list: { category: FontCategory; fonts: FontOption[] }[] = BASE_CATEGORIES.map((category) => ({
     category,
     fonts: FONT_OPTIONS.filter((font) => font.category === category),
@@ -1088,12 +1058,16 @@ export function getDynamicFontsByCategory(): { category: FontCategory; fonts: Fo
   return list;
 }
 
-export function findFont(id: string | undefined, fallbackId: string): FontOption {
+export function findFont(
+  id: string | undefined,
+  fallbackId: string,
+  custom: FontOption[] = [],
+): FontOption {
   if (!id) {
     return FONT_OPTIONS.find((f) => f.id === fallbackId) ?? FONT_OPTIONS[0];
   }
 
-  const all = getAllFonts();
+  const all = getAllFonts(custom);
 
   // 1. Direct match on id
   const byId = all.find((f) => f.id === id);
