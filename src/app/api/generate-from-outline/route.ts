@@ -26,29 +26,42 @@ type RequestPayload = {
       topics: string; // User provided topics/bullets for this chapter
     }>;
   };
+  startChapterIndex?: number;
+  spunChapters?: Array<{
+    title: string;
+    topics: string;
+  }>;
+  completedChapters?: GeneratedChapter[];
 };
 
 export async function POST(request: Request) {
   const blocked = guardRequest(request, { limit: 6 });
   if (blocked) return blocked;
 
-
   const stream = new ReadableStream({
     async start(controller) {
       const sendEvent = (data: StreamEvent) => sendStreamEvent(controller, data);
+      const heartbeat = setInterval(() => {
+        try {
+          sendEvent({ type: "ping" });
+        } catch {}
+      }, 15000);
 
       try {
         const body = (await request.json()) as RequestPayload;
         const { api, settings, outline } = body;
-
-        sendEvent({ type: "active_agent", agent: "Architect Agent" });
-        sendEvent({ type: "log", agent: "Architect Agent", message: "Spinning and rebranding the provided curriculum...", status: "pending" });
-
         const language = outline.language || "English (India)";
 
-        const { text: spunOutlineText, usage: architectUsage } = await callModel({
-          api,
-          systemPrompt: `You are the Writerdost Architect Agent. The user is providing a competitor's or existing book's Table of Contents and sub-topics.
+        let spunChapters = body.spunChapters && body.spunChapters.length > 0 ? body.spunChapters : null;
+
+        // Only run the Architect Agent if spunChapters were not already provided from a previous paused run
+        if (!spunChapters) {
+          sendEvent({ type: "active_agent", agent: "Architect Agent" });
+          sendEvent({ type: "log", agent: "Architect Agent", message: "Spinning and rebranding the provided curriculum...", status: "pending" });
+
+          const { text: spunOutlineText, usage: architectUsage } = await callModel({
+            api,
+            systemPrompt: `You are the Writerdost Architect Agent. The user is providing a competitor's or existing book's Table of Contents and sub-topics.
 Your job is to COMPLETELY REBRAND AND SPIN this curriculum so it is 100% original and avoids plagiarism, while keeping the logical learning progression.
 ${getLanguageDirective(language)}
 1. Rename every chapter title.
@@ -59,33 +72,62 @@ You must return a JSON array exactly matching this format:
   { "title": "New Chapter Title", "topics": "- Rebranded Topic 1\n- Rebranded Topic 2" }
 ]
 Do NOT return anything except the JSON array. Do not use markdown blocks like \`\`\`json.`,
-          userPrompt: `Target Audience: ${outline.audience}\nTone: ${outline.tone}\n\nOriginal Curriculum to Spin:\n${JSON.stringify(outline.chapters, null, 2)}`,
-          temperature: settings.temperature,
-          topP: settings.topP,
-        });
+            userPrompt: `Target Audience: ${outline.audience}\nTone: ${outline.tone}\n\nOriginal Curriculum to Spin:\n${JSON.stringify(outline.chapters, null, 2)}`,
+            temperature: settings.temperature,
+            topP: settings.topP,
+          });
 
-        sendEvent({ type: "usage", tokens: architectUsage.total_tokens });
+          sendEvent({ type: "usage", tokens: architectUsage.total_tokens });
 
-        let spunChapters = outline.chapters;
-        try {
-          const parsed = JSON.parse(spunOutlineText.trim());
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            spunChapters = parsed;
+          spunChapters = outline.chapters;
+          try {
+            const parsed = JSON.parse(spunOutlineText.trim());
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              spunChapters = parsed;
+            }
+          } catch (e) {
+            console.error("Failed to parse spun outline, falling back to original:", e);
           }
-        } catch (e) {
-          console.error("Failed to parse spun outline, falling back to original:", e);
+
+          sendEvent({ type: "spun_outline", spunChapters });
         }
 
-        const chapters: GeneratedChapter[] = [];
         const totalChapters = spunChapters.length;
         const wordsPerChapter = Math.round(outline.targetLength / (totalChapters || 1));
 
-        for (let i = 0; i < totalChapters; i++) {
+        const chapters: GeneratedChapter[] = Array.isArray(body.completedChapters)
+          ? [...body.completedChapters]
+          : [];
+        const startIndex = typeof body.startChapterIndex === "number"
+          ? Math.max(0, Math.min(body.startChapterIndex, totalChapters))
+          : chapters.length;
+
+        if (startIndex > 0) {
+          sendEvent({
+            type: "log",
+            agent: "System",
+            message: `Resuming generation from Chapter ${startIndex + 1} of ${totalChapters} (${startIndex} chapters already saved)...`,
+            status: "success",
+          });
+        }
+
+        for (let i = startIndex; i < totalChapters; i++) {
           const chapterData = spunChapters[i];
           const chapterNum = i + 1;
           
           sendEvent({ type: "active_agent", agent: "Writing Agent" });
-          sendEvent({ type: "log", agent: "Writing Agent", message: `Drafting Chapter ${chapterNum}: ${chapterData.title}...`, status: "pending" });
+          sendEvent({
+            type: "chapter_started",
+            index: chapterNum,
+            total: totalChapters,
+            title: chapterData.title,
+          });
+          sendEvent({
+            type: "log",
+            agent: "Writing Agent",
+            message: `Drafting Chapter ${chapterNum} of ${totalChapters}: ${chapterData.title}...`,
+            status: "pending",
+          });
 
           const systemPrompt = `You are the Lead Manuscript Writer. Your task is to write a high-quality, professional ebook chapter based on the provided title and topics.
 ${getToneDirective(outline.tone)}
@@ -118,8 +160,7 @@ Instructions: Expand these topics into deep, insightful prose. Do not just list 
           sendEvent({ type: "usage", tokens: usage.total_tokens });
 
           const chapterTitleHeader = `<h2>${chapterData.title}</h2>\n`;
-
-          chapters.push({
+          const newChapter: GeneratedChapter = {
             id: slugify(chapterData.title),
             title: chapterData.title,
             outline: [],
@@ -127,9 +168,24 @@ Instructions: Expand these topics into deep, insightful prose. Do not just list 
             wordCount: proseMd.split(/\s+/).filter(Boolean).length,
             content: chapterTitleHeader + mdToHtml(proseMd),
             summary: `Content generated from provided topics for ${chapterData.title}.`,
-          });
+          };
 
-          sendEvent({ type: "log", agent: "Writing Agent", message: `Chapter ${chapterNum} complete.`, status: "success" });
+          chapters.push(newChapter);
+
+          sendEvent({
+            type: "chapter_completed",
+            index: chapterNum,
+            total: totalChapters,
+            title: chapterData.title,
+            chapter: newChapter,
+            progress: Math.round((chapterNum / totalChapters) * 85) + 10,
+          });
+          sendEvent({
+            type: "log",
+            agent: "Writing Agent",
+            message: `Chapter ${chapterNum} of ${totalChapters} complete.`,
+            status: "success",
+          });
         }
 
         const project: GeneratedProjectPayload = {
@@ -150,11 +206,14 @@ Instructions: Expand these topics into deep, insightful prose. Do not just list 
 
         sendEvent({ type: "log", agent: "System", message: "Project generation complete.", status: "success" });
         sendEvent({ type: "final", project });
-        controller.close();
       } catch (error) {
         console.error("Outline generation error:", error);
         sendEvent({ type: "error", message: error instanceof Error ? error.message : "Failed to generate project from outline." });
-        controller.close();
+      } finally {
+        clearInterval(heartbeat);
+        try {
+          controller.close();
+        } catch {}
       }
     },
   });

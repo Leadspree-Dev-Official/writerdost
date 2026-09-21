@@ -7,6 +7,7 @@ import { useAppStore, type RewriteFlow } from "@/lib/app-store";
 import { LANGUAGE_GROUPS, DEFAULT_LANGUAGE, getLanguageDirective } from "@/lib/languages";
 import { STREAM_DELIMITER, robustParseJson } from "@/lib/app-utils";
 import { TONES } from "@/lib/tone-standards";
+import type { GeneratedChapter } from "@/lib/store-types";
 
 export default function RewritePage() {
   const router = useRouter();
@@ -41,6 +42,10 @@ export default function RewritePage() {
   };
   const fileInputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const outlineCompletedChaptersRef = useRef<GeneratedChapter[]>([]);
+  const outlineSpunChaptersRef = useRef<Array<{ title: string; topics: string }> | null>(null);
+  const outlineTotalChaptersRef = useRef<number>(0);
+  const outlineStartTimeRef = useRef<number>(0);
 
   // Generation Overlay Actions
   const startGeneration = useAppStore((state) => state.startGeneration);
@@ -48,6 +53,9 @@ export default function RewritePage() {
   const setGenerationProgress = useAppStore((state) => state.setGenerationProgress);
   const finishGeneration = useAppStore((state) => state.finishGeneration);
   const setActiveAgent = useAppStore((state) => state.setActiveAgent);
+  const setCurrentTask = useAppStore((state) => state.setCurrentTask);
+  const setPaused = useAppStore((state) => state.setPaused);
+  const setResumeGeneration = useAppStore((state) => state.setResumeGeneration);
   const isGenerating = useAppStore((state) => state.generationStatus.isGenerating);
 
 
@@ -61,8 +69,22 @@ export default function RewritePage() {
   const handleCancel = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
-      addGenerationLog({ agent: "System", message: "Process cancelled by user.", status: "error" });
-      setTimeout(() => finishGeneration(), 1000);
+      abortControllerRef.current = null;
+      if (outlineCompletedChaptersRef.current.length > 0) {
+        setPaused(true);
+        const saved = outlineCompletedChaptersRef.current.length;
+        const total = outlineTotalChaptersRef.current || outlineGenerator.chapters.length;
+        setCurrentTask(`Paused at Chapter ${saved} of ${total}`);
+        addGenerationLog({
+          agent: "System",
+          message: `Generation paused by user. ${saved} of ${total} chapters saved safely.`,
+          status: "pending",
+        });
+        setResumeGeneration(() => runOutlineStream({ isResume: true }));
+      } else {
+        addGenerationLog({ agent: "System", message: "Process cancelled by user.", status: "error" });
+        setTimeout(() => finishGeneration(), 1000);
+      }
     }
   };
 
@@ -253,32 +275,54 @@ export default function RewritePage() {
     }
   };
 
-  const handleGenerateFromOutline = async () => {
-    // Declared here (not inside `try`) so the `finally` block can clear it.
+  const runOutlineStream = async ({ isResume = false }: { isResume?: boolean } = {}) => {
     let interval: ReturnType<typeof setInterval> | undefined;
 
-    if (!outlineGenerator.title.trim()) {
-      setMessage("Add a project title first.");
-      return;
+    if (!isResume) {
+      if (!outlineGenerator.title.trim()) {
+        setMessage("Add a project title first.");
+        return;
+      }
+
+      if (outlineGenerator.chapters.length === 0) {
+        setMessage("Add at least one chapter, or use Smart import to build the outline from text.");
+        return;
+      }
+
+      outlineCompletedChaptersRef.current = [];
+      outlineSpunChaptersRef.current = null;
+      outlineTotalChaptersRef.current = outlineGenerator.chapters.length;
+      outlineStartTimeRef.current = Date.now();
+
+      startGeneration({ 
+        title: "Building from your outline",
+        subtitle: "Turning the chapter blueprint into a full draft."
+      });
+      setGenerationProgress(5);
+      setCurrentTask("Architect Agent spinning and rebranding curriculum...");
+      setActiveAgent("System");
+      setPaused(false);
+      setResumeGeneration(null);
+    } else {
+      setPaused(false);
+      const savedCount = outlineCompletedChaptersRef.current.length;
+      const total = outlineTotalChaptersRef.current || outlineGenerator.chapters.length;
+      setCurrentTask(`Resuming generation at Chapter ${savedCount + 1} of ${total}...`);
+      setActiveAgent("Writing Agent");
+      addGenerationLog({
+        agent: "System",
+        message: `Resuming generation from Chapter ${savedCount + 1} of ${total}...`,
+        status: "pending",
+      });
     }
-
-    if (outlineGenerator.chapters.length === 0) {
-      setMessage("Add at least one chapter, or use Smart import to build the outline from text.");
-      return;
-    }
-
-    const startTime = Date.now();
-
-    startGeneration({ 
-      title: "Building from your outline",
-      subtitle: "Turning the chapter blueprint into a full draft."
-    });
-    setGenerationProgress(5);
-    setActiveAgent("System");
 
     const controller = new AbortController();
     abortControllerRef.current = controller;
     useAppStore.getState().setCancelGeneration(handleCancel);
+    setResumeGeneration(null);
+
+    const startTime = outlineStartTimeRef.current || Date.now();
+    let receivedFinal = false;
 
     try {
       const response = await fetch("/api/generate-from-outline", {
@@ -294,10 +338,18 @@ export default function RewritePage() {
             language: outlineGenerator.language || DEFAULT_LANGUAGE,
             targetLength: outlineGenerator.targetLength,
             chapters: outlineGenerator.chapters,
-          }
+          },
+          startChapterIndex: outlineCompletedChaptersRef.current.length,
+          spunChapters: outlineSpunChaptersRef.current,
+          completedChapters: outlineCompletedChaptersRef.current,
         }),
         signal: controller.signal,
       });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Server error (${response.status}): ${errText || response.statusText}`);
+      }
 
       interval = setInterval(() => {
         const elapsed = Math.floor((Date.now() - startTime) / 1000);
@@ -323,14 +375,39 @@ export default function RewritePage() {
           const event = robustParseJson(part);
           if (!event) continue;
 
-          if (event.type === "active_agent") setActiveAgent(event.agent);
-          else if (event.type === "usage" && event.tokens) {
+          if (event.type === "ping") {
+            continue;
+          } else if (event.type === "spun_outline" && Array.isArray(event.spunChapters)) {
+            outlineSpunChaptersRef.current = event.spunChapters;
+            outlineTotalChaptersRef.current = event.spunChapters.length;
+          } else if (event.type === "active_agent") {
+            setActiveAgent(event.agent);
+          } else if (event.type === "usage" && event.tokens) {
             useAppStore.getState().recordUsage(event.tokens, api.provider, api.model);
             setMetrics(prev => ({ ...prev, tokens: prev.tokens + event.tokens }));
-          }
-          else if (event.type === "log") {
+          } else if (event.type === "chapter_started") {
+            outlineTotalChaptersRef.current = event.total;
+            setCurrentTask(`Drafting Chapter ${event.index} of ${event.total}: ${event.title}`);
+            const currentProg = Math.max(5, Math.round(((event.index - 0.7) / event.total) * 85) + 10);
+            setGenerationProgress(currentProg);
+          } else if (event.type === "chapter_completed") {
+            if (event.chapter) {
+              const ch = event.chapter as GeneratedChapter;
+              const existing = outlineCompletedChaptersRef.current.filter(
+                (c) => c.id !== ch.id && c.title !== ch.title
+              );
+              outlineCompletedChaptersRef.current = [...existing, ch];
+            }
+            outlineTotalChaptersRef.current = event.total;
+            setCurrentTask(`Completed Chapter ${event.index} of ${event.total}: ${event.title}`);
+            const currentProg = Math.round((event.index / event.total) * 85) + 10;
+            setGenerationProgress(currentProg);
+          } else if (event.type === "log") {
             addGenerationLog({ agent: event.agent, message: event.message, status: event.status || "success" });
           } else if (event.type === "final" && event.project) {
+            receivedFinal = true;
+            setPaused(false);
+            setResumeGeneration(null);
             const duration = Math.floor((Date.now() - startTime) / 1000);
             const tokensUsed = useAppStore.getState().generationStatus.sessionTokens || 0;
             setMetrics(prev => ({ ...prev, draftingTime: duration, tokens: tokensUsed }));
@@ -340,6 +417,7 @@ export default function RewritePage() {
               tokensUsed,
             });
             setGenerationProgress(100);
+            setCurrentTask("Project generation complete!");
             setTimeout(() => {
               finishGeneration();
               router.push("/editor");
@@ -349,14 +427,52 @@ export default function RewritePage() {
           }
         }
       }
+
+      if (!receivedFinal) {
+        const savedCount = outlineCompletedChaptersRef.current.length;
+        const total = outlineTotalChaptersRef.current || outlineGenerator.chapters.length;
+
+        if (savedCount > 0) {
+          setPaused(true);
+          setCurrentTask(`Paused at Chapter ${savedCount + 1} of ${total} (interrupted)`);
+          addGenerationLog({
+            agent: "System",
+            message: `Connection interrupted after Chapter ${savedCount} of ${total}. All completed chapters are safely saved. Click Resume to continue.`,
+            status: "error",
+          });
+          setResumeGeneration(() => runOutlineStream({ isResume: true }));
+        } else {
+          throw new Error("Connection closed unexpectedly before chapters could be drafted.");
+        }
+      }
     } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') return;
-      addGenerationLog({ agent: "System", message: error instanceof Error ? error.message : "Outline generation failed.", status: "error" });
+      if (error instanceof Error && error.name === "AbortError") return;
+      const savedCount = outlineCompletedChaptersRef.current.length;
+      const total = outlineTotalChaptersRef.current || outlineGenerator.chapters.length;
+
+      if (savedCount > 0) {
+        setPaused(true);
+        setCurrentTask(`Paused at Chapter ${savedCount + 1} of ${total} (error)`);
+        addGenerationLog({
+          agent: "System",
+          message: `${error instanceof Error ? error.message : "Generation was interrupted"}. ${savedCount} chapters are safely saved. Click Resume to retry.`,
+          status: "error",
+        });
+        setResumeGeneration(() => runOutlineStream({ isResume: true }));
+      } else {
+        addGenerationLog({
+          agent: "System",
+          message: error instanceof Error ? error.message : "Outline generation failed.",
+          status: "error",
+        });
+      }
     } finally {
       abortControllerRef.current = null;
       if (interval) clearInterval(interval);
     }
   };
+
+  const handleGenerateFromOutline = () => runOutlineStream({ isResume: false });
 
   const handleTranslateProject = async () => {
     // Declared here (not inside `try`) so the `finally` block can clear it.
@@ -405,6 +521,7 @@ export default function RewritePage() {
         setMetrics(prev => ({ ...prev, draftingTime: elapsed }));
       }, 1000);
 
+      let receivedFinal = false;
       const reader = response.body?.getReader();
       if (!reader) throw new Error("Failed to initialize stream.");
 
@@ -431,7 +548,11 @@ export default function RewritePage() {
           }
           else if (event.type === "log") {
             addGenerationLog({ agent: event.agent, message: event.message, status: event.status || "success" });
+            if (typeof event.message === "string" && event.message.includes("Translating")) {
+              setCurrentTask(event.message);
+            }
           } else if (event.type === "final" && event.project) {
+            receivedFinal = true;
             const duration = Math.floor((Date.now() - startTime) / 1000);
             const tokensUsed = useAppStore.getState().generationStatus.sessionTokens || 0;
             setMetrics(prev => ({ ...prev, draftingTime: duration, tokens: tokensUsed }));
@@ -441,6 +562,7 @@ export default function RewritePage() {
               tokensUsed,
             });
             setGenerationProgress(100);
+            setCurrentTask("Translation complete!");
             setTimeout(() => {
               finishGeneration();
               router.push("/editor");
@@ -449,6 +571,10 @@ export default function RewritePage() {
             throw new Error(event.message);
           }
         }
+      }
+
+      if (!receivedFinal) {
+        throw new Error("Translation connection closed unexpectedly before completion.");
       }
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') return;

@@ -24,14 +24,19 @@ const agentIcon = (agent: string) => {
 
 export function GenerationOverlay({
   onCancel,
+  onResume,
   title: propTitle,
   subtitle: propSubtitle,
 }: {
   onCancel?: () => void;
+  onResume?: () => void;
   title?: string;
   subtitle?: string;
 }) {
   const isGenerating = useAppStore((state) => state.generationStatus.isGenerating);
+  const isPaused = useAppStore((state) => state.generationStatus.isPaused);
+  const storeResume = useAppStore((state) => state.resumeGeneration);
+  const handleResume = onResume || storeResume;
   const logs = useAppStore((state) => state.generationStatus.logs);
   const progress = useAppStore((state) => state.generationStatus.progress);
   const activeAgent = useAppStore((state) => state.generationStatus.activeAgent);
@@ -62,14 +67,14 @@ export function GenerationOverlay({
   const [ticker, setTicker] = useState({ start: 0, seconds: 0 });
 
   useEffect(() => {
-    if (!isGenerating || !startTime) return;
+    if (!isGenerating || !startTime || isPaused) return;
     const begin = Number(startTime);
     const update = () =>
       setTicker({ start: begin, seconds: Math.max(0, Math.floor((Date.now() - begin) / 1000)) });
 
     const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
-  }, [isGenerating, startTime]);
+  }, [isGenerating, startTime, isPaused]);
 
   const seconds = ticker.start === Number(startTime) ? ticker.seconds : 0;
   const elapsed = !isGenerating || !startTime ? "00:00" : clock(seconds);
@@ -178,10 +183,12 @@ export function GenerationOverlay({
         >
           <div className="flex items-center gap-2">
             <span
-              className={`h-1.5 w-1.5 shrink-0 rounded-full bg-primary ${reduceMotion ? "" : "animate-pulse"}`}
+              className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                isPaused ? "bg-amber-500" : "bg-primary"
+              } ${reduceMotion || isPaused ? "" : "animate-pulse"}`}
             />
             <p className="min-w-0 flex-1 truncate text-[0.8125rem] font-semibold text-on-surface">
-              {currentTask || activeAgent || "Working"}
+              {isPaused ? `Paused: ${currentTask || "Generation paused"}` : currentTask || activeAgent || "Working"}
             </p>
             <button
               type="button"
@@ -196,7 +203,7 @@ export function GenerationOverlay({
 
           <div className="mt-2.5 h-1 overflow-hidden rounded-full bg-[var(--hairline-strong)]">
             <motion.div
-              className="h-full rounded-full bg-primary"
+              className={`h-full rounded-full ${isPaused ? "bg-amber-500" : "bg-primary"}`}
               initial={false}
               animate={{ width: `${progress}%` }}
               transition={{ duration: reduceMotion ? 0 : 0.4, ease: EASE_OUT }}
@@ -204,7 +211,7 @@ export function GenerationOverlay({
           </div>
           <div className="mt-1.5 flex items-center justify-between">
             <span className="row-meta">{progress}%</span>
-            <span className="row-meta">{elapsed}</span>
+            <span className="row-meta">{isPaused ? "Paused" : elapsed}</span>
           </div>
         </motion.div>
       ) : view === "dialog" ? (
@@ -220,7 +227,7 @@ export function GenerationOverlay({
             role="dialog"
             aria-modal="true"
             aria-labelledby="generation-title"
-            aria-busy={isGenerating}
+            aria-busy={isGenerating && !isPaused}
             tabIndex={-1}
             initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 10, scale: 0.985 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -233,6 +240,8 @@ export function GenerationOverlay({
                 className={`mt-[0.4375rem] h-2 w-2 shrink-0 rounded-full ${
                   hasError
                     ? "bg-error"
+                    : isPaused
+                    ? "bg-amber-500"
                     : `bg-primary ${reduceMotion ? "" : "animate-pulse"}`
                 }`}
                 aria-hidden="true"
@@ -279,12 +288,12 @@ export function GenerationOverlay({
               </div>
 
               <p className="mt-1 truncate text-[0.75rem] text-on-surface-variant" aria-live="polite">
-                {currentTask || "Starting…"}
+                {isPaused ? `Paused: ${currentTask || "Generation paused"}` : currentTask || "Starting…"}
               </p>
 
               <div className="mt-2.5 h-1 overflow-hidden rounded-full bg-[var(--hairline-strong)]">
                 <motion.div
-                  className={`h-full rounded-full ${hasError ? "bg-error" : "bg-primary"}`}
+                  className={`h-full rounded-full ${hasError ? "bg-error" : isPaused ? "bg-amber-500" : "bg-primary"}`}
                   initial={{ width: 0 }}
                   animate={{ width: `${progress}%` }}
                   transition={{ duration: reduceMotion ? 0 : 0.5, ease: EASE_OUT }}
@@ -377,19 +386,43 @@ export function GenerationOverlay({
             {/* Actions. Minimising is the safe exit, so it is named here too. */}
             <div className="flex items-center justify-between gap-3 border-t border-[var(--hairline)] px-4 py-3">
               <p className="row-meta hidden sm:block">
-                {hasError ? "The run stopped early." : "Keeps running if you minimise this."}
+                {isPaused
+                  ? "Generation paused. Click Resume to continue."
+                  : hasError
+                  ? "The run stopped early."
+                  : "Keeps running if you minimise this."}
               </p>
-              {hasError ? (
-                <button type="button" onClick={() => finishGeneration()} className="btn btn-primary">
-                  Close
-                </button>
-              ) : (
-                onCancel && (
-                  <button type="button" onClick={onCancel} className="btn btn-secondary btn-danger">
-                    Stop generating
+              <div className="flex items-center gap-2">
+                {isPaused && handleResume && (
+                  <button
+                    type="button"
+                    onClick={handleResume}
+                    className="btn btn-primary flex items-center gap-1.5"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">play_arrow</span>
+                    Resume
                   </button>
-                )
-              )}
+                )}
+                {isPaused ? (
+                  <button
+                    type="button"
+                    onClick={() => finishGeneration()}
+                    className="btn btn-secondary"
+                  >
+                    Close
+                  </button>
+                ) : hasError ? (
+                  <button type="button" onClick={() => finishGeneration()} className="btn btn-primary">
+                    Close
+                  </button>
+                ) : (
+                  onCancel && (
+                    <button type="button" onClick={onCancel} className="btn btn-secondary btn-danger">
+                      Stop generating
+                    </button>
+                  )
+                )}
+              </div>
             </div>
           </motion.div>
         </motion.div>

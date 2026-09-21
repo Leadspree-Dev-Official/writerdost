@@ -166,6 +166,8 @@ export type GenerationLog = {
 
 export type GenerationStatus = {
   isGenerating: boolean;
+  isPaused?: boolean;
+  canResume?: boolean;
   progress: number;
   logs: GenerationLog[];
   activeAgent: string;
@@ -438,8 +440,11 @@ type AppStore = {
   removeResearchSource: (id: string) => void;
   toggleDarkMode: () => void;
   setMinimized: (minimized: boolean) => void;
+  setPaused: (paused: boolean) => void;
   cancelGeneration: () => void;
   setCancelGeneration: (fn: () => void) => void;
+  resumeGeneration?: () => void;
+  setResumeGeneration: (fn: (() => void) | null) => void;
   toggleGlobalSidebar: () => void;
   toggleEditorSidebar: () => void;
   setManuscriptFullView: (open: boolean) => void;
@@ -565,6 +570,8 @@ const defaultPlatformApi: PlatformApiSettings = {
 
 const defaultGenerationStatus: GenerationStatus = {
   isGenerating: false,
+  isPaused: false,
+  canResume: false,
   progress: 0,
   logs: [],
   activeAgent: "System",
@@ -1065,6 +1072,8 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     // Global abort mechanism (not persisted)
     cancelGeneration: () => {},
     setCancelGeneration: (fn) => set({ cancelGeneration: fn }),
+    resumeGeneration: undefined,
+    setResumeGeneration: (fn) => set({ resumeGeneration: fn ?? undefined }),
 
     toggleDarkMode: () => set((state) => {
       const next = !state.isDarkMode;
@@ -2121,6 +2130,14 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           progress,
         },
       })),
+    setPaused: (paused) =>
+      set((state) => ({
+        generationStatus: {
+          ...state.generationStatus,
+          isPaused: paused,
+          canResume: paused,
+        },
+      })),
     /** Ends the run. `isMinimized` is left as it is on purpose: a run that
         finished while minimised is what the overlay reads to show its
         "finished" pill, and dismissing that pill is what clears the flag. */
@@ -2129,6 +2146,8 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         generationStatus: {
           ...state.generationStatus,
           isGenerating: false,
+          isPaused: false,
+          canResume: false,
         },
       })),
     setMinimized: (minimized) =>
