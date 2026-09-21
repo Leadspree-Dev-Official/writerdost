@@ -97,6 +97,9 @@ export function AiSettingsTab() {
   const usage = useAppStore((state) => state.usage);
   const updateSettings = useAppStore((state) => state.updateSettings);
   const updateApiSettings = useAppStore((state) => state.updateApiSettings);
+  const saveWorkspaceNow = useAppStore((state) => state.saveWorkspaceNow);
+  const workspaceSaving = useAppStore((state) => state.workspaceSaving);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   // Feedback is stored against the credentials it was produced for. Anything
   // shown for a different set is simply not displayed, so changing a key or
   // model invalidates a stale "Connection successful" without an effect.
@@ -227,11 +230,54 @@ export function AiSettingsTab() {
           Reset to defaults
         </button>
         <button
-          className="btn btn-primary btn-lg"
-          onClick={() => setMessage("Settings saved. API credentials and generation defaults are ready to use.")}
+          className={`btn btn-primary btn-lg min-w-[135px] flex items-center justify-center gap-1.5 transition-all duration-200 ${
+            saveStatus === "saved"
+              ? "!bg-emerald-600 hover:!bg-emerald-500 !text-white border-transparent"
+              : saveStatus === "error"
+              ? "!bg-rose-600 hover:!bg-rose-500 !text-white border-transparent"
+              : ""
+          }`}
+          onClick={async () => {
+            setSaveStatus("saving");
+            try {
+              await saveWorkspaceNow(true);
+              const currentError = useAppStore.getState().workspaceError;
+              if (currentError) {
+                setSaveStatus("error");
+                setMessage(`Save failed: ${currentError}`);
+                setTimeout(() => setSaveStatus("idle"), 4000);
+              } else {
+                setSaveStatus("saved");
+                setMessage("Settings saved. API credentials and generation defaults are ready to use.");
+                setTimeout(() => setSaveStatus("idle"), 2500);
+              }
+            } catch (err) {
+              setSaveStatus("error");
+              setMessage(err instanceof Error ? err.message : "Failed to save settings.");
+              setTimeout(() => setSaveStatus("idle"), 4000);
+            }
+          }}
+          disabled={saveStatus === "saving" || workspaceSaving}
           type="button"
         >
-          Save changes
+          {saveStatus === "saving" || (workspaceSaving && saveStatus !== "saved") ? (
+            <>
+              <span className="material-symbols-outlined text-[16px] animate-spin">sync</span>
+              <span>Saving…</span>
+            </>
+          ) : saveStatus === "saved" ? (
+            <>
+              <span className="material-symbols-outlined text-[16px]">check</span>
+              <span>Saved!</span>
+            </>
+          ) : saveStatus === "error" ? (
+            <>
+              <span className="material-symbols-outlined text-[16px]">error</span>
+              <span>Failed</span>
+            </>
+          ) : (
+            <span>Save changes</span>
+          )}
         </button>
       </div>
 

@@ -353,7 +353,7 @@ type AppStore = {
   workspaceSaving: boolean;
   workspaceSavedAt: string;
   /** Flushes any pending edits now. Resolves once the server has them. */
-  saveWorkspaceNow: () => Promise<void>;
+  saveWorkspaceNow: (force?: boolean) => Promise<void>;
 
   setCurrentProject: (projectId: string) => void;
   setActiveChapter: (chapterId: string) => void;
@@ -766,18 +766,18 @@ function settingsSnapshot(state: AppStore): Record<string, unknown> {
  * What has changed since the server last confirmed a save. `more` says that
  * the patch was capped and another pass is needed once this one lands.
  */
-function pendingPatch(state: AppStore): { patch: WorkspacePatch; more: boolean } | null {
+function pendingPatch(state: AppStore, force = false): { patch: WorkspacePatch; more: boolean } | null {
   const settingsJson = JSON.stringify(settingsSnapshot(state));
   const patch: WorkspacePatch = {};
 
-  if (settingsJson !== saveState.settings) patch.settings = JSON.parse(settingsJson);
+  if (force || settingsJson !== saveState.settings) patch.settings = JSON.parse(settingsJson);
 
   const changed: Project[] = [];
   const live = new Set<string>();
   for (const project of state.projects) {
     live.add(project.id);
     const json = JSON.stringify(project);
-    if (json !== saveState.projects.get(project.id)) changed.push(project);
+    if (force || json !== saveState.projects.get(project.id)) changed.push(project);
   }
 
   const deleted = [...saveState.projects.keys()].filter((id) => !live.has(id));
@@ -799,7 +799,32 @@ function markSaved(patch: WorkspacePatch) {
   for (const id of patch.deletedProjectIds ?? []) saveState.projects.delete(id);
 }
 
-async function flushWorkspace({ keepalive = false }: { keepalive?: boolean } = {}): Promise<void> {
+async function flushWorkspace({
+  keepalive = false,
+  force = false,
+}: {
+  keepalive?: boolean;
+  force?: boolean;
+} = {}): Promise<void> {
+  const state = useAppStore.getState();
+
+  // If uninitialized or in error state while a signed-in user is present, attempt reconnecting
+  if ((!saveState.userId || state.workspaceStatus === "error") && state.currentUser?.id) {
+    try {
+      await fetchWorkspace();
+      saveState.userId = state.currentUser.id;
+      useAppStore.setState({ workspaceStatus: "ready", workspaceError: "" });
+      startSync();
+    } catch (error) {
+      useAppStore.setState({
+        workspaceStatus: "error",
+        workspaceSaving: false,
+        workspaceError: error instanceof Error ? error.message : "Could not connect to workspace cloud.",
+      });
+      return;
+    }
+  }
+
   if (!saveState.userId) return;
   if (saveState.inFlight) {
     // A save is already running; let it finish and pick the rest up after.
@@ -807,13 +832,17 @@ async function flushWorkspace({ keepalive = false }: { keepalive?: boolean } = {
     return saveState.inFlight;
   }
 
-  const state = useAppStore.getState();
   if (state.workspaceStatus !== "ready") return;
 
   saveState.pendingSince = 0;
 
-  const pending = pendingPatch(state);
-  if (!pending) return;
+  const pending = pendingPatch(state, force);
+  if (!pending) {
+    if (state.workspaceError) {
+      useAppStore.setState({ workspaceError: "" });
+    }
+    return;
+  }
   const { patch, more } = pending;
 
   useAppStore.setState({ workspaceSaving: true });
@@ -1010,7 +1039,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     workspaceError: "",
     workspaceSaving: false,
     workspaceSavedAt: "",
-    saveWorkspaceNow: () => flushWorkspace(),
+    saveWorkspaceNow: (force?: boolean) => flushWorkspace({ force: force ?? true }),
 
     addCustomFont: (familyName) => {
       const font = buildCustomFont(familyName);

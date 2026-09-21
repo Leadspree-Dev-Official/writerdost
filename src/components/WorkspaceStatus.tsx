@@ -30,13 +30,22 @@ export default function WorkspaceStatus() {
 
   if (status === "idle") return null;
 
+  if (saving) {
+    return (
+      <span className="flex items-center gap-1 h-6 px-2 rounded-full text-[11px] text-on-surface-variant">
+        <span className="material-symbols-outlined text-[13px] animate-spin">sync</span>
+        <span className="hidden sm:inline">Saving…</span>
+      </span>
+    );
+  }
+
   if (error) {
     return (
       <button
         type="button"
-        onClick={() => void saveNow()}
+        onClick={() => void saveNow(true)}
         title={error}
-        className="flex items-center gap-1 h-6 px-2 rounded-full text-[11px] font-medium text-amber-700 dark:text-amber-400 bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500/15 transition-colors"
+        className="flex items-center gap-1 h-6 px-2 rounded-full text-[11px] font-medium text-amber-700 dark:text-amber-400 bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500/15 transition-colors cursor-pointer"
       >
         <span className="material-symbols-outlined text-[13px]">cloud_off</span>
         <span className="hidden sm:inline">Not saved — retry</span>
@@ -44,8 +53,7 @@ export default function WorkspaceStatus() {
     );
   }
 
-  const label =
-    status === "loading" ? "Loading…" : saving ? "Saving…" : justSaved ? "Saved" : null;
+  const label = status === "loading" ? "Loading…" : justSaved ? "Saved" : null;
   if (!label) return null;
 
   return (

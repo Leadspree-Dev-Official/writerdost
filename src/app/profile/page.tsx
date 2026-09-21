@@ -12,6 +12,9 @@ import { TONES, TONE_GUIDE } from "@/lib/tone-standards";
 export default function ProfilePage() {
   const profile = useAppStore((state) => state.profile);
   const updateProfile = useAppStore((state) => state.updateProfile);
+  const saveWorkspaceNow = useAppStore((state) => state.saveWorkspaceNow);
+  const workspaceSaving = useAppStore((state) => state.workspaceSaving);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [message, setMessage] = useState("");
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -100,11 +103,54 @@ export default function ProfilePage() {
                 Preview
               </button>
               <button
-                className="btn btn-primary btn-lg flex-1 sm:flex-none"
-                onClick={() => setMessage("Profile preferences saved. Future projects will use these defaults.")}
+                className={`btn btn-primary btn-lg flex-1 sm:flex-none min-w-[135px] flex items-center justify-center gap-1.5 transition-all duration-200 ${
+                  saveStatus === "saved"
+                    ? "!bg-emerald-600 hover:!bg-emerald-500 !text-white border-transparent"
+                    : saveStatus === "error"
+                    ? "!bg-rose-600 hover:!bg-rose-500 !text-white border-transparent"
+                    : ""
+                }`}
+                onClick={async () => {
+                  setSaveStatus("saving");
+                  try {
+                    await saveWorkspaceNow(true);
+                    const currentError = useAppStore.getState().workspaceError;
+                    if (currentError) {
+                      setSaveStatus("error");
+                      setMessage(`Save failed: ${currentError}`);
+                      setTimeout(() => setSaveStatus("idle"), 4000);
+                    } else {
+                      setSaveStatus("saved");
+                      setMessage("Profile preferences saved. Future projects will use these defaults.");
+                      setTimeout(() => setSaveStatus("idle"), 2500);
+                    }
+                  } catch (err) {
+                    setSaveStatus("error");
+                    setMessage(err instanceof Error ? err.message : "Failed to save profile.");
+                    setTimeout(() => setSaveStatus("idle"), 4000);
+                  }
+                }}
+                disabled={saveStatus === "saving" || workspaceSaving}
                 type="button"
               >
-                Save changes
+                {saveStatus === "saving" || (workspaceSaving && saveStatus !== "saved") ? (
+                  <>
+                    <span className="material-symbols-outlined text-[16px] animate-spin">sync</span>
+                    <span>Saving…</span>
+                  </>
+                ) : saveStatus === "saved" ? (
+                  <>
+                    <span className="material-symbols-outlined text-[16px]">check</span>
+                    <span>Saved!</span>
+                  </>
+                ) : saveStatus === "error" ? (
+                  <>
+                    <span className="material-symbols-outlined text-[16px]">error</span>
+                    <span>Failed</span>
+                  </>
+                ) : (
+                  <span>Save changes</span>
+                )}
               </button>
             </div>
           </div>
