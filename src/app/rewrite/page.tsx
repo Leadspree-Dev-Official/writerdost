@@ -33,6 +33,12 @@ export default function RewritePage() {
   const [importTitle, setImportTitle] = useState("");
   const [importDescription, setImportDescription] = useState("");
   const [importOutlineText, setImportOutlineText] = useState("");
+  const [importLanguage, setImportLanguage] = useState(DEFAULT_LANGUAGE);
+
+  const openSmartImport = () => {
+    setImportLanguage(outlineGenerator.language || DEFAULT_LANGUAGE);
+    setShowSmartImport(true);
+  };
   const fileInputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -555,7 +561,7 @@ export default function RewritePage() {
                         )}
                       </span>
                       <div className="flex items-center gap-2">
-                        <button onClick={() => setShowSmartImport(true)} className="btn btn-secondary" type="button">
+                        <button onClick={openSmartImport} className="btn btn-secondary" type="button">
                           <span className="material-symbols-outlined">text_fields</span>
                           Smart import
                         </button>
@@ -581,7 +587,7 @@ export default function RewritePage() {
                             Add chapter
                           </button>
                           <button
-                            onClick={() => setShowSmartImport(true)}
+                            onClick={openSmartImport}
                             className="btn btn-secondary"
                             type="button"
                           >
@@ -1037,18 +1043,42 @@ export default function RewritePage() {
                 The system will parse chapters and topics, then regenerate an original outline for your new project.
               </p>
 
-              {/* Title Field */}
-              <div>
-                <label className="flex items-center gap-2 text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-[0.15em] mb-2.5 pl-1">
-                  <span className="material-symbols-outlined text-sm text-indigo-500">title</span>
-                  Ebook Title
-                </label>
-                <input
-                  className="w-full min-h-[2.625rem] bg-slate-50 dark:bg-white/[0.05] px-5 py-2.5 rounded-[var(--radius-lg)] text-sm font-semibold border border-slate-200 dark:border-white/[0.08] outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/30 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 transition-all"
-                  placeholder="e.g., Marketing Psychology Decoded"
-                  value={importTitle}
-                  onChange={(e) => setImportTitle(e.target.value)}
-                />
+              {/* Title & Language Row */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="flex items-center gap-2 text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-[0.15em] mb-2.5 pl-1">
+                    <span className="material-symbols-outlined text-sm text-indigo-500">title</span>
+                    Ebook Title
+                  </label>
+                  <input
+                    className="w-full min-h-[2.625rem] bg-slate-50 dark:bg-white/[0.05] px-5 py-2.5 rounded-[var(--radius-lg)] text-sm font-semibold border border-slate-200 dark:border-white/[0.08] outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/30 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 transition-all"
+                    placeholder="e.g., Marketing Psychology Decoded"
+                    value={importTitle}
+                    onChange={(e) => setImportTitle(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="smart-import-language" className="flex items-center gap-2 text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-[0.15em] mb-2.5 pl-1">
+                    <span className="material-symbols-outlined text-sm text-indigo-500">language</span>
+                    Output Language
+                  </label>
+                  <select
+                    id="smart-import-language"
+                    className="w-full min-h-[2.625rem] bg-slate-50 dark:bg-[#1a1a2e] px-4 py-2.5 rounded-[var(--radius-lg)] text-sm font-semibold border border-slate-200 dark:border-white/[0.08] outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/30 text-slate-900 dark:text-white transition-all cursor-pointer"
+                    value={importLanguage}
+                    onChange={(e) => setImportLanguage(e.target.value)}
+                  >
+                    {LANGUAGE_GROUPS.map((group) => (
+                      <optgroup key={group.label} label={group.label} className="bg-white dark:bg-[#1a1a2e] text-slate-900 dark:text-white font-semibold">
+                        {group.options.map((lang) => (
+                          <option key={lang} value={lang} className="bg-white dark:bg-[#1a1a2e] text-slate-900 dark:text-white">
+                            {lang}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               {/* Description Field */}
@@ -1087,7 +1117,8 @@ export default function RewritePage() {
                 disabled={!importTitle.trim() && !importOutlineText.trim()}
                 onClick={() => {
                   const combinedText = `${importTitle}\nDESCRIPTION\n${importDescription}\nCURRICULUM\n${importOutlineText}`;
-                  importOutlineFromText(combinedText);
+                  importOutlineFromText(combinedText, importLanguage);
+                  updateOutlineGenerator({ language: importLanguage });
                   setShowSmartImport(false);
                   setImportTitle("");
                   setImportDescription("");

@@ -367,7 +367,7 @@ type AppStore = {
   addOutlineChapter: () => void;
   removeOutlineChapter: (id: string) => void;
   updateOutlineChapter: (id: string, payload: Partial<OutlineChapter>) => void;
-  importOutlineFromText: (text: string) => void;
+  importOutlineFromText: (text: string, language?: string) => void;
   generateRewritePreview: () => void;
   applyRewriteToCurrentProject: () => void;
   createProjectFromRewrite: () => Project;
@@ -1372,7 +1372,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         },
       });
     },
-    importOutlineFromText: (text: string) => {
+    importOutlineFromText: (text: string, language?: string) => {
       const rawLines = text.split("\n").map((l) => l.trim());
       const lines = rawLines.filter(Boolean);
       if (lines.length === 0) return;
@@ -1448,7 +1448,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           title: title || "Imported Project",
           audience: audience || "General Audience",
           tone: "Professional",
-          language: get().outlineGenerator.language || DEFAULT_LANGUAGE,
+          language: language || get().outlineGenerator.language || DEFAULT_LANGUAGE,
           targetLength: 20000,
           chapters: chapters.length > 0 ? chapters : get().outlineGenerator.chapters,
         },
