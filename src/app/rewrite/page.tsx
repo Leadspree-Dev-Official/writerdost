@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { generateAiText } from "@/lib/ai-client";
 import { useAppStore, type RewriteFlow } from "@/lib/app-store";
-import { LANGUAGE_GROUPS } from "@/lib/languages";
+import { LANGUAGE_GROUPS, DEFAULT_LANGUAGE, getLanguageDirective } from "@/lib/languages";
 import { STREAM_DELIMITER, robustParseJson } from "@/lib/app-utils";
 import { TONES } from "@/lib/tone-standards";
 
@@ -178,6 +178,7 @@ export default function RewritePage() {
             api,
             chunk: chunks[i],
             tone: rewrite.tone,
+            language: rewrite.language || DEFAULT_LANGUAGE,
             targetChunkWords: targetChunkWords,
             settings: { temperature: settings.temperature, topP: settings.topP },
           }),
@@ -284,6 +285,7 @@ export default function RewritePage() {
             title: outlineGenerator.title,
             audience: outlineGenerator.audience,
             tone: outlineGenerator.tone,
+            language: outlineGenerator.language || DEFAULT_LANGUAGE,
             targetLength: outlineGenerator.targetLength,
             chapters: outlineGenerator.chapters,
           }
@@ -500,7 +502,7 @@ export default function RewritePage() {
             {rewrite.flow === "Outline" ? (
               <div className="space-y-3">
                 <div className="panel panel-pad">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 mb-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3 mb-4">
                     <div>
                       <label htmlFor="ol-title" className="label">Ebook title</label>
                       <input
@@ -522,6 +524,23 @@ export default function RewritePage() {
                         value={outlineGenerator.audience || ""}
                         onChange={(e) => updateOutlineGenerator({ audience: e.target.value })}
                       />
+                    </div>
+                    <div>
+                      <label htmlFor="ol-language" className="label">Language</label>
+                      <select
+                        id="ol-language"
+                        className="select"
+                        value={outlineGenerator.language || DEFAULT_LANGUAGE}
+                        onChange={(e) => updateOutlineGenerator({ language: e.target.value })}
+                      >
+                        {LANGUAGE_GROUPS.map((group) => (
+                          <optgroup key={group.label} label={group.label}>
+                            {group.options.map((lang) => (
+                              <option key={lang} value={lang}>{lang}</option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
                     </div>
                   </div>
 
@@ -645,8 +664,8 @@ export default function RewritePage() {
                             <label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase block mb-3 pl-1">Target Language</label>
                             <select
                               className="w-full bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.06] rounded-[var(--radius-lg)] px-5 py-2 text-sm font-bold focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none transition-all shadow-inner dark:shadow-none text-on-surface"
-                              value={rewrite.targetLanguage || "Spanish"}
-                              onChange={(e) => updateRewrite({ targetLanguage: e.target.value })}
+                              value={rewrite.targetLanguage || rewrite.language || "Spanish"}
+                              onChange={(e) => updateRewrite({ targetLanguage: e.target.value, language: e.target.value })}
                             >
                               {LANGUAGE_GROUPS.map((group) => (
                                 <optgroup key={group.label} label={group.label}>
@@ -788,6 +807,49 @@ export default function RewritePage() {
               </div>
 
               <div className="rail-section">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="rail-title !mb-0">
+                    {rewrite.flow === "Translate" ? "Target language" : "Language"}
+                  </p>
+                </div>
+                <label htmlFor="rw-rail-language" className="sr-only">Language</label>
+                <select
+                  id="rw-rail-language"
+                  className="select"
+                  value={
+                    rewrite.flow === "Outline"
+                      ? outlineGenerator.language || DEFAULT_LANGUAGE
+                      : rewrite.flow === "Translate"
+                        ? rewrite.targetLanguage || rewrite.language || "Spanish"
+                        : rewrite.language || DEFAULT_LANGUAGE
+                  }
+                  onChange={(e) => {
+                    const selected = e.target.value;
+                    if (rewrite.flow === "Outline") {
+                      updateOutlineGenerator({ language: selected });
+                    } else if (rewrite.flow === "Translate") {
+                      updateRewrite({ language: selected, targetLanguage: selected });
+                    } else {
+                      updateRewrite({ language: selected });
+                    }
+                  }}
+                >
+                  {LANGUAGE_GROUPS.map((group) => (
+                    <optgroup key={group.label} label={group.label}>
+                      {group.options.map((lang) => (
+                        <option key={lang} value={lang}>{lang}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+                <p className="hint">
+                  {rewrite.flow === "Translate"
+                    ? "Chapters will be translated into this language."
+                    : "The output manuscript will be written in this language."}
+                </p>
+              </div>
+
+              <div className="rail-section">
                 <p className="rail-title">Voice</p>
                 <label htmlFor="rw-tone" className="sr-only">Tone</label>
                 <select
@@ -884,11 +946,12 @@ export default function RewritePage() {
                     setGenerating(true);
                     const startTime = Date.now();
                     try {
+                      const currentLang = rewrite.language || DEFAULT_LANGUAGE;
                       const text = await generateAiText({
                         api,
                         systemPrompt:
-                          "You rewrite manuscript passages for professional authors. If the content provided is an existing author's work, you MUST use it as inspiration but completely rebrand and rewrite it to be original while maintaining the winning structure and logical progression. Do not plagiarize phrasing.",
-                        userPrompt: `Rewrite this manuscript in a "${rewrite.tone}" tone.\n\nTarget length for this output: ${rewrite.length || 20000} words.\n\nHumanize: ${rewrite.humanize}.\nAvoid plagiarism: ${rewrite.avoidPlagiarism}.\n\nText:\n${rewrite.manuscript}`,
+                          `You rewrite manuscript passages for professional authors. If the content provided is an existing author's work, you MUST use it as inspiration but completely rebrand and rewrite it to be original while maintaining the winning structure and logical progression. Do not plagiarize phrasing.\n\n${getLanguageDirective(currentLang)}`,
+                        userPrompt: `Rewrite this manuscript in a "${rewrite.tone}" tone in ${currentLang}.\n\nTarget length for this output: ${rewrite.length || 20000} words.\n\nHumanize: ${rewrite.humanize}.\nAvoid plagiarism: ${rewrite.avoidPlagiarism}.\n\nText:\n${rewrite.manuscript}`,
                         temperature: settings.temperature,
                         topP: settings.topP,
                       });

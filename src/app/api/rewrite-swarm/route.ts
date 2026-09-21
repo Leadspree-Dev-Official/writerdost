@@ -1,5 +1,6 @@
 import { callModel } from "@/lib/ai-server-utils";
 import { sendStreamEvent, type StreamEvent } from "@/lib/app-utils";
+import { getLanguageDirective } from "@/lib/languages";
 import type { ApiSettings } from "@/lib/store-types";
 import { guardRequest } from "@/lib/api-guard";
 
@@ -10,6 +11,7 @@ type RewriteRequest = {
   api: ApiSettings;
   chunk: string;
   tone: string;
+  language?: string;
   targetChunkWords: number;
   settings: {
     temperature: number;
@@ -29,6 +31,7 @@ export async function POST(request: Request) {
       try {
         const body = (await request.json()) as RewriteRequest;
         const { api, chunk, tone, targetChunkWords, settings } = body;
+        const language = body.language || "English (India)";
 
         // AGENT 1: THE CONCEPT EXTRACTOR
         sendEvent({ type: "active_agent", agent: "Concept Extractor" });
@@ -50,11 +53,12 @@ IF THE CONTENT IS AN EXISTING WORK: Your goal is to map the "winning logic" of t
 
         // AGENT 2: THE TRANSLATION DRAFTER
         sendEvent({ type: "active_agent", agent: "Translation Drafter" });
-        sendEvent({ type: "log", agent: "Translation Drafter", message: `Rebuilding prose in "${tone}" style...`, status: "pending" });
+        sendEvent({ type: "log", agent: "Translation Drafter", message: `Rebuilding prose in "${tone}" style (${language})...`, status: "pending" });
         const { text: freshProse, usage: usage2 } = await callModel({
           api,
           systemPrompt: `You are the Translation Drafter. You will receive a sterile outline of facts and concepts. You must draft these concepts into beautiful, cohesive prose.
 1. You must strictly adopt the [Selected Tone & Style: ${tone}]. 
+${getLanguageDirective(language)}
 2. You must weave the facts into a compelling narrative, creating your own transitions and metaphors. 
 3. Do NOT use Markdown formatting, headings, or bullet points. Focus solely on fresh word choice and deep narrative exploration.
 4. Expand the outline to reach approximately ${targetChunkWords} words.
@@ -72,8 +76,9 @@ IF THE SOURCE IS INSPIRED BY OTHER AUTHORS: You must completely rebrand the narr
         const { text: formattedText, usage: usage3 } = await callModel({
           api,
           systemPrompt: `You are the Structural Editor. Take the raw text and apply V2 Formatting Rules to enhance scannability. 
+${getLanguageDirective(language)}
 1. Break paragraphs longer than 4 sentences. 
-2. Insert ### (H3) and #### (H4) subheadings where thematic shifts occur. 
+2. Insert ### (H3) and #### (H4) subheadings where thematic shifts occur in ${language}. 
 3. Format sequential steps or 3+ items as bolded bullet points. 
 4. Isolate one core philosophy into a > blockquote. 
 5. Do NOT alter the meaning, vocabulary, or tone.`,
@@ -92,8 +97,9 @@ IF THE SOURCE IS INSPIRED BY OTHER AUTHORS: You must completely rebrand the narr
           systemPrompt: `You are the Anti-Plagiarism Director. You must compare the newly drafted text against the Original Source Chunk. 
 1. Plagiarism Check: Run a strict comparison. If you detect *any* matching sequence of 5 or more consecutive words (excluding common names or industry terms), you must automatically REWRITE that sentence to be 100% unique.
 2. Fluff Check: Scan for generic AI phrases ('In conclusion', 'Ultimately', 'Delve into', etc). If found, REMOVE or REWRITE them naturally.
-3. You must NOT reject the text. Fix the issues yourself.
-4. Output 'APPROVE' followed by the final, polished, and unique text payload in Markdown format.`,
+3. Language: The output must strictly remain in ${language}.
+4. You must NOT reject the text. Fix the issues yourself.
+5. Output 'APPROVE' followed by the final, polished, and unique text payload in Markdown format.`,
           userPrompt: `Original Source Chunk:\n${chunk}\n\nNewly Formatted Text:\n${formattedText}`,
           temperature: 0.1,
           topP: settings.topP,

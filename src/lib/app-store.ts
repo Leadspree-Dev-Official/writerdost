@@ -240,6 +240,7 @@ type RewriteState = {
   title: string;
   audience: string;
   tone: string;
+  language: string;
   humanize: boolean;
   avoidPlagiarism: boolean;
   preview: string;
@@ -258,6 +259,7 @@ type OutlineGeneratorState = {
   title: string;
   audience: string;
   tone: string;
+  language: string;
   targetLength: number;
   chapters: OutlineChapter[];
 };
@@ -488,6 +490,7 @@ const defaultRewrite: RewriteState = {
   title: "",
   audience: "",
   tone: "Professional",
+  language: DEFAULT_LANGUAGE,
   humanize: true,
   avoidPlagiarism: true,
   preview: "",
@@ -500,6 +503,7 @@ const defaultOutlineGenerator: OutlineGeneratorState = {
   title: "",
   audience: "",
   tone: "Professional",
+  language: DEFAULT_LANGUAGE,
   targetLength: 15000,
   chapters: [],
 };
@@ -1444,6 +1448,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           title: title || "Imported Project",
           audience: audience || "General Audience",
           tone: "Professional",
+          language: get().outlineGenerator.language || DEFAULT_LANGUAGE,
           targetLength: 20000,
           chapters: chapters.length > 0 ? chapters : get().outlineGenerator.chapters,
         },
@@ -1508,6 +1513,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         description: rewrite.manuscript.slice(0, 160),
         audience: rewrite.audience,
         tone: rewrite.tone,
+        language: rewrite.language || DEFAULT_LANGUAGE,
         type: "rewrite",
         progress: 50,
         status: "Editing",

@@ -2,6 +2,7 @@ import { callModel } from "@/lib/ai-server-utils";
 import { sendStreamEvent, slugify, type StreamEvent } from "@/lib/app-utils";
 import { mdToHtml } from "@/lib/markdown-utils";
 import { getToneDirective } from "@/lib/tone-standards";
+import { getLanguageDirective } from "@/lib/languages";
 import type { ApiSettings, GeneratedProjectPayload, GeneratedChapter } from "@/lib/store-types";
 import { guardRequest } from "@/lib/api-guard";
 
@@ -18,6 +19,7 @@ type RequestPayload = {
     title: string;
     audience: string;
     tone: string;
+    language?: string;
     targetLength: number;
     chapters: Array<{
       title: string;
@@ -42,10 +44,13 @@ export async function POST(request: Request) {
         sendEvent({ type: "active_agent", agent: "Architect Agent" });
         sendEvent({ type: "log", agent: "Architect Agent", message: "Spinning and rebranding the provided curriculum...", status: "pending" });
 
+        const language = outline.language || "English (India)";
+
         const { text: spunOutlineText, usage: architectUsage } = await callModel({
           api,
           systemPrompt: `You are the Writerdost Architect Agent. The user is providing a competitor's or existing book's Table of Contents and sub-topics.
 Your job is to COMPLETELY REBRAND AND SPIN this curriculum so it is 100% original and avoids plagiarism, while keeping the logical learning progression.
+${getLanguageDirective(language)}
 1. Rename every chapter title.
 2. Rewrite every sub-topic into original bullet points.
 3. Keep the exact same number of chapters.
@@ -84,6 +89,7 @@ Do NOT return anything except the JSON array. Do not use markdown blocks like \`
 
           const systemPrompt = `You are the Lead Manuscript Writer. Your task is to write a high-quality, professional ebook chapter based on the provided title and topics.
 ${getToneDirective(outline.tone)}
+${getLanguageDirective(language)}
 Follow Ebook Formatting Standards:
 1. Use ### (H3) and #### (H4) headings.
 2. Use bolded bullet points for frameworks.
@@ -131,6 +137,7 @@ Instructions: Expand these topics into deep, insightful prose. Do not just list 
           description: `An ebook generated from a custom curriculum about ${outline.title}.`,
           audience: outline.audience,
           tone: outline.tone,
+          language: language,
           positioning: "Direct curriculum derivation",
           targetLength: outline.targetLength,
           chapterCount: totalChapters,
