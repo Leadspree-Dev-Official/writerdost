@@ -15,9 +15,9 @@ import {
   testBundleKartConnection,
   testMarketplaceConnection,
 } from "@/lib/marketplace";
-import type { ApiScope, ListingFormat, ListingVisibility, MarketplaceLicense } from "@/lib/store-types";
+import type { ApiScope, ListingFormat, ListingVisibility, MarketplaceLicense, PlatformApiSettings } from "@/lib/store-types";
 
-const CURRENCIES = ["USD", "INR", "EUR", "GBP"];
+const CURRENCIES = ["INR", "USD", "EUR", "GBP"];
 const DEFAULT_SCOPES: ApiScope[] = ["projects:read", "publish"];
 
 /**
@@ -287,16 +287,25 @@ export function ApiTab() {
                     className="input num"
                     type="number"
                     min="0"
-                    step="0.5"
-                    placeholder="9.99"
+                    step={platform.currency === "INR" ? "1" : "0.5"}
+                    placeholder={platform.currency === "INR" ? "499" : "9.99"}
                     value={platform.defaultPrice}
                     onChange={(event) => updatePlatformApi({ defaultPrice: Number(event.target.value) })}
                   />
                   <select
                     className="select w-auto"
                     aria-label="Default currency"
-                    value={platform.currency}
-                    onChange={(event) => updatePlatformApi({ currency: event.target.value })}
+                    value={platform.currency || "INR"}
+                    onChange={(event) => {
+                      const next = event.target.value;
+                      const update: Partial<PlatformApiSettings> = { currency: next };
+                      if (next === "INR" && platform.defaultPrice === 9.99) {
+                        update.defaultPrice = 499;
+                      } else if (next === "USD" && platform.defaultPrice === 499) {
+                        update.defaultPrice = 9.99;
+                      }
+                      updatePlatformApi(update);
+                    }}
                   >
                     {CURRENCIES.map((item) => (
                       <option key={item} value={item}>{item}</option>

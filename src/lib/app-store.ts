@@ -547,9 +547,9 @@ const defaultPlatformApi: PlatformApiSettings = {
   connectionMessage: "",
   lastCheckedAt: null,
   seller: null,
-  defaultPrice: 9.99,
-  currency: "USD",
-  defaultCategory: "Business & Money",
+  defaultPrice: 499,
+  currency: "INR",
+  defaultCategory: "Business & Startups",
   defaultLicense: "standard",
   defaultFormats: ["epub", "pdf"],
   defaultVisibility: "draft",
@@ -939,6 +939,16 @@ async function openWorkspace(userId: string | null): Promise<void> {
   try {
     const snapshot = await fetchWorkspace();
     const saved = (snapshot.settings ?? {}) as Partial<AppStore>;
+
+    if (saved.platform) {
+      if (!saved.platform.currency || (saved.platform.currency === "USD" && saved.platform.defaultPrice === 9.99)) {
+        saved.platform = {
+          ...saved.platform,
+          currency: "INR",
+          defaultPrice: 499,
+        };
+      }
+    }
 
     // Defaults first, then whatever was saved: a workspace written by an older
     // build simply has fewer keys, and the missing ones keep their defaults.
