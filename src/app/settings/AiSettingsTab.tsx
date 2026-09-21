@@ -11,6 +11,8 @@ const modelOptions = {
   gemini: ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-1.0-pro"],
   deepseek: ["deepseek-chat", "deepseek-reasoner"],
   openrouter: [
+    "openai/gpt-oss-120b:free",
+    "openai/gpt-oss-20b:free",
     "openai/gpt-4o-mini",
     "anthropic/claude-3.5-sonnet",
     "google/gemini-pro-1.5",
@@ -20,6 +22,8 @@ const modelOptions = {
     "google/gemma-3-4b-it",
   ],
   ollama: [
+    "gpt-oss:120b",
+    "gpt-oss:20b",
     "llama3.1:8b",
     "llama3.2:3b",
     "mistral:7b",
@@ -36,6 +40,8 @@ const modelOptions = {
     "gemma4:31b-cloud",
   ],
   ollama_cloud: [
+    "gpt-oss:120b",
+    "gpt-oss:20b",
     "llama3.1:8b",
     "llama3.2:3b",
     "mistral:7b",

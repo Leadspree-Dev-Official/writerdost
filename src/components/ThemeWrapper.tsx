@@ -7,13 +7,31 @@ export default function ThemeWrapper() {
   const isDarkMode = useAppStore((state) => state.isDarkMode);
   const updateApiSettings = useAppStore((state) => state.updateApiSettings);
 
+  // On mount, sync store state if localStorage already had a preference
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("writerdost_theme");
+      if (saved === "dark" && !isDarkMode) {
+        useAppStore.setState({ isDarkMode: true });
+      } else if (saved === "light" && isDarkMode) {
+        useAppStore.setState({ isDarkMode: false });
+      }
+    } catch {}
+  }, []);
+
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add("dark");
       document.documentElement.classList.remove("light");
+      try {
+        localStorage.setItem("writerdost_theme", "dark");
+      } catch {}
     } else {
       document.documentElement.classList.remove("dark");
       document.documentElement.classList.add("light");
+      try {
+        localStorage.setItem("writerdost_theme", "light");
+      } catch {}
     }
   }, [isDarkMode]);
 

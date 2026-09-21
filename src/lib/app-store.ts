@@ -985,7 +985,9 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     platform: defaultPlatformApi,
     generationStatus: defaultGenerationStatus,
     usage: defaultUsage,
-    isDarkMode: false,
+    isDarkMode: typeof window !== "undefined"
+      ? (localStorage.getItem("writerdost_theme") === "dark" || (!localStorage.getItem("writerdost_theme") && window.matchMedia("(prefers-color-scheme: dark)").matches))
+      : false,
     isGlobalSidebarCollapsed: false,
     isEditorSidebarCollapsed: false,
     isManuscriptFullView: false,
@@ -1021,7 +1023,15 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     cancelGeneration: () => {},
     setCancelGeneration: (fn) => set({ cancelGeneration: fn }),
 
-    toggleDarkMode: () => set((state) => ({ isDarkMode: !state.isDarkMode })),
+    toggleDarkMode: () => set((state) => {
+      const next = !state.isDarkMode;
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("writerdost_theme", next ? "dark" : "light");
+        } catch {}
+      }
+      return { isDarkMode: next };
+    }),
     toggleGlobalSidebar: () => set((state) => ({ isGlobalSidebarCollapsed: !state.isGlobalSidebarCollapsed })),
     toggleEditorSidebar: () => set((state) => ({ isEditorSidebarCollapsed: !state.isEditorSidebarCollapsed })),
     setManuscriptFullView: (open) => set({ isManuscriptFullView: open }),
@@ -2112,6 +2122,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           "gemini-2.0-flash": 0.1,
           "deepseek-chat": 0.14,
           "deepseek-reasoner": 0.14,
+          "gpt-oss": 0,
         };
 
         // Sort candidates longest-first so a specific match (e.g. "gpt-4o-mini")
