@@ -31,6 +31,7 @@ export const TABLES = {
   upgrades: "upgrade_requests",
   workspaces: "workspaces",
   workspaceProjects: "workspace_projects",
+  leases: "automation_leases",
 } as const;
 
 export { ID, Permission, Query, Role };

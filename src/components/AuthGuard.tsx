@@ -4,6 +4,16 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useAppStore } from "@/lib/app-store";
 
+const PUBLIC_PATHS = new Set([
+  "/",
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/reset-password",
+  "/privacy",
+  "/terms",
+]);
+
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -27,7 +37,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     if (!isReady) return;
 
     const isAuthPage = pathname === "/login" || pathname === "/signup";
-    const isPublicPage = pathname === "/" || isAuthPage;
+    const isPublicPage = PUBLIC_PATHS.has(pathname);
     
     if (!currentUser && !isPublicPage) {
       router.push("/login");
@@ -58,7 +68,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   // If not logged in and on a protected route, or logged in as standard user on admin route,
   // hide children during transition to avoid content flashing
   const isAuthPage = pathname === "/login" || pathname === "/signup";
-  const isPublicPage = pathname === "/" || isAuthPage;
+  const isPublicPage = PUBLIC_PATHS.has(pathname);
   if (!currentUser && !isPublicPage) return null;
   if (currentUser && isAuthPage) return null;
   if (currentUser && pathname.startsWith("/admin") && currentUser.role !== "admin") return null;

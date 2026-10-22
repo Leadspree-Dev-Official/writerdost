@@ -19,8 +19,8 @@ export default function FaqSection() {
       a: "We provide an official, lightweight WordPress plugin called 'writerdost-connect'. Once uploaded to your WordPress site, it securely interfaces with the standard WordPress REST API using Application Passwords. You can queue automated blog schedules, and Writerdost automatically generates articles, attaches tags/categories, sets featured images, and publishes on your chosen cron schedule.",
     },
     {
-      q: "Can I bring my own API keys or run 100% offline with local Ollama?",
-      a: "Yes. Writerdost has zero vendor lock-in. You can enter your personal API keys for Anthropic Claude 3.5, OpenAI GPT-4o, Google Gemini, DeepSeek, or OpenRouter. If you require absolute privacy, you can connect directly to a local Ollama instance (e.g. running Llama 3.1 or DeepSeek R1 on localhost:11434) with zero cloud transmission.",
+      q: "Can I bring my own API keys or use local Ollama?",
+      a: "Yes. Bring your own key for OpenAI, OpenRouter, Claude, Gemini, DeepSeek, or Ollama Cloud. If you self-host Writerdost and enable the local Ollama mode, prompts can stay on your own machine. Otherwise your workspace is stored in Appwrite and prompts are sent to the provider you choose.",
     },
     {
       q: "What export formats are supported for publishing?",

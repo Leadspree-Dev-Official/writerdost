@@ -82,11 +82,15 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-3">
             <div>
-              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+              <label htmlFor="login-email" className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
                 Work Email Address
               </label>
               <input
+                id="login-email"
+                name="email"
                 type="email"
+                autoComplete="email"
+                required
                 placeholder="you@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -97,12 +101,18 @@ export default function LoginPage() {
 
             <div>
               <div className="flex justify-between items-center mb-2">
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">
+                <label htmlFor="login-password" className="block text-xs font-bold text-slate-400 uppercase tracking-wider">
                   Password
                 </label>
+                <Link href="/forgot-password" className="text-[11px] font-semibold text-indigo-400 hover:text-indigo-300">
+                  Forgot password?
+                </Link>
               </div>
               <div className="relative">
                 <input
+                  id="login-password"
+                  name="password"
+                  autoComplete="current-password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   value={password}
@@ -113,7 +123,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
-                  tabIndex={-1}
+                  aria-pressed={showPassword}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors p-1"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >

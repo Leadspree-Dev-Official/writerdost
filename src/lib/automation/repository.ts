@@ -268,6 +268,64 @@ export async function loadSeenHashes(automationId: string): Promise<Set<string>>
   }
 }
 
+const LEASE_MS = 15 * 60_000;
+
+/** Atomically claims an automation for one worker. */
+export async function claimAutomation(automation: Automation, runId: string): Promise<boolean> {
+  const db = workerTables();
+  const rowId = rowKey("lease", automation.id);
+  const expiresAt = new Date(Date.now() + LEASE_MS).toISOString();
+
+  try {
+    await db.createRow({
+      databaseId: DATABASE_ID,
+      tableId: TABLES.leases,
+      rowId,
+      data: { automationId: automation.id, runId, expiresAt },
+      permissions: [],
+    });
+    return true;
+  } catch (error) {
+    if ((error as { code?: number }).code !== 409) throw error;
+  }
+
+  const existing = (await db.getRow({
+    databaseId: DATABASE_ID,
+    tableId: TABLES.leases,
+    rowId,
+  })) as unknown as { expiresAt: string };
+
+  if (new Date(existing.expiresAt).getTime() > Date.now()) return false;
+  await db.deleteRow({ databaseId: DATABASE_ID, tableId: TABLES.leases, rowId });
+  return claimAutomation(automation, runId);
+}
+
+export async function releaseAutomation(automationId: string, runId: string): Promise<void> {
+  const db = workerTables();
+  const rowId = rowKey("lease", automationId);
+  try {
+    const row = (await db.getRow({
+      databaseId: DATABASE_ID,
+      tableId: TABLES.leases,
+      rowId,
+    })) as unknown as { runId: string };
+    if (row.runId !== runId) return;
+    await db.deleteRow({ databaseId: DATABASE_ID, tableId: TABLES.leases, rowId });
+  } catch (error) {
+    if ((error as { code?: number }).code !== 404) throw error;
+  }
+}
+
+export async function skipRun(runId: string, detail: string): Promise<void> {
+  const db = workerTables();
+  await db.updateRow({
+    databaseId: DATABASE_ID,
+    tableId: TABLES.runs,
+    rowId: runId,
+    data: { status: "skipped", detail, finishedAt: new Date().toISOString() },
+  });
+}
+
 export async function openRun(
   automation: Automation,
   trigger: "schedule" | "manual",
@@ -400,16 +458,18 @@ export async function failRun(
     data: { status: "error", detail: message, finishedAt: now.toISOString() },
   });
 
-  // Still advance the schedule, otherwise a permanently broken automation is
-  // retried on every tick forever.
+  // Use the frequency-aware scheduler so a failed one-off stays spent and a
+  // biweekly job does not retry in one week. Recurring jobs still advance, so a
+  // permanently broken automation is not retried on every tick forever.
+  const next = nextRunFor({ ...automation, lastRunAt: now.toISOString() }, now);
   await db.updateRow({
     databaseId: DATABASE_ID,
     tableId: TABLES.automations,
     rowId: automation.id,
     data: {
       lastRunAt: now.toISOString(),
-      nextRunAt:
-        nextRunAt(automation.scheduleCron, automation.timezone, now)?.toISOString() ?? null,
+      nextRunAt: next?.toISOString() ?? null,
+      ...(next ? {} : { enabled: false }),
     },
   });
 }

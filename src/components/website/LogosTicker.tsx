@@ -6,7 +6,7 @@ export default function LogosTicker() {
     { name: "OpenAI GPT-4o", role: "Multimodal Intelligence", icon: "psychology" },
     { name: "Google Gemini", role: "Massive Context Memory", icon: "temp_preferences_custom" },
     { name: "DeepSeek R1", role: "Complex Reasoning", icon: "hub" },
-    { name: "Ollama Local AI", role: "100% Offline Privacy", icon: "terminal" },
+    { name: "Ollama Local AI", role: "Self-hosted option", icon: "terminal" },
     { name: "WordPress Connect", role: "Direct REST Automation", icon: "rss_feed" },
     { name: "OpenRouter", role: "Universal Multi-Model", icon: "lan" },
   ];

@@ -164,6 +164,20 @@ const TABLES = [
     ],
   },
   {
+    id: "automation_leases",
+    permissions: [],
+    name: "Automation leases",
+    // A deterministic row id makes claim() atomic: only one worker can create
+    // the lease for an automation. Expired leases are reclaimed by the next
+    // tick; permissions stay empty because only the worker touches this table.
+    columns: [
+      s("automationId", 64, { required: true }),
+      s("runId", 64, { required: true }),
+      when("expiresAt", { required: true }),
+    ],
+    indexes: [key("leases_by_expiry", ["expiresAt"], [OrderBy.Asc])],
+  },
+  {
     id: "automation_runs",
     permissions: [],
     name: "Automation runs",

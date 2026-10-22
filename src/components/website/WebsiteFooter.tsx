@@ -35,11 +35,6 @@ export default function WebsiteFooter() {
               Empowering authors, digital publishers, and marketing teams to produce cohesive 30,000+ word manuscripts and automated scheduled WordPress campaigns using collaborative multi-agent AI.
             </p>
 
-            {/* Operational Status Pill */}
-            <div className="pt-2 flex items-center gap-2 text-[11.5px] font-semibold text-emerald-600 dark:text-emerald-400">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>All Systems Operational • Swarm v2.2 Online</span>
-            </div>
           </div>
 
           {/* Column 2: Product */}
@@ -143,6 +138,16 @@ export default function WebsiteFooter() {
                 >
                   Contact Support
                 </a>
+              </li>
+              <li>
+                <Link href="/privacy" className="hover:text-on-surface transition-colors">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link href="/terms" className="hover:text-on-surface transition-colors">
+                  Terms of Service
+                </Link>
               </li>
               <li>
                 <Link href="/login" className="hover:text-on-surface transition-colors">

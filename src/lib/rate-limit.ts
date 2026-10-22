@@ -30,6 +30,15 @@ function limiter(bucket: string, points: number, durationSeconds: number) {
   return created;
 }
 
+export async function rateLimitHealthy(): Promise<boolean> {
+  if (!redis) return process.env.NODE_ENV !== "production";
+  try {
+    return (await redis.ping()) === "PONG";
+  } catch {
+    return false;
+  }
+}
+
 export async function consumeRateLimit(
   userId: string,
   bucket: string,

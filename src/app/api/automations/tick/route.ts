@@ -11,11 +11,14 @@
 import { NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import {
+  claimAutomation,
   closeRun,
   failRun,
   findDueAutomations,
   loadSeenHashes,
   openRun,
+  releaseAutomation,
+  skipRun,
   automationBackendReady,
 } from "@/lib/automation/repository";
 import { runAutomation } from "@/lib/automation/pipeline";
@@ -60,6 +63,13 @@ function authorize(request: Request): NextResponse | null {
 /** Runs one automation, recording the result whatever happens. */
 async function execute(automation: Automation, trigger: "schedule" | "manual") {
   const runId = await openRun(automation, trigger);
+  const claimed = await claimAutomation(automation, runId);
+
+  if (!claimed) {
+    const detail = "Another worker already holds this automation.";
+    await skipRun(runId, detail);
+    return { automation: automation.name, status: "skipped" as const, detail, posts: 0, tokens: 0 };
+  }
 
   try {
     const seen = await loadSeenHashes(automation.id);
@@ -77,6 +87,8 @@ async function execute(automation: Automation, trigger: "schedule" | "manual") {
     const message = error instanceof Error ? error.message : "The run failed.";
     await failRun(automation, runId, message);
     return { automation: automation.name, status: "error" as const, detail: message };
+  } finally {
+    await releaseAutomation(automation.id, runId);
   }
 }
 

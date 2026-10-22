@@ -37,7 +37,6 @@ export default function RewritePage() {
   const projects = useAppStore((state) => state.projects);
   const setCurrentProject = useAppStore((state) => state.setCurrentProject);
   const updateRewrite = useAppStore((state) => state.updateRewrite);
-  const generateRewritePreview = useAppStore((state) => state.generateRewritePreview);
   
   const outlineGenerator = useAppStore((state) => state.outlineGenerator);
   const updateOutlineGenerator = useAppStore((state) => state.updateOutlineGenerator);
@@ -1149,8 +1148,7 @@ export default function RewritePage() {
                     }
 
                     if (!api.baseUrl || !api.model || (!api.apiKey && api.provider !== "ollama")) {
-                      generateRewritePreview();
-                      setMessage("Rewrite preview generated with local fallback.");
+                      setMessage("Connect an AI provider and key in Settings → API to rewrite this passage.");
                       return;
                     }
 
@@ -1175,9 +1173,12 @@ export default function RewritePage() {
 
                       useAppStore.getState().createProjectFromRewrite();
                       router.push("/editor");
-                    } catch {
-                      generateRewritePreview();
-                      setMessage("AI request failed. Falling back to local.");
+                    } catch (error) {
+                      setMessage(
+                        error instanceof Error
+                          ? error.message
+                          : "The rewrite failed. Check your AI settings and try again.",
+                      );
                     } finally {
                       setGenerating(false);
                     }

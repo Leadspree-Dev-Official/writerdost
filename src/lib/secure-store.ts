@@ -14,19 +14,27 @@ import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 const IV_BYTES = 12; // GCM standard nonce length
 const TAG_BYTES = 16;
 
-function readKey(): Buffer {
-  const raw = process.env.WRITERDOST_ENCRYPTION_KEY || "";
+function decodeKey(raw: string, name: string): Buffer {
   if (!raw) {
     throw new Error(
-      "WRITERDOST_ENCRYPTION_KEY is not set. Generate one with `openssl rand -base64 32`.",
+      `${name} is not set. Generate one with \`openssl rand -base64 32\`.`,
     );
   }
 
   const key = /^[0-9a-f]{64}$/i.test(raw) ? Buffer.from(raw, "hex") : Buffer.from(raw, "base64");
   if (key.length !== 32) {
-    throw new Error("WRITERDOST_ENCRYPTION_KEY must decode to exactly 32 bytes.");
+    throw new Error(`${name} must decode to exactly 32 bytes.`);
   }
   return key;
+}
+
+function readKey(): Buffer {
+  return decodeKey(process.env.WRITERDOST_ENCRYPTION_KEY || "", "WRITERDOST_ENCRYPTION_KEY");
+}
+
+function readPreviousKey(): Buffer | null {
+  const raw = process.env.WRITERDOST_ENCRYPTION_KEY_PREVIOUS || "";
+  return raw ? decodeKey(raw, "WRITERDOST_ENCRYPTION_KEY_PREVIOUS") : null;
 }
 
 /** Encrypts a secret. Output is `v1.<iv>.<tag>.<ciphertext>`, all base64url. */
@@ -53,7 +61,6 @@ export function decryptSecret(payload: string): string {
     throw new Error("Stored credential is not in the expected format.");
   }
 
-  const key = readKey();
   const iv = Buffer.from(parts[1], "base64url");
   const tag = Buffer.from(parts[2], "base64url");
   const ciphertext = Buffer.from(parts[3], "base64url");
@@ -62,10 +69,19 @@ export function decryptSecret(payload: string): string {
     throw new Error("Stored credential is malformed.");
   }
 
-  const decipher = createDecipheriv("aes-256-gcm", key, iv);
-  decipher.setAuthTag(tag);
+  const decryptWith = (key: Buffer) => {
+    const decipher = createDecipheriv("aes-256-gcm", key, iv);
+    decipher.setAuthTag(tag);
+    return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString("utf8");
+  };
 
-  return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString("utf8");
+  try {
+    return decryptWith(readKey());
+  } catch (error) {
+    const previous = readPreviousKey();
+    if (!previous) throw error;
+    return decryptWith(previous);
+  }
 }
 
 /** True when encryption is configured, so the UI can warn before saving keys. */

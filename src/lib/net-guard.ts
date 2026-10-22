@@ -107,7 +107,14 @@ export async function assertSafeUrl(
 /** Caps how much of a remote document we will pull into memory. */
 export const MAX_FETCH_BYTES = 3_000_000;
 
-const SENSITIVE_HEADERS = ["authorization", "cookie", "x-api-key", "x-cron-secret"];
+const SENSITIVE_HEADERS = [
+  "authorization",
+  "cookie",
+  "x-api-key",
+  "x-cron-secret",
+  "x-writerdost-key",
+  "x-writerdost-signature",
+];
 
 function stripSensitive(headers: Headers): void {
   for (const key of SENSITIVE_HEADERS) headers.delete(key);

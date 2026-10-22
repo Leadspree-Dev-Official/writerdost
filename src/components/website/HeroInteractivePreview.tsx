@@ -494,7 +494,7 @@ export default function HeroInteractivePreview() {
                 </p>
                 <div className="mt-4 pt-3 border-t border-primary/20 flex items-center gap-2 text-[11px] text-emerald-600 dark:text-emerald-400">
                   <span className="material-symbols-outlined text-[14px]">verified</span>
-                  <span>Sensory vocabulary • High readability • Plagiarism-free</span>
+                  <span>Sensory vocabulary • High readability • AI originality pass</span>
                 </div>
               </div>
             </div>

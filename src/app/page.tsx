@@ -10,7 +10,6 @@ import ComparisonMatrix from "@/components/website/ComparisonMatrix";
 import PersonasSection from "@/components/website/PersonasSection";
 import RoiCalculator from "@/components/website/RoiCalculator";
 import PricingSection from "@/components/website/PricingSection";
-import TestimonialsSection from "@/components/website/TestimonialsSection";
 import FaqSection from "@/components/website/FaqSection";
 import CtaBanner from "@/components/website/CtaBanner";
 import WebsiteFooter from "@/components/website/WebsiteFooter";
@@ -47,13 +46,10 @@ export default function HomePage() {
         {/* 8. Interactive ROI & Cost-Savings Calculator */}
         <RoiCalculator />
 
-        {/* 9. Transparent Monthly/Annual Pricing */}
+        {/* 9. Beta access */}
         <PricingSection />
 
-        {/* 10. Wall of Love / Author Testimonials */}
-        <TestimonialsSection />
-
-        {/* 11. Frequently Asked Questions Accordion */}
+        {/* 10. Frequently Asked Questions Accordion */}
         <FaqSection />
 
         {/* 12. Final High-Energy Cosmic Conversion CTA */}

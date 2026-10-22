@@ -57,7 +57,7 @@ async function postJson(
     // Some platforms return HTML on error; keep the raw body for the message.
   }
 
-  if (response.status >= 400) {
+  if (response.status < 200 || response.status >= 300) {
     const message =
       (typeof json.message === "string" && json.message) ||
       (typeof json.error === "string" && json.error) ||
@@ -367,10 +367,14 @@ const webhook: DestinationAdapter = {
 
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (destination.secret) {
-      // Signing lets the receiver verify the post really came from here.
+      // The timestamp is inside the signed payload so a captured request
+      // cannot be replayed indefinitely.
       const { createHmac } = await import("node:crypto");
+      const timestamp = Math.floor(Date.now() / 1000).toString();
+      const canonical = `${timestamp}\nPOST\n${body}`;
+      headers["x-writerdost-timestamp"] = timestamp;
       headers["x-writerdost-signature"] = createHmac("sha256", destination.secret)
-        .update(body)
+        .update(canonical)
         .digest("hex");
     }
 
@@ -381,7 +385,7 @@ const webhook: DestinationAdapter = {
       body,
     });
 
-    if (response.status >= 400) {
+    if (response.status < 200 || response.status >= 300) {
       throw new Error(`Webhook returned HTTP ${response.status}.`);
     }
 

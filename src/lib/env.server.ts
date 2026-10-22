@@ -8,6 +8,7 @@ const schema = z
     APPWRITE_API_KEY: z.string().min(1),
     APPWRITE_DATABASE_ID: z.string().min(1),
     WRITERDOST_ENCRYPTION_KEY: z.string().min(1),
+    WRITERDOST_ENCRYPTION_KEY_PREVIOUS: z.string().optional(),
     WRITERDOST_CRON_SECRET: z.string().min(32),
     REDIS_URL: z.string().url().optional(),
     WRITERDOST_ALLOWED_AI_HOSTS: z.string().default(""),

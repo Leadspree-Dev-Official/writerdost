@@ -14,6 +14,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -27,6 +28,10 @@ export default function SignupPage() {
     // the server, where the message is less helpful.
     if (password.length < 8) {
       setError("Password must be at least 8 characters long.");
+      return;
+    }
+    if (!acceptedTerms) {
+      setError("Please accept the Terms and Privacy Policy to continue.");
       return;
     }
     if (password !== confirmPassword) {
@@ -93,11 +98,15 @@ export default function SignupPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+              <label htmlFor="signup-name" className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
                 Full Name
               </label>
               <input
+                id="signup-name"
+                name="name"
                 type="text"
+                autoComplete="name"
+                required
                 placeholder="Aniruddha Das"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
@@ -107,11 +116,15 @@ export default function SignupPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+              <label htmlFor="signup-email" className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
                 Work Email Address
               </label>
               <input
+                id="signup-email"
+                name="email"
                 type="email"
+                autoComplete="email"
+                required
                 placeholder="you@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -121,11 +134,15 @@ export default function SignupPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+              <label htmlFor="signup-password" className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
                 Choose Password
               </label>
               <div className="relative">
                 <input
+                  id="signup-password"
+                  name="password"
+                  autoComplete="new-password"
+                  required
                   type={showPassword ? "text" : "password"}
                   placeholder="At least 8 characters"
                   value={password}
@@ -136,7 +153,7 @@ export default function SignupPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
-                  tabIndex={-1}
+                  aria-pressed={showPassword}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors p-1"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
@@ -148,11 +165,15 @@ export default function SignupPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+              <label htmlFor="signup-confirm-password" className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
                 Confirm Password
               </label>
               <div className="relative">
                 <input
+                  id="signup-confirm-password"
+                  name="confirmPassword"
+                  autoComplete="new-password"
+                  required
                   type={showPassword ? "text" : "password"}
                   placeholder="Re-enter password"
                   value={confirmPassword}
@@ -163,7 +184,7 @@ export default function SignupPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
-                  tabIndex={-1}
+                  aria-pressed={showPassword}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors p-1"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
@@ -174,9 +195,26 @@ export default function SignupPage() {
               </div>
             </div>
 
+            <label htmlFor="accept-terms" className="flex items-start gap-2 text-[11px] leading-relaxed text-slate-400">
+              <input
+                id="accept-terms"
+                type="checkbox"
+                checked={acceptedTerms}
+                onChange={(event) => setAcceptedTerms(event.target.checked)}
+                className="mt-0.5"
+                required
+              />
+              <span>
+                I agree to the{" "}
+                <Link href="/terms" className="text-indigo-400 hover:text-indigo-300 underline">Terms</Link>{" "}
+                and{" "}
+                <Link href="/privacy" className="text-indigo-400 hover:text-indigo-300 underline">Privacy Policy</Link>.
+              </span>
+            </label>
+
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !acceptedTerms}
               className="btn btn-primary btn-lg w-full mt-2"
             >
               {loading ? (

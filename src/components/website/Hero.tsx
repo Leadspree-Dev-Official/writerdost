@@ -88,15 +88,15 @@ export default function Hero() {
         {/* Key Metrics Strip */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto my-12 pt-6 border-y border-outline-variant/30">
           <div className="text-center p-3">
-            <p className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">2.4M+</p>
+            <p className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">30k+</p>
             <p className="text-[12px] font-semibold text-on-surface-variant uppercase tracking-wider mt-1">
-              Words Generated
+              Words per Project
             </p>
           </div>
           <div className="text-center p-3 border-l border-outline-variant/30">
             <p className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">4 Agents</p>
             <p className="text-[12px] font-semibold text-on-surface-variant uppercase tracking-wider mt-1">
-              Parallel Swarm
+              Collaborative Pipeline
             </p>
           </div>
           <div className="text-center p-3 border-l border-outline-variant/30">
@@ -106,9 +106,9 @@ export default function Hero() {
             </p>
           </div>
           <div className="text-center p-3 border-l border-outline-variant/30">
-            <p className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">100%</p>
+            <p className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">BYO</p>
             <p className="text-[12px] font-semibold text-on-surface-variant uppercase tracking-wider mt-1">
-              Data Privacy &amp; Offline
+              API Keys
             </p>
           </div>
         </div>
