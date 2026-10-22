@@ -27,6 +27,7 @@ import {
   rowKey,
 } from "@/lib/appwrite/server";
 import { decryptSecret, encryptSecret, encryptionAvailable } from "@/lib/secure-store";
+import { sanitizeGeneratedHtml } from "@/lib/sanitize";
 import type { StoredProject, WorkspacePatch, WorkspaceSettings, WorkspaceSnapshot } from "./wire";
 
 /** Appwrite rejects a larger page. Nobody has this many books, but page anyway. */
@@ -269,10 +270,22 @@ export async function saveWorkspace(
   for (const project of patch.projects ?? []) {
     if (!project || typeof project.id !== "string" || !project.id) continue;
     try {
+      const safeProject = {
+        ...project,
+        chapters: Array.isArray(project.chapters)
+          ? project.chapters.map((chapter) => ({
+              ...chapter,
+              content:
+                typeof chapter.content === "string"
+                  ? sanitizeGeneratedHtml(chapter.content)
+                  : "",
+            }))
+          : [],
+      };
       await upsert(db, TABLES.workspaceProjects, projectRowId(userId, project.id), userId, {
         projectId: project.id,
         title: String(project.title ?? "Untitled").slice(0, 512),
-        data: encodeJson(project),
+        data: encodeJson(safeProject),
         savedAt: new Date().toISOString(),
       });
     } catch (error) {

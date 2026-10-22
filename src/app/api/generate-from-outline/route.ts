@@ -4,7 +4,7 @@ import { mdToHtml } from "@/lib/markdown-utils";
 import { getToneDirective } from "@/lib/tone-standards";
 import { getLanguageDirective } from "@/lib/languages";
 import type { ApiSettings, GeneratedProjectPayload, GeneratedChapter } from "@/lib/store-types";
-import { guardRequest } from "@/lib/api-guard";
+import { guardCostlyRequest } from "@/lib/costly-route";
 
 export const maxDuration = 300;
 export const dynamic = "force-dynamic";
@@ -35,8 +35,8 @@ type RequestPayload = {
 };
 
 export async function POST(request: Request) {
-  const blocked = guardRequest(request, { limit: 6 });
-  if (blocked) return blocked;
+  const { denied } = await guardCostlyRequest(request, "generate-from-outline", 6);
+  if (denied) return denied;
 
   const stream = new ReadableStream({
     async start(controller) {

@@ -7,9 +7,8 @@
  * server fetch it (SSRF). Everything that leaves this app for an AI provider
  * must go through `resolveUpstream` first.
  */
-import { lookup } from "node:dns/promises";
-import { isIP } from "node:net";
-import { isPrivateIpv4, isPrivateIpv6, isLoopbackAddress } from "@/lib/net-guard";
+import { assertPublicHost as assertPublicAddresses } from "@/lib/net-guard";
+import { isLoopbackAddress } from "@/lib/outbound-policy";
 import { providerDefaults } from "@/lib/ai-providers";
 import type { ApiSettings } from "@/lib/store-types";
 
@@ -25,8 +24,10 @@ const envAllowedHosts = (process.env.WRITERDOST_ALLOWED_AI_HOSTS || "")
   .map((h) => h.trim().toLowerCase())
   .filter(Boolean);
 
-/** Loopback AI servers (Ollama) are only reachable when explicitly enabled. */
-const allowLoopback = process.env.WRITERDOST_ALLOW_LOCAL_AI !== "false";
+/** Loopback AI servers (Ollama) are opt-in; production also requires self-hosted mode. */
+const allowLoopback =
+  process.env.WRITERDOST_ALLOW_LOCAL_AI === "true" &&
+  (process.env.WRITERDOST_SELF_HOSTED === "true" || process.env.NODE_ENV === "development");
 
 export class UpstreamNotAllowedError extends Error {
   readonly status = 400;
@@ -34,35 +35,6 @@ export class UpstreamNotAllowedError extends Error {
 
 function deny(message: string): never {
   throw new UpstreamNotAllowedError(message);
-}
-
-/**
- * Resolves the hostname and rejects any address that lands inside the
- * network the server itself sits on. Resolving here (rather than trusting the
- * hostname) is what stops DNS entries that point at private space.
- */
-async function assertPublicHost(hostname: string): Promise<void> {
-  let addresses: { address: string }[];
-
-  if (isIP(hostname)) {
-    addresses = [{ address: hostname }];
-  } else {
-    try {
-      addresses = await lookup(hostname, { all: true });
-    } catch {
-      deny(`Could not resolve AI host "${hostname}".`);
-    }
-  }
-
-  for (const { address } of addresses) {
-    const priv = isIP(address) === 6 ? isPrivateIpv6(address) : isPrivateIpv4(address);
-    if (!priv) continue;
-    if (isLoopbackAddress(address) && allowLoopback) continue;
-    deny(
-      `The AI endpoint "${hostname}" resolves to a private network address. ` +
-        `Use a public provider endpoint, or add the host to WRITERDOST_ALLOWED_AI_HOSTS.`,
-    );
-  }
 }
 
 /**
@@ -124,7 +96,11 @@ export async function resolveUpstream(api: ApiSettings): Promise<ApiSettings> {
   }
 
   if (!explicitlyAllowed) {
-    await assertPublicHost(host);
+    try {
+      await assertPublicAddresses(host, { allowLoopback, label: "AI endpoint" });
+    } catch (error) {
+      deny(error instanceof Error ? error.message : `Could not validate AI host "${host}".`);
+    }
   }
 
   if (provider !== "ollama" && !api.apiKey) {

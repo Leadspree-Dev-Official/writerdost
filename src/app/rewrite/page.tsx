@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { generateAiText } from "@/lib/ai-client";
+import { apiFetch } from "@/lib/api-client";
 import { useAppStore, type RewriteFlow } from "@/lib/app-store";
 import { LANGUAGE_GROUPS, DEFAULT_LANGUAGE, getLanguageDirective } from "@/lib/languages";
 import { STREAM_DELIMITER, robustParseJson, calculateProjectWords } from "@/lib/app-utils";
@@ -150,7 +151,7 @@ export default function RewritePage() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("/api/extract-text", {
+      const response = await apiFetch("/api/extract-text", {
         method: "POST",
         body: formData,
       });
@@ -220,7 +221,7 @@ export default function RewritePage() {
         const chunkNum = i + 1;
         addGenerationLog({ agent: "System", message: `Starting processing for part ${chunkNum} of ${totalChunks}...`, status: "pending" });
         
-        const response = await fetch("/api/rewrite-swarm", {
+        const response = await apiFetch("/api/rewrite-swarm", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -346,7 +347,7 @@ export default function RewritePage() {
     let receivedFinal = false;
 
     try {
-      const response = await fetch("/api/generate-from-outline", {
+      const response = await apiFetch("/api/generate-from-outline", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -524,7 +525,7 @@ export default function RewritePage() {
     useAppStore.getState().setCancelGeneration(handleCancel);
 
     try {
-      const response = await fetch("/api/translate-project", {
+      const response = await apiFetch("/api/translate-project", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

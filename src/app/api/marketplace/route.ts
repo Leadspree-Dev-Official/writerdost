@@ -11,7 +11,8 @@
  * error body is returned unchanged so the UI shows what the service said.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { guardRequest, readJsonBody } from "@/lib/api-guard";
+import { readJsonBody } from "@/lib/api-guard";
+import { guardCostlyRequest } from "@/lib/costly-route";
 import { BlockedRequestError, safeFetch } from "@/lib/net-guard";
 
 /** The calls the UI is allowed to make, mapped to the service's paths. */
@@ -36,8 +37,8 @@ type ProxyBody = {
 const text = (value: unknown) => (typeof value === "string" ? value.trim() : "");
 
 export async function POST(req: NextRequest) {
-  const blocked = guardRequest(req, { limit: 20 });
-  if (blocked) return blocked;
+  const { denied } = await guardCostlyRequest(req, "marketplace", 20);
+  if (denied) return denied;
 
   try {
     const body = await readJsonBody<ProxyBody>(req, 500_000);

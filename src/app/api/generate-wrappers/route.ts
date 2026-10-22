@@ -1,13 +1,13 @@
 import { NextRequest } from "next/server";
 import { STREAM_DELIMITER, type StreamEvent } from "@/lib/app-utils";
 import { callModel } from "@/lib/ai-server-utils";
-import { guardRequest } from "@/lib/api-guard";
+import { guardCostlyRequest } from "@/lib/costly-route";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  const blocked = guardRequest(req, { limit: 6 });
-  if (blocked) return blocked;
+  const { denied } = await guardCostlyRequest(req, "generate-wrappers", 6);
+  if (denied) return denied;
 
   const { project, api, settings, profile } = await req.json();
 

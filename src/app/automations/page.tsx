@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { apiFetch } from "@/lib/api-client";
 import { useAppStore } from "@/lib/app-store";
+import SafeHtml from "@/components/SafeHtml";
 import {
   FREQUENCY_LABELS,
   FREQUENCY_ORDER,
@@ -226,10 +228,8 @@ export default function AutomationsPage() {
     setPreview({ loading: true, error: undefined });
     setActiveTab("preview");
 
-    const destination = destinations.find((d) => d.id === selected.destinationId);
-
     try {
-      const response = await fetch("/api/automations/preview", {
+      const response = await apiFetch("/api/automations/preview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -248,16 +248,8 @@ export default function AutomationsPage() {
             timezone: selected.timezone,
             lastRunAt: null,
             nextRunAt: null,
-            destination: destination
-              ? {
-                  id: destination.id,
-                  name: destination.name,
-                  kind: destination.kind,
-                  config: destination.config,
-                  secret: destination.config.secret,
-                }
-              : null,
           },
+          destinationId: selected.destinationId || undefined,
         }),
       });
 
@@ -287,10 +279,8 @@ export default function AutomationsPage() {
     setIsGeneratingNow(true);
     setSaveFeedback(null);
 
-    const destination = destinations.find((d) => d.id === selected.destinationId);
-
     try {
-      const response = await fetch("/api/automations/preview", {
+      const response = await apiFetch("/api/automations/preview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -309,16 +299,8 @@ export default function AutomationsPage() {
             timezone: selected.timezone,
             lastRunAt: null,
             nextRunAt: null,
-            destination: destination
-              ? {
-                  id: destination.id,
-                  name: destination.name,
-                  kind: destination.kind,
-                  config: destination.config,
-                  secret: destination.config.secret,
-                }
-              : null,
           },
+          destinationId: selected.destinationId || undefined,
         }),
       });
 
@@ -1070,9 +1052,9 @@ export default function AutomationsPage() {
                       </p>
                     )}
 
-                    <div
+                    <SafeHtml
                       className="prose prose-sm dark:prose-invert max-w-none text-[13px] max-h-[380px] overflow-y-auto pr-1 border border-[var(--hairline)] rounded-[var(--radius)] p-3 bg-surface-container-lowest"
-                      dangerouslySetInnerHTML={{ __html: preview.post.bodyHtml }}
+                      html={preview.post.bodyHtml}
                     />
 
                     <div className="flex items-center justify-between text-[11px] text-on-surface-variant">
@@ -1157,9 +1139,9 @@ export default function AutomationsPage() {
             )}
 
             <div className="flex-1 overflow-y-auto pr-2 border border-[var(--hairline)] rounded-[var(--radius)] p-4 bg-surface-container-lowest">
-              <div
+              <SafeHtml
                 className="prose prose-sm dark:prose-invert max-w-none text-[13px]"
-                dangerouslySetInnerHTML={{ __html: viewingPost.bodyHtml }}
+                html={viewingPost.bodyHtml}
               />
             </div>
 

@@ -32,6 +32,13 @@ export async function PATCH(request: Request, { params }: Context) {
     const patch = (await request.json()) as Patch;
     const users = adminUsers();
 
+    if (patch.role !== undefined && !["user", "admin"].includes(patch.role)) {
+      return NextResponse.json({ error: "Unknown role." }, { status: 400 });
+    }
+    if (patch.status !== undefined && !["active", "suspended"].includes(patch.status)) {
+      return NextResponse.json({ error: "Unknown account status." }, { status: 400 });
+    }
+
     // An admin who demotes or suspends themselves locks everyone out of this
     // screen, since there may be no other administrator to undo it.
     if (id === session.user.id && (patch.role === "user" || patch.status === "suspended")) {

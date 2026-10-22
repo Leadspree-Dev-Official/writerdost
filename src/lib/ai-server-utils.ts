@@ -1,4 +1,5 @@
 import { resolveUpstream, UpstreamNotAllowedError } from "@/lib/ai-upstream";
+import { BlockedRequestError, safeFetch } from "@/lib/net-guard";
 import type { ApiSettings } from "@/lib/store-types";
 
 export type ChatResponse = {
@@ -80,6 +81,7 @@ function buildBody(
     ],
     temperature,
     top_p: topP,
+    max_tokens: 4096,
   };
 }
 
@@ -124,36 +126,41 @@ export async function callModel({
   const isClaude = upstream.provider === "claude";
   const headers = buildHeaders(upstream, isClaude);
   const bodyData = buildBody(upstream, isClaude, systemPrompt, userPrompt, temperature, topP);
+  const allowHttp = upstream.baseUrl.startsWith("http://");
+  const allowLoopback =
+    process.env.WRITERDOST_ALLOW_LOCAL_AI === "true" &&
+    (process.env.WRITERDOST_SELF_HOSTED === "true" || process.env.NODE_ENV === "development");
 
   let retries = 3;
   let delay = 1000;
 
   while (retries > 0) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-
     try {
-      const response = await fetch(upstream.baseUrl, {
+      const response = await safeFetch(upstream.baseUrl, {
         method: "POST",
         headers,
         body: JSON.stringify(bodyData),
-        signal: controller.signal,
+        timeoutMs: REQUEST_TIMEOUT_MS,
+        maxBytes: 10_000_000,
+        label: "AI provider",
+        allowHttp,
+        allowLoopback,
       });
 
       let payload: ProviderPayload = {};
-      const contentType = response.headers.get("content-type") || "";
-      if (contentType.includes("application/json")) {
+      if (response.contentType.includes("application/json")) {
         try {
-          payload = (await response.json()) as ProviderPayload;
+          payload = JSON.parse(response.body) as ProviderPayload;
         } catch {
           payload = {};
         }
       } else {
-        const text = await response.text();
-        payload = { error: { message: text || response.statusText || `HTTP ${response.status}` } };
+        payload = {
+          error: { message: response.body || `HTTP ${response.status}` },
+        };
       }
 
-      if (!response.ok) {
+      if (response.status < 200 || response.status >= 300) {
         const message =
           payload.error?.message ||
           (isClaude ? payload.error?.msg : null) ||
@@ -170,14 +177,16 @@ export async function callModel({
 
       return result;
     } catch (error) {
-      // A blocked endpoint is a configuration problem — never retry it.
+      // A blocked or timed-out endpoint is a configuration problem — never retry it.
       if (error instanceof UpstreamNotAllowedError) throw error;
-
-      const err = error as ProviderError;
-      if (err.name === "AbortError") {
-        throw new Error("The AI provider timed out.");
+      if (error instanceof BlockedRequestError) {
+        if (error.message.startsWith("Timed out")) {
+          throw new Error("The AI provider timed out.");
+        }
+        throw new UpstreamNotAllowedError(error.message);
       }
 
+      const err = error as ProviderError;
       retries -= 1;
       const status = err.status;
       const isDefinitive4xx = typeof status === "number" && status >= 400 && status < 500 && status !== 429;
@@ -188,8 +197,6 @@ export async function callModel({
 
       await new Promise((resolve) => setTimeout(resolve, delay));
       delay *= 2;
-    } finally {
-      clearTimeout(timeoutId);
     }
   }
 

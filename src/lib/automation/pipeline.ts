@@ -9,6 +9,7 @@ import { callModel } from "@/lib/ai-server-utils";
 import { mdToHtml } from "@/lib/markdown-utils";
 import { robustParseJson, slugify } from "@/lib/app-utils";
 import { getToneDirective } from "@/lib/tone-standards";
+import { sanitizeGeneratedHtml } from "@/lib/sanitize";
 import { publishPost } from "./destinations";
 import { collectSourceItems, hashUrl } from "./sources";
 import type { Automation, GeneratedPost, SourceItem } from "./types";
@@ -143,7 +144,7 @@ Return ONLY raw JSON, no markdown fence, exactly:
   const parsed = (robustParseJson(text) || {}) as Record<string, unknown>;
   const title = String(parsed.title || item.title || "Untitled post").trim();
   const bodyMarkdown = String(parsed.body || "").trim();
-  const bodyHtml = mdToHtml(bodyMarkdown);
+  const bodyHtml = sanitizeGeneratedHtml(mdToHtml(bodyMarkdown));
 
   const keywords = Array.isArray(parsed.keywords)
     ? parsed.keywords.map(String).filter(Boolean).slice(0, 8)

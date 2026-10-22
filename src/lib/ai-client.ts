@@ -1,4 +1,5 @@
 import { useAppStore } from "@/lib/app-store";
+import { apiFetch } from "@/lib/api-client";
 import type { ApiSettings } from "@/lib/store-types";
 
 type GenerateTextOptions = {
@@ -16,7 +17,7 @@ export async function generateAiText({
   temperature,
   topP,
 }: GenerateTextOptions) {
-  const response = await fetch("/api/ai", {
+  const response = await apiFetch("/api/ai", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

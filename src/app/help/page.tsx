@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/lib/app-store";
 import { generateAiText } from "@/lib/ai-client";
+import SafeHtml from "@/components/SafeHtml";
 import { mdToHtml } from "@/lib/markdown-utils";
 
 const WRITERDOST_CONTEXT = `
@@ -179,9 +180,9 @@ export default function HelpPage() {
                   )}
 
                   {aiResponse && (
-                    <div 
+                    <SafeHtml
                       className="py-2 text-sm text-on-surface leading-relaxed help-ai-content prose prose-sm dark:prose-invert max-w-none"
-                      dangerouslySetInnerHTML={{ __html: mdToHtml(aiResponse) }}
+                      html={mdToHtml(aiResponse)}
                     />
                   )}
 

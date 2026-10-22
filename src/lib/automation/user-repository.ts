@@ -20,9 +20,11 @@ import {
   encodeJson,
   ownerPermissions,
 } from "@/lib/appwrite/server";
-import { encryptSecret } from "@/lib/secure-store";
+import { decryptSecret, encryptSecret } from "@/lib/secure-store";
+import { sanitizeGeneratedHtml } from "@/lib/sanitize";
 import { cronForFrequency, nextRunFor } from "./schedule";
 import type { AutomationInput, AutomationWire, DestinationInput, DestinationWire, PostInput, PostWire } from "./wire";
+import type { Destination } from "./types";
 import type { ApiSettings, BlogAutomation, CampaignPost } from "@/lib/store-types";
 
 /** Appwrite rejects a page larger than this. */
@@ -127,6 +129,31 @@ export async function updateDestination(
 
 export async function deleteDestination(db: TablesDB, id: string): Promise<void> {
   await db.deleteRow({ databaseId: DATABASE_ID, tableId: TABLES.destinations, rowId: id });
+}
+
+/** Loads a destination through the caller's JWT so row permissions decide access. */
+export async function getDestinationForUser(
+  db: TablesDB,
+  id: string,
+): Promise<Destination | null> {
+  try {
+    const row = (await db.getRow({
+      databaseId: DATABASE_ID,
+      tableId: TABLES.destinations,
+      rowId: id,
+    })) as unknown as DestinationRow;
+
+    return {
+      id: row.$id,
+      name: row.name,
+      kind: row.kind,
+      config: decodeJson<Record<string, unknown>>(row.config, {}),
+      secret: row.secretCipher ? decryptSecret(row.secretCipher) : undefined,
+    };
+  } catch (error) {
+    if ((error as { code?: number }).code === 404) return null;
+    throw error;
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -374,20 +401,38 @@ export async function listPosts(db: TablesDB, userId: string): Promise<PostWire[
 }
 
 export async function savePost(db: TablesDB, userId: string, input: PostInput): Promise<PostWire> {
+  let automationId: string | null = input.automationId || null;
+  if (automationId) {
+    try {
+      await db.getRow({
+        databaseId: DATABASE_ID,
+        tableId: TABLES.automations,
+        rowId: automationId,
+      });
+    } catch (error) {
+      if ((error as { code?: number }).code === 404) automationId = null;
+      else throw error;
+    }
+  }
+
   const data = {
     userId,
-    automationId: input.automationId || null,
-    title: input.title,
-    slug: input.slug || null,
-    bodyHtml: input.bodyHtml || null,
-    bodyMarkdown: input.bodyMarkdown || null,
+    automationId,
+    title: String(input.title || "Untitled").slice(0, 512),
+    slug: input.slug ? String(input.slug).slice(0, 255) : null,
+    bodyHtml: input.bodyHtml ? sanitizeGeneratedHtml(String(input.bodyHtml)) : null,
+    bodyMarkdown: input.bodyMarkdown ? String(input.bodyMarkdown).slice(0, 2_000_000) : null,
     excerpt: input.excerpt || null,
-    metaDescription: input.metaDescription || null,
-    keywords: input.keywords ?? [],
+    metaDescription: input.metaDescription ? String(input.metaDescription).slice(0, 1024) : null,
+    keywords: Array.isArray(input.keywords)
+      ? input.keywords.slice(0, 8).map((keyword) => String(keyword).slice(0, 128))
+      : [],
     sourceUrl: input.sourceUrl || null,
-    sourceTitle: input.sourceTitle || null,
-    state: input.state,
-    remoteUrl: input.remoteUrl || null,
+    sourceTitle: input.sourceTitle ? String(input.sourceTitle).slice(0, 512) : null,
+    // Browser writes are drafts only. The scheduler sets published state after
+    // a confirmed remote response.
+    state: "draft",
+    remoteUrl: null,
     quality: encodeJson(input.quality ?? null),
   };
 

@@ -17,6 +17,13 @@ import type { UpgradeRequest } from "@/lib/store-types";
 
 export const dynamic = "force-dynamic";
 
+const UPGRADE_FEATURES = [
+  "createEbook",
+  "rewriteEbook",
+  "blogGenerator",
+  "advancedModels",
+] as const;
+
 type RequestRow = {
   $id: string;
   $createdAt: string;
@@ -90,8 +97,24 @@ export async function POST(request: Request) {
 
   try {
     const { feature } = (await request.json()) as { feature?: string };
-    if (!feature) {
-      return NextResponse.json({ error: "A feature is required." }, { status: 400 });
+    if (!feature || !UPGRADE_FEATURES.includes(feature as (typeof UPGRADE_FEATURES)[number])) {
+      return NextResponse.json({ error: "Unknown feature." }, { status: 400 });
+    }
+
+    const pending = await session.tables.listRows({
+      databaseId: DATABASE_ID,
+      tableId: TABLES.upgrades,
+      queries: [
+        Query.equal("userId", session.user.id),
+        Query.equal("status", "pending"),
+        Query.limit(5),
+      ],
+    });
+    if (pending.rows.length >= 5) {
+      return NextResponse.json(
+        { error: "You already have five pending requests. Wait for an administrator to review them." },
+        { status: 429 },
+      );
     }
 
     // Asking twice is not an error, and should not create a second row for the

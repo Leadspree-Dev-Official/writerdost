@@ -6,6 +6,9 @@ import { Document, Packer, Paragraph, HeadingLevel, AlignmentType, TextRun, Page
 /** A node in the docx body we assemble while walking the chapter HTML. */
 type DocxNode = Paragraph | TextRun;
 
+const inlineChildren = (nodes: DocxNode[]): TextRun[] =>
+  nodes.filter((node): node is TextRun => node instanceof TextRun);
+
 /** Inline run formatting carried down through nested elements. */
 type RunStyles = {
   bold?: boolean;
@@ -238,7 +241,7 @@ export async function downloadDocx(project: Project) {
                   if (tagName === "p") {
                     nodes.push(
                       new Paragraph({
-                        children: walk(el, { ...styles, color }, { alignment }),
+                        children: inlineChildren(walk(el, { ...styles, color }, { alignment })),
                         alignment,
                         spacing: { before: spacingBefore, after: spacingAfter },
                       })
@@ -260,7 +263,7 @@ export async function downloadDocx(project: Project) {
 
                     nodes.push(
                       new Paragraph({
-                        children: walk(el, { ...headingStyles, size }, { alignment }),
+                        children: inlineChildren(walk(el, { ...headingStyles, size }, { alignment })),
                         heading: level,
                         alignment,
                         spacing: { before: 240, after: 120 },
@@ -309,7 +312,7 @@ export async function downloadDocx(project: Project) {
             parsedContent.forEach((node) => {
               if (node instanceof Paragraph) {
                 if (currentParagraphChildren.length > 0) {
-                  children.push(new Paragraph({ children: currentParagraphChildren, spacing: { after: 120 } }));
+                  children.push(new Paragraph({ children: inlineChildren(currentParagraphChildren), spacing: { after: 120 } }));
                   currentParagraphChildren = [];
                 }
                 children.push(node);
@@ -319,7 +322,7 @@ export async function downloadDocx(project: Project) {
             });
 
             if (currentParagraphChildren.length > 0) {
-              children.push(new Paragraph({ children: currentParagraphChildren, spacing: { after: 120 } }));
+              children.push(new Paragraph({ children: inlineChildren(currentParagraphChildren), spacing: { after: 120 } }));
             }
 
             return children;

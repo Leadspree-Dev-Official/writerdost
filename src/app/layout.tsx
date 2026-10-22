@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import {
   Inter,
   Lato,
@@ -112,15 +113,19 @@ export const metadata: Metadata = {
 import ThemeWrapper from "@/components/ThemeWrapper";
 import LayoutWrapper from "@/components/layout/LayoutWrapper";
 
-export default function RootLayout({
+export const dynamic = "force-dynamic";
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const nonce = (await headers()).get("x-nonce") ?? "";
   return (
     <html lang="en" className={fontVariables} suppressHydrationWarning>
       <head>
         <script
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `
               (function() {

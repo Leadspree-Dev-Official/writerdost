@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { callModel } from "@/lib/ai-server-utils";
 import { UpstreamNotAllowedError } from "@/lib/ai-upstream";
-import { guardRequest, readJsonBody } from "@/lib/api-guard";
+import { readJsonBody } from "@/lib/api-guard";
+import { guardCostlyRequest } from "@/lib/costly-route";
 import type { ApiSettings } from "@/lib/store-types";
 
 type RequestPayload = {
@@ -13,12 +14,12 @@ type RequestPayload = {
 };
 
 export async function POST(request: Request) {
-  const blocked = guardRequest(request, { limit: 30 });
-  if (blocked) return blocked;
+  const { denied } = await guardCostlyRequest(request, "ai", 30);
+  if (denied) return denied;
 
   try {
     const { api, systemPrompt, userPrompt, temperature, topP } =
-      await readJsonBody<RequestPayload>(request);
+      await readJsonBody<RequestPayload>(request, 500_000);
 
     if (typeof systemPrompt !== "string" || typeof userPrompt !== "string") {
       return NextResponse.json({ error: "A system and user prompt are required." }, { status: 400 });

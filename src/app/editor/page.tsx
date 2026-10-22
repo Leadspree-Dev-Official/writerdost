@@ -7,7 +7,9 @@ import { StageBar } from "@/components/StageBar";
 import { fontStack, findFont, loadGoogleFont, DEFAULT_BODY_FONT, DEFAULT_HEADING_FONT } from "@/lib/fonts";
 import { DesignSettings } from "@/components/DesignSettings";
 import { ProjectMetrics } from "@/components/ProjectMetrics";
+import SafeHtml from "@/components/SafeHtml";
 import { generateAiText } from "@/lib/ai-client";
+import { apiFetch } from "@/lib/api-client";
 import { useAppStore, type ProjectChapter } from "@/lib/app-store";
 import { findChapterById, findProjectById, calculateProjectWords, robustParseJson, STREAM_DELIMITER } from "@/lib/app-utils";
 import { htmlToText, mdToHtml } from "@/lib/markdown-utils";
@@ -108,7 +110,7 @@ export default function EditorPage() {
       // store snapshot cannot desync from what React rendered.
       useAppStore.getState().setCancelGeneration(handleCancelGeneration);
 
-      const response = await fetch("/api/draft-chapters", {
+      const response = await apiFetch("/api/draft-chapters", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ project, api, settings }),
@@ -218,7 +220,7 @@ export default function EditorPage() {
       // store snapshot cannot desync from what React rendered.
       useAppStore.getState().setCancelGeneration(handleCancelGeneration);
 
-      const response = await fetch("/api/generate-wrappers", {
+      const response = await apiFetch("/api/generate-wrappers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ project, api, settings, profile }),
@@ -507,13 +509,13 @@ export default function EditorPage() {
                 boxSizing: "border-box",
               }}
             >
-              <div 
+              <SafeHtml
                 className="prose max-w-none text-slate-800 prose-headings:text-slate-900 prose-headings:font-bold"
-                style={{ 
+                style={{
                   color: "#1e293b",
                   fontFamily: "var(--body-font)",
                 }}
-                dangerouslySetInnerHTML={{ __html: ch.content }}
+                html={ch.content}
               />
               {/* Page Number */}
               <div className="absolute bottom-8 left-0 right-0 text-center">

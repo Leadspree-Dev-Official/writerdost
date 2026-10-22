@@ -354,6 +354,7 @@ type AppStore = {
      Settings reports the last save or the reason there wasn't one. */
   workspaceStatus: WorkspaceStatus;
   workspaceError: string;
+  workspaceErrorKind: "" | "load" | "save";
   workspaceSaving: boolean;
   workspaceSavedAt: string;
   /** Flushes any pending edits now. Resolves once the server has them. */
@@ -820,23 +821,8 @@ async function flushWorkspace({
 } = {}): Promise<void> {
   const state = useAppStore.getState();
 
-  // If uninitialized or in error state while a signed-in user is present, attempt reconnecting
-  if ((!saveState.userId || state.workspaceStatus === "error") && state.currentUser?.id) {
-    try {
-      await fetchWorkspace();
-      saveState.userId = state.currentUser.id;
-      useAppStore.setState({ workspaceStatus: "ready", workspaceError: "" });
-      startSync();
-    } catch (error) {
-      useAppStore.setState({
-        workspaceStatus: "error",
-        workspaceSaving: false,
-        workspaceError: error instanceof Error ? error.message : "Could not connect to workspace cloud.",
-      });
-      return;
-    }
-  }
-
+  // A failed load must never be reported as ready here: doing so would let the
+  // next autosave write a blank workspace over the user's real one.
   if (!saveState.userId) return;
   if (saveState.inFlight) {
     // A save is already running; let it finish and pick the rest up after.
@@ -851,7 +837,7 @@ async function flushWorkspace({
   const pending = pendingPatch(state, force);
   if (!pending) {
     if (state.workspaceError) {
-      useAppStore.setState({ workspaceError: "" });
+      useAppStore.setState({ workspaceError: "", workspaceErrorKind: "" });
     }
     return;
   }
@@ -873,6 +859,7 @@ async function flushWorkspace({
       useAppStore.setState({
         workspaceSaving: false,
         workspaceSavedAt: new Date().toISOString(),
+        workspaceErrorKind: "",
         workspaceError: result.secretsDropped
           ? "Saved, but API keys were not: the server has no WRITERDOST_ENCRYPTION_KEY, so they are never written to the database."
           : "",
@@ -883,6 +870,7 @@ async function flushWorkspace({
       // is the only thing standing between a dropped connection and lost work.
       useAppStore.setState({
         workspaceSaving: false,
+        workspaceErrorKind: "save",
         workspaceError:
           error instanceof Error ? error.message : "Could not save the workspace.",
       });
@@ -969,13 +957,14 @@ async function openWorkspace(userId: string | null): Promise<void> {
       ...blankWorkspace(),
       workspaceStatus: "idle",
       workspaceError: "",
+      workspaceErrorKind: "",
       workspaceSaving: false,
       workspaceSavedAt: "",
     });
     return;
   }
 
-  useAppStore.setState({ workspaceStatus: "loading", workspaceError: "" });
+  useAppStore.setState({ workspaceStatus: "loading", workspaceError: "", workspaceErrorKind: "" });
 
   try {
     const snapshot = await fetchWorkspace();
@@ -999,6 +988,7 @@ async function openWorkspace(userId: string | null): Promise<void> {
       projects: snapshot.projects as Project[],
       workspaceStatus: "ready",
       workspaceError: "",
+      workspaceErrorKind: "",
       workspaceSaving: false,
       workspaceSavedAt: snapshot.existed ? new Date().toISOString() : "",
     });
@@ -1017,6 +1007,7 @@ async function openWorkspace(userId: string | null): Promise<void> {
     useAppStore.setState({
       ...blankWorkspace(),
       workspaceStatus: "error",
+      workspaceErrorKind: "load",
       workspaceError:
         error instanceof Error ? error.message : "Could not load your workspace.",
     });
@@ -1049,6 +1040,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
        on a debounce. Nothing below is written to this machine. */
     workspaceStatus: "idle",
     workspaceError: "",
+    workspaceErrorKind: "",
     workspaceSaving: false,
     workspaceSavedAt: "",
     saveWorkspaceNow: (force?: boolean) => flushWorkspace({ force: force ?? true }),

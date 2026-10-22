@@ -3,6 +3,7 @@
 import { ChangeEvent, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/app-store";
+import { apiFetch } from "@/lib/api-client";
 import { robustParseJson, STREAM_DELIMITER } from "@/lib/app-utils";
 
 import { TONES, TONE_GUIDE } from "@/lib/tone-standards";
@@ -86,7 +87,7 @@ export default function IdeaAndInput() {
     useAppStore.getState().setCancelGeneration(handleCancel);
 
     try {
-      const response = await fetch("/api/generate-ebook", {
+      const response = await apiFetch("/api/generate-ebook", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

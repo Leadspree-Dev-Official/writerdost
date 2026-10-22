@@ -25,6 +25,9 @@ export async function PUT(request: Request, { params }: Context) {
   if (denied) return denied;
 
   const input = (await request.json()) as DestinationInput;
+  if (!["wordpress", "ghost", "webflow", "strapi", "sanity", "webhook"].includes(input.kind)) {
+    return NextResponse.json({ error: "Unknown destination kind." }, { status: 400 });
+  }
   if (input.config?.secret && !encryptionAvailable()) {
     return NextResponse.json(
       { error: "WRITERDOST_ENCRYPTION_KEY is not set, so credentials cannot be stored." },

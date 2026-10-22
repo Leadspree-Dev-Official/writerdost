@@ -20,8 +20,9 @@ describe("parseServerEnv", () => {
   });
 
   it("rejects production without Redis", () => {
-    const { REDIS_URL, ...withoutRedis } = valid;
-    expect(() => parseServerEnv(withoutRedis as NodeJS.ProcessEnv)).toThrow(/REDIS_URL/);
+    const withoutRedis: NodeJS.ProcessEnv = { ...valid };
+    delete withoutRedis.REDIS_URL;
+    expect(() => parseServerEnv(withoutRedis)).toThrow(/REDIS_URL/);
   });
 
   it("rejects local AI without self-hosted mode in production", () => {

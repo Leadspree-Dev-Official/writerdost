@@ -2,7 +2,7 @@ import { callModel } from "@/lib/ai-server-utils";
 import { sendStreamEvent, type StreamEvent } from "@/lib/app-utils";
 import { getLanguageDirective } from "@/lib/languages";
 import type { ApiSettings } from "@/lib/store-types";
-import { guardRequest } from "@/lib/api-guard";
+import { guardCostlyRequest } from "@/lib/costly-route";
 
 export const maxDuration = 300;
 export const dynamic = "force-dynamic";
@@ -20,8 +20,8 @@ type RewriteRequest = {
 };
 
 export async function POST(request: Request) {
-  const blocked = guardRequest(request, { limit: 10 });
-  if (blocked) return blocked;
+  const { denied } = await guardCostlyRequest(request, "rewrite-swarm", 10);
+  if (denied) return denied;
 
 
   const stream = new ReadableStream({

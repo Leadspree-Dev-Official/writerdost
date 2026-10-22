@@ -3,7 +3,8 @@ import { robustParseJson, slugify, sendStreamEvent, type StreamEvent } from "@/l
 import { getToneDirective } from "@/lib/tone-standards";
 import { getLanguageDirective, DEFAULT_LANGUAGE } from "@/lib/languages";
 import { callModel } from "@/lib/ai-server-utils";
-import { guardRequest } from "@/lib/api-guard";
+import { guardCostlyRequest } from "@/lib/costly-route";
+import { clampInt, LIMITS } from "@/lib/validation";
 
 type RequestPayload = {
   api: ApiSettings;
@@ -46,8 +47,8 @@ type Blueprint = {
 };
 
 export async function POST(request: Request) {
-  const blocked = guardRequest(request, { limit: 6 });
-  if (blocked) return blocked;
+  const { denied } = await guardCostlyRequest(request, "generate-ebook", 6);
+  if (denied) return denied;
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -56,6 +57,10 @@ export async function POST(request: Request) {
       try {
         const body = (await request.json()) as RequestPayload;
         const { api, settings, draft } = body;
+        draft.length = clampInt(draft.length, 10_000, 1_000, LIMITS.targetWords);
+        draft.researchSources = Array.isArray(draft.researchSources)
+          ? draft.researchSources.slice(0, LIMITS.researchSources)
+          : [];
         const readyForLiveAi = Boolean(api.baseUrl && api.model && (api.apiKey || api.provider === "ollama" || api.provider === "ollama_cloud"));
         if (!readyForLiveAi) {
           sendEvent({
@@ -148,10 +153,10 @@ ${bibliography}
         let usePlannedChapters = false;
         
         if (planning.chapters && Array.isArray(planning.chapters) && planning.chapters.length > 0) {
-          targetChapterCount = planning.chapters.length;
+          targetChapterCount = Math.min(LIMITS.chapters, planning.chapters.length);
           usePlannedChapters = true;
         } else {
-          targetChapterCount = Math.max(3, Math.min(60, Math.round(draft.length / 1000)));
+          targetChapterCount = Math.max(3, Math.min(LIMITS.chapters, Math.round(draft.length / 1000)));
         }
 
         sendEvent({ type: "log", agent: "Outline Agent", message: `Generating comprehensive outlines for ${targetChapterCount} chapters sequentially to ensure stability...`, status: "pending" });

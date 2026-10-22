@@ -13,6 +13,7 @@ import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/appwrite/session";
 import { appwritePublicConfigured } from "@/lib/appwrite/server";
 import { loadWorkspace, saveWorkspace } from "@/lib/workspace/repository";
+import { enforceRateLimit } from "@/lib/route-limit";
 import type { WorkspacePatch } from "@/lib/workspace/wire";
 
 export const dynamic = "force-dynamic";
@@ -45,6 +46,9 @@ export async function GET(request: Request) {
 export async function PUT(request: Request) {
   const { session, denied } = await requireUser(request);
   if (denied) return denied;
+
+  const limited = await enforceRateLimit(session.user.id, "workspace-write", 30, 60);
+  if (limited) return limited;
 
   const declared = Number(request.headers.get("content-length") || 0);
   if (declared > MAX_BODY_BYTES) {

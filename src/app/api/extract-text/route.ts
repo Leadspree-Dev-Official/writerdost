@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import mammoth from "mammoth";
 import { PDFParse } from "pdf-parse";
-import { guardRequest } from "@/lib/api-guard";
+import { guardCostlyRequest } from "@/lib/costly-route";
 
 /** Uploads are parsed in-process, so the ceiling has to be conservative. */
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10 MB
 
 const SUPPORTED = new Set(["docx", "pdf", "txt", "md"]);
 
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
-  const blocked = guardRequest(req, { limit: 10 });
-  if (blocked) return blocked;
+  const { denied } = await guardCostlyRequest(req, "extract-text", 10);
+  if (denied) return denied;
 
   try {
     const declared = Number(req.headers.get("content-length") || 0);
@@ -44,6 +46,12 @@ export async function POST(req: NextRequest) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
+    if (fileType === "pdf" && buffer.subarray(0, 5).toString() !== "%PDF-") {
+      return NextResponse.json({ error: "That file is not a valid PDF." }, { status: 400 });
+    }
+    if (fileType === "docx" && !(buffer[0] === 0x50 && buffer[1] === 0x4b)) {
+      return NextResponse.json({ error: "That file is not a valid DOCX." }, { status: 400 });
+    }
     let extractedText = "";
 
     if (fileType === "docx") {

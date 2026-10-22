@@ -14,6 +14,7 @@ export default function WorkspaceStatus() {
   const status = useAppStore((state) => state.workspaceStatus);
   const saving = useAppStore((state) => state.workspaceSaving);
   const error = useAppStore((state) => state.workspaceError);
+  const errorKind = useAppStore((state) => state.workspaceErrorKind);
   const savedAt = useAppStore((state) => state.workspaceSavedAt);
   const saveNow = useAppStore((state) => state.saveWorkspaceNow);
 
@@ -43,12 +44,17 @@ export default function WorkspaceStatus() {
     return (
       <button
         type="button"
-        onClick={() => void saveNow(true)}
+        onClick={() => {
+          if (errorKind === "load") window.location.reload();
+          else void saveNow(true);
+        }}
         title={error}
         className="flex items-center gap-1 h-6 px-2 rounded-full text-[11px] font-medium text-amber-700 dark:text-amber-400 bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500/15 transition-colors cursor-pointer"
       >
         <span className="material-symbols-outlined text-[13px]">cloud_off</span>
-        <span className="hidden sm:inline">Not saved — retry</span>
+        <span className="hidden sm:inline">
+          {errorKind === "load" ? "Reload workspace" : "Not saved — retry"}
+        </span>
       </button>
     );
   }

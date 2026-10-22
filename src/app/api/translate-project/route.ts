@@ -1,7 +1,7 @@
 import { callModel } from "@/lib/ai-server-utils";
 import { sendStreamEvent, slugify, type StreamEvent } from "@/lib/app-utils";
 import type { ApiSettings, GeneratedProjectPayload, GeneratedChapter } from "@/lib/store-types";
-import { guardRequest } from "@/lib/api-guard";
+import { guardCostlyRequest } from "@/lib/costly-route";
 
 export const maxDuration = 300; // 5 minutes max duration for serverless functions
 export const dynamic = "force-dynamic";
@@ -38,8 +38,8 @@ type RequestPayload = {
 };
 
 export async function POST(request: Request) {
-  const blocked = guardRequest(request, { limit: 6 });
-  if (blocked) return blocked;
+  const { denied } = await guardCostlyRequest(request, "translate-project", 6);
+  if (denied) return denied;
 
   const stream = new ReadableStream({
     async start(controller) {

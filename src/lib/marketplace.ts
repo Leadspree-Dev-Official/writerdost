@@ -25,6 +25,7 @@ import type {
 import type { Project } from "@/lib/app-store";
 import { calculateProjectWords } from "@/lib/app-utils";
 import { generateAiText } from "@/lib/ai-client";
+import { apiFetch } from "@/lib/api-client";
 import { htmlToText } from "@/lib/markdown-utils";
 
 export const MARKETPLACE = {
@@ -217,7 +218,7 @@ async function postJson<T>(
   platform: PlatformApiSettings,
   payload: unknown,
 ): Promise<T> {
-  const response = await fetch(MARKETPLACE_PROXY, {
+  const response = await apiFetch(MARKETPLACE_PROXY, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action, ...credentials(platform), payload }),
@@ -474,7 +475,7 @@ Please output ONLY valid JSON matching the exact schema.`;
 export async function testBundleKartConnection(
   platform: PlatformApiSettings,
 ): Promise<{ success: boolean; seller: MarketplaceSeller; service?: string }> {
-  const response = await fetch(MARKETPLACE_PROXY, {
+  const response = await apiFetch(MARKETPLACE_PROXY, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -498,7 +499,7 @@ export async function publishToBundleKart(
   platform: PlatformApiSettings,
   payload: BundleKartPublishPayload,
 ): Promise<BundleKartPublishResponse> {
-  const response = await fetch(MARKETPLACE_PROXY, {
+  const response = await apiFetch(MARKETPLACE_PROXY, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

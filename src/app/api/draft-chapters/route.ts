@@ -4,13 +4,14 @@ import { EBOOK_FORMATTING_STANDARDS } from "@/lib/ebook-standards";
 import { getToneDirective } from "@/lib/tone-standards";
 import { getLanguageDirective } from "@/lib/languages";
 import { callModel } from "@/lib/ai-server-utils";
-import { guardRequest } from "@/lib/api-guard";
+import { guardCostlyRequest } from "@/lib/costly-route";
+import { clampInt, LIMITS } from "@/lib/validation";
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function POST(req: Request) {
-  const blocked = guardRequest(req, { limit: 6 });
-  if (blocked) return blocked;
+  const { denied } = await guardCostlyRequest(req, "draft-chapters", 6);
+  if (denied) return denied;
 
   const { project, api, settings } = await req.json();
 
@@ -32,11 +33,19 @@ export async function POST(req: Request) {
         sendEvent({ type: "log", agent: "Writing Agent", message: `Beginning drafting phase for ${project.chapters.length} chapters...`, status: "pending" });
 
         const writingResults = [];
-        const TOTAL_TARGET_WORDS = project.targetLength || 10000;
-        const CHAPTER_COUNT = Math.max(1, project.chapters.length);
+        const TOTAL_TARGET_WORDS = clampInt(project.targetLength, 10_000, 1_000, LIMITS.targetWords);
+        const CHAPTER_COUNT = Math.min(
+          LIMITS.chapters,
+          Math.max(1, project.chapters.length),
+        );
         // Quota formula: Target sections ≈ Total Words / 900 (sweet spot for high quality)
-        const SECTIONS_PER_CHAPTER = Math.max(1, Math.round((TOTAL_TARGET_WORDS / 900) / CHAPTER_COUNT));
-        const SECTION_WORD_GOAL = Math.floor(TOTAL_TARGET_WORDS / (CHAPTER_COUNT * SECTIONS_PER_CHAPTER));
+        const SECTIONS_PER_CHAPTER = Math.min(
+          LIMITS.sectionsPerChapter,
+          Math.max(1, Math.round(TOTAL_TARGET_WORDS / 900 / CHAPTER_COUNT)),
+        );
+        const SECTION_WORD_GOAL = Math.floor(
+          TOTAL_TARGET_WORDS / (CHAPTER_COUNT * SECTIONS_PER_CHAPTER),
+        );
 
         sendEvent({ 
           type: "log", 
@@ -49,7 +58,7 @@ export async function POST(req: Request) {
         let cumulativeActualWords = 0;
         let lastSectionTail = "";
 
-        for (const chapter of (project.chapters ?? [])) {
+        for (const chapter of (project.chapters ?? []).slice(0, LIMITS.chapters)) {
           const isWrapperPage = ["title page", "copyright", "table of contents", "next steps / cta", "next steps"].includes(chapter.title.toLowerCase());
           
           if (isWrapperPage) {
