@@ -4,7 +4,11 @@ import { RateLimiterMemory, RateLimiterRedis } from "rate-limiter-flexible";
 type Result = { ok: true } | { ok: false; retryAfter: number };
 
 const redis = process.env.REDIS_URL
-  ? new Redis(process.env.REDIS_URL, { maxRetriesPerRequest: 1, enableOfflineQueue: false })
+  ? new Redis(process.env.REDIS_URL, {
+      maxRetriesPerRequest: 1,
+      enableOfflineQueue: true,
+      connectTimeout: 5_000,
+    })
   : null;
 
 redis?.on("error", () => {
