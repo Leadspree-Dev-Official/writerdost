@@ -57,7 +57,7 @@ WriterDost AI is a modern, high-performance platform engineered for creators, au
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js 18.18+ or Node.js 20+
+- Node.js 20.9+ (22 LTS recommended)
 - npm, yarn, or pnpm
 
 ### 1. Clone & Install

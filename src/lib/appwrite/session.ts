@@ -19,14 +19,9 @@
 import { Account, Client, Users, type TablesDB } from "node-appwrite";
 import { NextResponse } from "next/server";
 import { isAdminAccount, toUser } from "@/lib/auth/profile";
+import { serverEnv } from "@/lib/env.server";
 import type { User } from "@/lib/store-types";
 import { userTables } from "./server";
-
-const ENDPOINT =
-  process.env.APPWRITE_ENDPOINT || process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "";
-const PROJECT_ID =
-  process.env.APPWRITE_PROJECT_ID || process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "";
-const API_KEY = process.env.APPWRITE_API_KEY || "";
 
 export type Session = {
   user: User;
@@ -44,10 +39,13 @@ function bearer(request: Request): string {
 
 /** The Users API. Server-only: it can read and modify any account. */
 export function adminUsers(): Users {
-  if (!ENDPOINT || !PROJECT_ID || !API_KEY) {
-    throw new Error("Appwrite is not configured for administrative access.");
-  }
-  return new Users(new Client().setEndpoint(ENDPOINT).setProject(PROJECT_ID).setKey(API_KEY));
+  const env = serverEnv();
+  return new Users(
+    new Client()
+      .setEndpoint(env.APPWRITE_ENDPOINT)
+      .setProject(env.APPWRITE_PROJECT_ID)
+      .setKey(env.APPWRITE_API_KEY),
+  );
 }
 
 /**
@@ -56,10 +54,14 @@ export function adminUsers(): Users {
  */
 export async function currentUser(request: Request): Promise<Session | null> {
   const jwt = bearer(request);
-  if (!jwt || !ENDPOINT || !PROJECT_ID) return null;
+  if (!jwt) return null;
 
   try {
-    const client = new Client().setEndpoint(ENDPOINT).setProject(PROJECT_ID).setJWT(jwt);
+    const env = serverEnv();
+    const client = new Client()
+      .setEndpoint(env.APPWRITE_ENDPOINT)
+      .setProject(env.APPWRITE_PROJECT_ID)
+      .setJWT(jwt);
     const account = await new Account(client).get();
     return { user: toUser(account), tables: userTables(jwt), jwt };
   } catch {

@@ -1,0 +1,13 @@
+{$WRITERDOST_DOMAIN:localhost} {
+  encode zstd gzip
+  request_body {
+    max_size 26MB
+  }
+  reverse_proxy app:3000 {
+    flush_interval -1
+    transport http {
+      read_timeout 15m
+      write_timeout 15m
+    }
+  }
+}

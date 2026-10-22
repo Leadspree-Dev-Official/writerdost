@@ -1,0 +1,46 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main, remediation/production-readiness]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      APPWRITE_ENDPOINT: https://example.appwrite.test/v1
+      NEXT_PUBLIC_APPWRITE_ENDPOINT: https://example.appwrite.test/v1
+      APPWRITE_PROJECT_ID: ci-project
+      NEXT_PUBLIC_APPWRITE_PROJECT_ID: ci-project
+      APPWRITE_API_KEY: ci-api-key-placeholder
+      APPWRITE_DATABASE_ID: writerdost
+      WRITERDOST_ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      WRITERDOST_CRON_SECRET: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      WRITERDOST_ALLOW_LOCAL_AI: "false"
+      WRITERDOST_SELF_HOSTED: "false"
+      NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3100
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run test:unit
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e -- --project=chromium e2e/public.spec.ts
+      - name: Secret scan
+        uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --only-verified

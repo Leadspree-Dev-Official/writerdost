@@ -15,12 +15,8 @@
  */
 import { createHash } from "node:crypto";
 import { Client, TablesDB, ID, Permission, Query, Role } from "node-appwrite";
-
-const ENDPOINT =
-  process.env.APPWRITE_ENDPOINT || process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "https://sgp.cloud.appwrite.io/v1";
-const PROJECT_ID =
-  process.env.APPWRITE_PROJECT_ID || process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "6aa84ecb00304c7935ad";
-const API_KEY = process.env.APPWRITE_API_KEY || "";
+import { serverEnv } from "@/lib/env.server";
+import { publicEnv } from "@/lib/env.public";
 
 /** The database holding every Writerdost table. Created by appwrite/setup.mjs. */
 export const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || "writerdost";
@@ -41,29 +37,33 @@ export { ID, Permission, Query, Role };
 
 /** True when the server can reach Appwrite, so the UI can show a setup notice. */
 export function appwriteConfigured(): boolean {
-  return Boolean(ENDPOINT && PROJECT_ID && API_KEY);
+  try {
+    serverEnv();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /** True when the browser has enough to talk to Appwrite directly (auth). */
 export function appwritePublicConfigured(): boolean {
-  return Boolean(ENDPOINT && PROJECT_ID);
+  try {
+    publicEnv();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function baseClient(): Client {
-  if (!ENDPOINT || !PROJECT_ID) {
-    throw new Error(
-      "Appwrite is not configured. Set APPWRITE_ENDPOINT and APPWRITE_PROJECT_ID.",
-    );
-  }
-  return new Client().setEndpoint(ENDPOINT).setProject(PROJECT_ID);
+  const env = serverEnv();
+  return new Client().setEndpoint(env.APPWRITE_ENDPOINT).setProject(env.APPWRITE_PROJECT_ID);
 }
 
 /** API-key client. Server only — ignores row permissions. */
 export function workerTables(): TablesDB {
-  if (!API_KEY) {
-    throw new Error("APPWRITE_API_KEY is not set, so the scheduler cannot reach Appwrite.");
-  }
-  return new TablesDB(baseClient().setKey(API_KEY));
+  const env = serverEnv();
+  return new TablesDB(baseClient().setKey(env.APPWRITE_API_KEY));
 }
 
 /** Client scoped to one signed-in user; row permissions apply. */

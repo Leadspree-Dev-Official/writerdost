@@ -11,15 +11,16 @@
  * holds that key. The browser never sees ciphertext and never sees the key.
  */
 import { Account, Client } from "appwrite";
-
-const ENDPOINT =
-  process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "https://sgp.cloud.appwrite.io/v1";
-const PROJECT_ID =
-  process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "6aa84ecb00304c7935ad";
+import { publicEnv } from "@/lib/env.public";
 
 /** True when the browser has enough configuration to reach Appwrite. */
 export function appwriteBrowserConfigured(): boolean {
-  return Boolean(ENDPOINT && PROJECT_ID);
+  try {
+    publicEnv();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 let cached: Account | null = null;
@@ -29,14 +30,13 @@ let cached: Account | null = null;
  * opaque network error, so a missing NEXT_PUBLIC_ variable is obvious.
  */
 export function account(): Account {
-  if (!appwriteBrowserConfigured()) {
-    throw new Error(
-      "Appwrite is not configured. Set NEXT_PUBLIC_APPWRITE_ENDPOINT and " +
-        "NEXT_PUBLIC_APPWRITE_PROJECT_ID.",
-    );
-  }
+  const env = publicEnv();
   if (!cached) {
-    cached = new Account(new Client().setEndpoint(ENDPOINT).setProject(PROJECT_ID));
+    cached = new Account(
+      new Client()
+        .setEndpoint(env.NEXT_PUBLIC_APPWRITE_ENDPOINT)
+        .setProject(env.NEXT_PUBLIC_APPWRITE_PROJECT_ID),
+    );
   }
   return cached;
 }
