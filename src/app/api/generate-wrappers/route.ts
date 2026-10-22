@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
             id: 'front-toc',
             title: 'Table of Contents',
             outline: [],
-            content: `<h2>Table of Contents</h2>\n<ul>\n${project.chapters.map((ch: { title: string }) => `<li><strong>${ch.title}</strong></li>`).join('\n')}\n</ul>\n<blockquote><p><em>✏️ Note: Page numbers and live anchors will be generated automatically upon PDF export.</em></p></blockquote>`,
+            content: `<h2>Table of Contents</h2>\n<ul>\n${project.chapters.map((ch: { title: string }) => `<li><strong>${ch.title}</strong></li>`).join('\n')}\n</ul>\n<p style="margin-top: 1.5rem; color: #64748b;"><em>✏️ Note: Page numbers and live anchors will be generated automatically upon PDF export.</em></p>`,
             summary: "Auto-generated Table of Contents",
             status: "Done" as const,
             wordCount: project.chapters.length * 5

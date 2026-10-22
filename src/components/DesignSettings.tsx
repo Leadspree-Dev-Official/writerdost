@@ -89,20 +89,26 @@ export const DesignSettings: React.FC<DesignSettingsProps> = ({ projectId }) => 
       {/* Collapsible Header */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-surface-container-highest/30 hover:bg-surface-container-highest/50 transition-colors"
+        className="w-full flex items-center justify-between px-3.5 py-2.5 bg-surface-container-highest/30 hover:bg-surface-container-highest/50 transition-colors"
+        type="button"
       >
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-primary text-sm">text_fields</span>
           <span className="text-[10px] font-semibold text-on-surface-variant">Typography & Spacing</span>
         </div>
-        <span className={`material-symbols-outlined text-slate-400 text-sm transition-transform ${isOpen ? "rotate-180" : ""}`}>
-          expand_more
-        </span>
+        <div className="flex items-center gap-1.5">
+          <span className="chip chip-neutral text-[9px] px-1.5 py-0.5">
+            {findFont(settings.bodyFont, DEFAULT_BODY_FONT)?.label || "Default"}
+          </span>
+          <span className={`material-symbols-outlined text-slate-400 text-sm transition-transform ${isOpen ? "rotate-180" : ""}`}>
+            expand_more
+          </span>
+        </div>
       </button>
 
       {/* Collapsible Body */}
       {isOpen && (
-        <div className="px-4 py-2 space-y-5 bg-surface-container-highest/10">
+        <div className="px-3.5 py-2.5 space-y-4 bg-surface-container-highest/10 max-h-72 overflow-y-auto pr-1">
           {/* Typeface Section */}
           <div>
             <p className="text-[9px] font-semibold text-slate-500 mb-3">Typeface</p>

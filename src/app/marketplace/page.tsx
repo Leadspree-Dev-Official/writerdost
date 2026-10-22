@@ -9,7 +9,6 @@ import {
   testBundleKartConnection,
 } from "@/lib/marketplace";
 import { BundleKartPublishModal } from "@/components/BundleKartPublishModal";
-import type { Project } from "@/lib/app-store";
 
 export default function MarketplacePage() {
   const platform = useAppStore((state) => state.platform);

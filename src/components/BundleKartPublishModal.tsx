@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useAppStore } from "@/lib/app-store";
 import { calculateProjectWords } from "@/lib/app-utils";

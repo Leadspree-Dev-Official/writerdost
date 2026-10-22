@@ -127,7 +127,7 @@ export default function Editor({
         return false;
       },
       attributes: {
-        class: "prose prose-indigo dark:prose-invert max-w-none text-on-surface prose-headings:text-on-surface prose-strong:text-on-surface focus:outline-none focus-visible:outline-none min-h-[260px] prose-headings:font-black prose-p:mb-3 prose-headings:mt-5 prose-headings:mb-2",
+        class: "prose prose-indigo dark:prose-invert max-w-none text-on-surface prose-headings:text-on-surface prose-strong:text-on-surface focus:outline-none focus-visible:outline-none min-h-[260px] prose-headings:font-black prose-p:mb-3 prose-headings:mt-4 prose-headings:mb-1",
       },
     },
     content,

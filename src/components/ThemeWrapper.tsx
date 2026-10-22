@@ -17,7 +17,7 @@ export default function ThemeWrapper() {
         useAppStore.setState({ isDarkMode: false });
       }
     } catch {}
-  }, []);
+  }, [isDarkMode]);
 
   useEffect(() => {
     if (isDarkMode) {

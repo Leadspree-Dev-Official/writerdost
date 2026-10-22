@@ -31,7 +31,7 @@ const NAV_GROUPS: Array<{
     label: "Create",
     items: [
       { name: "New ebook", href: "/create", icon: "auto_awesome", feature: "createEbook" },
-      { name: "Rewrite", href: "/rewrite", icon: "book_5", feature: "rewriteEbook" },
+      { name: "Outline & Rewrite", href: "/rewrite", icon: "auto_awesome_motion", feature: "rewriteEbook" },
       { name: "Blog draft", href: "/blog-generator", icon: "edit_note", feature: "blogGenerator" },
       { name: "BlogGen", href: "/automations", icon: "schedule_send", feature: "blogGenerator", beta: true },
     ],

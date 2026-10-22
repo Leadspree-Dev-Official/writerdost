@@ -80,8 +80,9 @@ ${getLanguageDirective(language)}
 1. Break paragraphs longer than 4 sentences. 
 2. Insert ### (H3) and #### (H4) subheadings where thematic shifts occur in ${language}. 
 3. Format sequential steps or 3+ items as bolded bullet points. 
-4. Isolate one core philosophy into a > blockquote. 
-5. Do NOT alter the meaning, vocabulary, or tone.`,
+4. DO NOT use \`>\` blockquotes. Use bold emphasis (**Core Principle:**) for key insights.
+5. DO NOT leave blank table cells or empty placeholder rows (e.g. \`||||\`). Complete all data points fully.
+6. Do NOT alter the meaning, vocabulary, or tone.`,
           userPrompt: `Raw Prose:\n${freshProse}`,
           temperature: 0.3,
           topP: settings.topP,

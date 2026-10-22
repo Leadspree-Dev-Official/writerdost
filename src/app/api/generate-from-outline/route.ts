@@ -135,10 +135,11 @@ ${getLanguageDirective(language)}
 Follow Ebook Formatting Standards:
 1. Use ### (H3) and #### (H4) headings.
 2. Use bolded bullet points for frameworks.
-3. Use blockquotes for core insights.
-4. Target a word count of approximately ${wordsPerChapter} words for this chapter.
-5. Return the output in clean Markdown.
-6. DO NOT include the chapter title or "Chapter X" heading in your response, as it is automatically added by the system.
+3. DO NOT use \`>\` blockquotes. Use bold callouts (**Core Insight:**) for key takeaways.
+4. DO NOT output blank table cells, empty worksheet rows, or placeholder pipes (e.g. \`||||\`). Fully complete all frameworks and analyses with concrete examples.
+5. Target a word count of approximately ${wordsPerChapter} words for this chapter.
+6. Return the output in clean Markdown.
+7. DO NOT include the chapter title or "Chapter X" heading in your response, as it is automatically added by the system.
 IF THE PROVIDED TOPICS ARE FROM AN EXISTING AUTHOR: You must use them as inspiration but completely rewrite and rebrand the content to be original. Maintain the logical structure but use unique phrasing, fresh metaphors, and a distinct narrative voice. Do not plagiarize the source.`;
 
           const userPrompt = `Book Title: ${outline.title}

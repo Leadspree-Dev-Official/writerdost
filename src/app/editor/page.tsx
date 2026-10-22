@@ -6,6 +6,7 @@ import { CoverSettings } from "@/components/CoverSettings";
 import { StageBar } from "@/components/StageBar";
 import { fontStack, findFont, loadGoogleFont, DEFAULT_BODY_FONT, DEFAULT_HEADING_FONT } from "@/lib/fonts";
 import { DesignSettings } from "@/components/DesignSettings";
+import { ProjectMetrics } from "@/components/ProjectMetrics";
 import { generateAiText } from "@/lib/ai-client";
 import { useAppStore, type ProjectChapter } from "@/lib/app-store";
 import { findChapterById, findProjectById, calculateProjectWords, robustParseJson, STREAM_DELIMITER } from "@/lib/app-utils";
@@ -531,55 +532,111 @@ export default function EditorPage() {
     <div className="flex flex-1 overflow-hidden h-full">
       <aside className={clsx(
         "bg-surface-container-low overflow-x-hidden border-r border-transparent no-print transition-all duration-300 flex flex-col h-full",
-        isEditorSidebarCollapsed ? "w-14 px-1.5 py-2 items-center" : "w-60"
+        isEditorSidebarCollapsed ? "w-14 px-1.5 py-2 items-center" : "w-64"
       )}>
-        {/* Fixed Top */}
-        <div className={clsx("shrink-0", isEditorSidebarCollapsed ? "mb-2 w-full" : "px-3 pt-3 pb-2")}>
-          <div className={clsx("flex items-center w-full", isEditorSidebarCollapsed ? "mb-3 justify-center" : "mb-4 justify-between")}>
-            {!isEditorSidebarCollapsed && <span className="section-title">Chapters</span>}
+        {/* Top Section: Settings & Tools (Placed on Top) */}
+        <div className={clsx("shrink-0 w-full", isEditorSidebarCollapsed ? "mb-2" : "px-3 pt-3 pb-2 space-y-2.5")}>
+          {/* Header Row: Title & Collapse Button */}
+          <div className={clsx("flex items-center w-full", isEditorSidebarCollapsed ? "mb-2 justify-center" : "justify-between")}>
+            {!isEditorSidebarCollapsed && (
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Project Tools</span>
+            )}
             <button 
               onClick={toggleEditorSidebar}
               className="btn btn-ghost btn-icon btn-sm shrink-0"
-              aria-label={isEditorSidebarCollapsed ? "Expand chapter list" : "Collapse chapter list"}
+              aria-label={isEditorSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
               <span className="material-symbols-outlined text-[17px]">{isEditorSidebarCollapsed ? 'left_panel_open' : 'left_panel_close'}</span>
             </button>
           </div>
-          <div className={clsx("flex w-full", isEditorSidebarCollapsed ? "flex-col items-center gap-3" : "items-center justify-between")}>
-             <button 
-               onClick={() => setFullView(true)}
-               title="Full Manuscript View"
-               className={clsx(
-                 "text-primary transition-all flex items-center",
-                 isEditorSidebarCollapsed ? "w-12 h-12 justify-center bg-primary/10 rounded-[var(--radius)] hover:bg-primary/20" : "text-[10px] font-semibold hover:underline gap-1"
-               )}
-             >
-               <span className={clsx("material-symbols-outlined", isEditorSidebarCollapsed ? "text-xl" : "text-xs")}>auto_stories</span>
-               {!isEditorSidebarCollapsed && "FULL MANUSCRIPT VIEW"}
-             </button>
-             <button 
-               onClick={() => {
-                 const title = window.prompt("Chapter Title:");
-                 if (title && project) addChapter(project.id, title);
-               }}
-               title="Add Chapter"
-               className={clsx(
-                 "text-emerald-600 transition-all flex items-center",
-                 isEditorSidebarCollapsed ? "w-12 h-12 justify-center bg-emerald-600/10 rounded-[var(--radius)] hover:bg-emerald-600/20" : "text-[10px] font-semibold hover:scale-105 gap-1"
-               )}
-             >
-               <span className={clsx("material-symbols-outlined", isEditorSidebarCollapsed ? "text-xl" : "text-xs")}>add_circle</span>
-               {!isEditorSidebarCollapsed && "ADD CHAPTER"}
-             </button>
+
+          {!isEditorSidebarCollapsed ? (
+            /* Compact Collapsible Tools Stack on Top */
+            <div className="space-y-1.5">
+              <CoverSettings projectId={project.id} />
+              <DesignSettings projectId={project.id} />
+              <ProjectMetrics project={project} />
+            </div>
+          ) : (
+            /* Quick Access Icon Buttons When Collapsed */
+            <div className="flex flex-col items-center gap-1.5 mb-2">
+              <button
+                onClick={toggleEditorSidebar}
+                title="Cover Image"
+                className="w-9 h-9 rounded-[var(--radius)] flex items-center justify-center text-slate-400 hover:text-primary hover:bg-surface-container-highest/40 transition-colors"
+                type="button"
+              >
+                <span className="material-symbols-outlined text-[18px]">image</span>
+              </button>
+              <button
+                onClick={toggleEditorSidebar}
+                title="Typography & Spacing"
+                className="w-9 h-9 rounded-[var(--radius)] flex items-center justify-center text-slate-400 hover:text-primary hover:bg-surface-container-highest/40 transition-colors"
+                type="button"
+              >
+                <span className="material-symbols-outlined text-[18px]">text_fields</span>
+              </button>
+              <button
+                onClick={toggleEditorSidebar}
+                title={`Project Metrics (${project.tokensUsed?.toLocaleString() || 0} tokens)`}
+                className="w-9 h-9 rounded-[var(--radius)] flex items-center justify-center text-slate-400 hover:text-primary hover:bg-surface-container-highest/40 transition-colors"
+                type="button"
+              >
+                <span className="material-symbols-outlined text-[18px]">query_stats</span>
+              </button>
+            </div>
+          )}
+
+          {/* Chapters Section Header & Actions */}
+          <div className={clsx("pt-2 border-t border-outline-variant/10", isEditorSidebarCollapsed ? "w-full" : "")}>
+            <div className={clsx("flex items-center w-full mb-1.5", isEditorSidebarCollapsed ? "justify-center" : "justify-between")}>
+              {!isEditorSidebarCollapsed && (
+                <span className="section-title flex items-center gap-1.5">
+                  Chapters
+                  <span className="text-[10px] font-normal text-slate-500">
+                    ({project.chapters.length})
+                  </span>
+                </span>
+              )}
+            </div>
+            <div className={clsx("flex w-full", isEditorSidebarCollapsed ? "flex-col items-center gap-2" : "items-center justify-between gap-1.5")}>
+               <button 
+                 onClick={() => setFullView(true)}
+                 title="Full Manuscript View"
+                 className={clsx(
+                   "text-primary transition-all flex items-center",
+                   isEditorSidebarCollapsed ? "w-10 h-10 justify-center bg-primary/10 rounded-[var(--radius)] hover:bg-primary/20" : "text-[10px] font-semibold hover:underline gap-1 py-1"
+                 )}
+                 type="button"
+               >
+                 <span className={clsx("material-symbols-outlined", isEditorSidebarCollapsed ? "text-lg" : "text-xs")}>auto_stories</span>
+                 {!isEditorSidebarCollapsed && "FULL VIEW"}
+               </button>
+               <button 
+                 onClick={() => {
+                   const title = window.prompt("Chapter Title:");
+                   if (title && project) addChapter(project.id, title);
+                 }}
+                 title="Add Chapter"
+                 className={clsx(
+                   "text-emerald-600 transition-all flex items-center",
+                   isEditorSidebarCollapsed ? "w-10 h-10 justify-center bg-emerald-600/10 rounded-[var(--radius)] hover:bg-emerald-600/20" : "text-[10px] font-semibold hover:scale-105 gap-1 py-1"
+                 )}
+                 type="button"
+               >
+                 <span className={clsx("material-symbols-outlined", isEditorSidebarCollapsed ? "text-lg" : "text-xs")}>add_circle</span>
+                 {!isEditorSidebarCollapsed && "ADD CHAPTER"}
+               </button>
+            </div>
           </div>
         </div>
 
         {/* Scrollable Chapter List */}
         <div className={clsx(
-          "flex-1 min-h-0 overflow-y-auto overflow-x-hidden",
-          isEditorSidebarCollapsed ? "w-full px-2" : "px-6"
+          "flex-1 min-h-0 overflow-y-auto overflow-x-hidden pt-1 pb-4",
+          isEditorSidebarCollapsed ? "w-full px-1.5" : "px-3"
         )}>
-          <div className="space-y-2 w-full">
+          <div className="space-y-1.5 w-full">
             {(project?.chapters ?? []).map((item) => (
               <div
                 key={item.id}
@@ -598,7 +655,7 @@ export default function EditorPage() {
               >
                 <span className={clsx(
                   "material-symbols-outlined font-bold shrink-0 transition-colors", 
-                  !isEditorSidebarCollapsed && "mr-3 text-sm",
+                  !isEditorSidebarCollapsed && "mr-1 text-sm",
                   isEditorSidebarCollapsed && "text-xl",
                   item.status === "Done" ? "text-primary" : item.status === "In Progress" ? "text-indigo-400" : "text-slate-300 dark:text-slate-600 group-hover:text-slate-400"
                 )}>
@@ -606,8 +663,8 @@ export default function EditorPage() {
                 </span>
                 {!isEditorSidebarCollapsed && (
                   <>
-                    <div className="flex-1 min-w-0 pr-2">
-                      <p className={`text-xs font-bold truncate ${item.id === chapter.id ? "text-on-surface" : "text-on-surface-variant"}`}>{item.title}</p>
+                    <div className="flex-1 min-w-0 pr-1">
+                      <p className={`text-xs font-semibold truncate ${item.id === chapter.id ? "text-on-surface" : "text-on-surface-variant"}`}>{item.title}</p>
                       <p className="text-[10px] text-slate-500">{item.wordCount.toLocaleString()} words • {item.status}</p>
                     </div>
                     <button 
@@ -618,6 +675,7 @@ export default function EditorPage() {
                         }
                       }}
                       className="material-symbols-outlined text-slate-300 dark:text-slate-600 hover:text-rose-400 text-sm transition-colors p-1"
+                      type="button"
                     >
                       delete
                     </button>
@@ -626,36 +684,6 @@ export default function EditorPage() {
               </div>
             ))}
           </div>
-        </div>
-
-        {/* Fixed Bottom: Cover, Typography + Metrics */}
-        <div className={clsx(
-          "shrink-0 border-t border-outline-variant/10 overflow-y-auto",
-          isEditorSidebarCollapsed ? "w-full px-2 py-3 max-h-[40%]" : "px-6 py-4 space-y-3 max-h-[50%]"
-        )}>
-          {!isEditorSidebarCollapsed && (
-            <div className="space-y-3 pt-3">
-              <CoverSettings projectId={project.id} />
-              <DesignSettings projectId={project.id} />
-              <div className="w-full">
-                <p className="rail-title">Project Metrics</p>
-                <dl className="panel panel-pad">
-                  <div className="kv">
-                    <dt>Outline time</dt>
-                    <dd className="num">{project.outlineDuration !== undefined ? `${Math.floor(project.outlineDuration / 60)}m ${project.outlineDuration % 60}s` : "0m 0s"}</dd>
-                  </div>
-                  <div className="kv">
-                    <dt>Drafting time</dt>
-                    <dd className="num">{project.draftDuration !== undefined ? `${Math.floor(project.draftDuration / 60)}m ${project.draftDuration % 60}s` : "0m 0s"}</dd>
-                  </div>
-                  <div className="kv">
-                    <dt>Tokens used</dt>
-                    <dd className="num">{project.tokensUsed?.toLocaleString() || "0"}</dd>
-                  </div>
-                </dl>
-              </div>
-            </div>
-          )}
         </div>
       </aside>
 

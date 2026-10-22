@@ -369,6 +369,7 @@ type AppStore = {
   addOutlineChapter: () => void;
   removeOutlineChapter: (id: string) => void;
   updateOutlineChapter: (id: string, payload: Partial<OutlineChapter>) => void;
+  resetOutlineGenerator: () => void;
   importOutlineFromText: (text: string, language?: string) => void;
   generateRewritePreview: () => void;
   applyRewriteToCurrentProject: () => void;
@@ -1381,6 +1382,9 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         },
       });
     },
+    resetOutlineGenerator: () => {
+      set({ outlineGenerator: defaultOutlineGenerator });
+    },
     importOutlineFromText: (text: string, language?: string) => {
       const rawLines = text.split("\n").map((l) => l.trim());
       const lines = rawLines.filter(Boolean);
@@ -1415,10 +1419,12 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         let currentChapter: OutlineChapter | null = null;
 
         for (const line of curriculumLines) {
-          // Pattern 1: Standalone chapter number (e.g. "1.")
-          const isStandaloneNum = /^\d+\.?$/.test(line);
-          // Pattern 2: Inline numbered title (e.g. "1. Delving into...")
-          const inlineMatch = /^\d+\.\s*(.+)/.exec(line);
+          // Pattern 0: Decimal subtopics (e.g. "1.1 Sub topic", "1.2.1 Deep detail")
+          const isDecimalSubTopic = /^\d+(\.\d+)+/.test(line);
+          // Pattern 1: Standalone chapter number (e.g. "1." or "Chapter 1")
+          const isStandaloneNum = !isDecimalSubTopic && (/^\d+\.?$/.test(line) || /^Chapter\s+\d+$/i.test(line));
+          // Pattern 2: Inline numbered title (e.g. "1. Title", "Chapter 1: Title") - must require space and not be decimal
+          const inlineMatch = !isDecimalSubTopic && (/^(?:Chapter\s+)?\d+[\.\:\-]\s+(.+)/i.exec(line) || /^\d+\.\s+(.+)/.exec(line));
           // Pattern 3: Bullet points
           const isBullet = line.startsWith("*") || line.startsWith("-") || line.startsWith("•");
 
@@ -1432,9 +1438,23 @@ export const useAppStore = create<AppStore>()((set, get) => ({
             if (currentChapter) chapters.push(currentChapter);
             currentChapter = {
               id: `import-${Date.now()}-${chapters.length}`,
-              title: inlineMatch[1],
+              title: inlineMatch[1].trim(),
               topics: "",
             };
+          } else if (isDecimalSubTopic) {
+            // Decimal numbered sub-topic (e.g. "1.1 Opening Note...")
+            if (!currentChapter) {
+              currentChapter = {
+                id: `import-${Date.now()}-${chapters.length}`,
+                title: "Chapter 1",
+                topics: "",
+              };
+            }
+            currentChapter.topics += (currentChapter.topics ? "\n" : "") + line.trim();
+          } else if (currentChapter && isBullet) {
+            // Found a topic bullet
+            const topic = line.replace(/^[*-\s•]+/, "").trim();
+            currentChapter.topics += (currentChapter.topics ? "\n" : "") + topic;
           } else if (!isBullet && line.length > 3) {
             // Found a new chapter (assuming non-bullet non-empty lines are titles)
             if (currentChapter) chapters.push(currentChapter);
@@ -1443,10 +1463,6 @@ export const useAppStore = create<AppStore>()((set, get) => ({
               title: line,
               topics: "",
             };
-          } else if (currentChapter && isBullet) {
-            // Found a topic bullet
-            const topic = line.replace(/^[*-\s•]+/, "");
-            currentChapter.topics += (currentChapter.topics ? "\n" : "") + topic;
           }
         }
         if (currentChapter) chapters.push(currentChapter);

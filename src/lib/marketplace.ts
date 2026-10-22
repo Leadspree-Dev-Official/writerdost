@@ -10,10 +10,8 @@
 import type {
   ApiScope,
   BundleKartBonus,
-  BundleKartDeliverableFile,
   BundleKartFaq,
   BundleKartLandingBlock,
-  BundleKartLandingPageConfig,
   BundleKartPublishPayload,
   BundleKartPublishResponse,
   BundleKartTemplateId,
@@ -340,6 +338,10 @@ export function generateFallbackLandingCopy(project: Project): AiLandingPageElem
   };
 }
 
+function asRecord(value: unknown): Record<string, unknown> {
+  return typeof value === "object" && value !== null ? (value as Record<string, unknown>) : {};
+}
+
 export async function generateBundleKartLandingCopy(
   project: Project,
   api: ApiSettings,
@@ -429,20 +431,35 @@ Please output ONLY valid JSON matching the exact schema.`;
           : fallback.benefits,
       deliverables:
         Array.isArray(parsed.deliverables) && parsed.deliverables.length > 0
-          ? (parsed.deliverables as any)
+          ? parsed.deliverables
+              .map((raw) => {
+                const item = asRecord(raw);
+                return {
+                  name: String(item.name ?? ""),
+                  format: String(item.format ?? ""),
+                  description: String(item.description ?? ""),
+                };
+              })
+              .filter((item) => item.name.length > 0)
           : fallback.deliverables,
       bonuses:
         Array.isArray(parsed.bonuses) && parsed.bonuses.length > 0
-          ? parsed.bonuses.map((b: any) => ({
-              title: String(b.title || "Bonus Vault"),
-              description: String(b.description || "Exclusive resource"),
-              valueInr: Number(b.valueInr) || 499,
-              valueUsd: Number(b.valueUsd) || 9,
-            }))
+          ? parsed.bonuses.map((raw) => {
+              const item = asRecord(raw);
+              return {
+                title: String(item.title || "Bonus Vault"),
+                description: String(item.description || "Exclusive resource"),
+                valueInr: Number(item.valueInr) || 499,
+                valueUsd: Number(item.valueUsd) || 9,
+              };
+            })
           : fallback.bonuses,
       faqs:
         Array.isArray(parsed.faqs) && parsed.faqs.length > 0
-          ? parsed.faqs.map((f: any) => ({ q: String(f.q || ""), a: String(f.a || "") }))
+          ? parsed.faqs.map((raw) => {
+              const item = asRecord(raw);
+              return { q: String(item.q || ""), a: String(item.a || "") };
+            })
           : fallback.faqs,
       suggestedInr: Number(parsed.suggestedInr) || fallback.suggestedInr,
       suggestedUsd: Number(parsed.suggestedUsd) || fallback.suggestedUsd,

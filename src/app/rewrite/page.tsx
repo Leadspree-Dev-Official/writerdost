@@ -5,9 +5,28 @@ import { useRouter } from "next/navigation";
 import { generateAiText } from "@/lib/ai-client";
 import { useAppStore, type RewriteFlow } from "@/lib/app-store";
 import { LANGUAGE_GROUPS, DEFAULT_LANGUAGE, getLanguageDirective } from "@/lib/languages";
-import { STREAM_DELIMITER, robustParseJson } from "@/lib/app-utils";
+import { STREAM_DELIMITER, robustParseJson, calculateProjectWords } from "@/lib/app-utils";
 import { TONES } from "@/lib/tone-standards";
 import type { GeneratedChapter } from "@/lib/store-types";
+
+const FLOW_DETAILS: Record<RewriteFlow, { title: string; subtitle: string }> = {
+  Outline: {
+    title: "Outline Studio",
+    subtitle: "Build a structured, full-length ebook from your chapter outline, table of contents, or syllabus.",
+  },
+  Simple: {
+    title: "Quick Polish",
+    subtitle: "Refine grammar, fix typos, and elevate the prose of your existing draft.",
+  },
+  Deep: {
+    title: "Deep Swarm Rewrite",
+    subtitle: "Multi-agent developmental rewrite with deep research and prose expansion.",
+  },
+  Translate: {
+    title: "Translate Manuscript",
+    subtitle: "Translate your entire book into different languages while preserving style and formatting.",
+  },
+};
 
 export default function RewritePage() {
   const router = useRouter();
@@ -15,11 +34,13 @@ export default function RewritePage() {
   const api = useAppStore((state) => state.api);
   const settings = useAppStore((state) => state.settings);
   const projects = useAppStore((state) => state.projects);
+  const setCurrentProject = useAppStore((state) => state.setCurrentProject);
   const updateRewrite = useAppStore((state) => state.updateRewrite);
   const generateRewritePreview = useAppStore((state) => state.generateRewritePreview);
   
   const outlineGenerator = useAppStore((state) => state.outlineGenerator);
   const updateOutlineGenerator = useAppStore((state) => state.updateOutlineGenerator);
+  const resetOutlineGenerator = useAppStore((state) => state.resetOutlineGenerator);
   const addOutlineChapter = useAppStore((state) => state.addOutlineChapter);
   const removeOutlineChapter = useAppStore((state) => state.removeOutlineChapter);
   const updateOutlineChapter = useAppStore((state) => state.updateOutlineChapter);
@@ -585,15 +606,19 @@ export default function RewritePage() {
     }
   };
 
+  const currentFlowDetail = FLOW_DETAILS[rewrite.flow] || FLOW_DETAILS.Outline;
+  const matchedProject = outlineGenerator.title
+    ? projects.find((p) => p.title.toLowerCase().trim() === outlineGenerator.title.toLowerCase().trim())
+    : null;
+
   return (
     <>
       <div className="page">
         <div className="page-head">
           <div>
-            <h1 className="page-title">Rewrite</h1>
+            <h1 className="page-title">{currentFlowDetail.title}</h1>
             <p className="page-sub">
-              Transform an existing manuscript: a quick pass, a multi-agent rewrite, a rebuild from an
-              outline, or a translation.
+              {currentFlowDetail.subtitle}
             </p>
           </div>
           <div className="segmented" role="tablist" aria-label="Rewrite mode">
@@ -618,6 +643,44 @@ export default function RewritePage() {
             ))}
           </div>
         </div>
+
+        {matchedProject && rewrite.flow === "Outline" ? (
+          <div className="mb-5 p-4 rounded-[var(--radius-lg)] bg-indigo-50/90 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-800/60 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined text-indigo-600 dark:text-indigo-400 text-2xl">check_circle</span>
+              <div>
+                <p className="text-[13.5px] font-semibold text-on-surface">
+                  Project &quot;{matchedProject.title}&quot; is created and active in your workspace!
+                </p>
+                <p className="text-[12px] text-on-surface-variant">
+                  {matchedProject.chapters.length} chapters • {calculateProjectWords(matchedProject).toLocaleString()} words • Saved in Projects
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setCurrentProject(matchedProject.id);
+                  router.push("/editor");
+                }}
+                className="btn btn-primary"
+                type="button"
+              >
+                <span className="material-symbols-outlined">edit_document</span>
+                Open in Editor
+              </button>
+              <button
+                onClick={() => resetOutlineGenerator()}
+                className="btn btn-secondary"
+                type="button"
+                title="Start a new outline from scratch"
+              >
+                <span className="material-symbols-outlined">restart_alt</span>
+                Start New Outline
+              </button>
+            </div>
+          </div>
+        ) : null}
 
         {message ? (
           <div className="mb-4 rounded-[var(--radius-lg)] bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 p-4 text-sm text-emerald-700 dark:text-emerald-400 flex items-center justify-between">
@@ -687,6 +750,21 @@ export default function RewritePage() {
                         )}
                       </span>
                       <div className="flex items-center gap-2">
+                        {outlineGenerator.chapters.length > 0 && (
+                          <button
+                            onClick={() => {
+                              if (window.confirm("Clear all outline chapters and start fresh?")) {
+                                resetOutlineGenerator();
+                              }
+                            }}
+                            className="btn btn-secondary text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                            type="button"
+                            title="Clear all chapters"
+                          >
+                            <span className="material-symbols-outlined">delete_sweep</span>
+                            Clear outline
+                          </button>
+                        )}
                         <button onClick={openSmartImport} className="btn btn-secondary" type="button">
                           <span className="material-symbols-outlined">text_fields</span>
                           Smart import

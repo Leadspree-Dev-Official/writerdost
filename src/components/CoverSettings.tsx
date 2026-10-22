@@ -20,7 +20,7 @@ export const CoverSettings: React.FC<CoverSettingsProps> = ({ projectId }) => {
   const project = projects.find((p) => p.id === projectId);
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const [isOpen, setIsOpen] = useState(() => !project?.coverImage);
+  const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState("");
 
   if (!project) return null;
@@ -55,7 +55,7 @@ export const CoverSettings: React.FC<CoverSettingsProps> = ({ projectId }) => {
     <div className="rounded-[var(--radius-lg)] border border-outline-variant/10 overflow-hidden">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-surface-container-highest/30 hover:bg-surface-container-highest/50 transition-colors"
+        className="w-full flex items-center justify-between px-3.5 py-2.5 bg-surface-container-highest/30 hover:bg-surface-container-highest/50 transition-colors"
         type="button"
       >
         <div className="flex items-center gap-2">
@@ -63,7 +63,7 @@ export const CoverSettings: React.FC<CoverSettingsProps> = ({ projectId }) => {
           <span className="text-[10px] font-semibold text-on-surface-variant">Cover Image</span>
         </div>
         <div className="flex items-center gap-1.5">
-          {cover && <span className="chip chip-neutral">Set</span>}
+          {cover && <span className="chip chip-neutral text-[9px] px-1.5 py-0.5">Set</span>}
           <span className={`material-symbols-outlined text-slate-400 text-sm transition-transform ${isOpen ? "rotate-180" : ""}`}>
             expand_more
           </span>
@@ -71,7 +71,7 @@ export const CoverSettings: React.FC<CoverSettingsProps> = ({ projectId }) => {
       </button>
 
       {isOpen && (
-        <div className="px-4 py-3 space-y-3 bg-surface-container-highest/10">
+        <div className="px-3.5 py-2.5 space-y-3 bg-surface-container-highest/10 max-h-72 overflow-y-auto">
           <input
             ref={inputRef}
             type="file"

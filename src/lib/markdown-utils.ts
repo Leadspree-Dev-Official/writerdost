@@ -44,6 +44,122 @@ export function mdToHtml(md: string): string {
     return `<ul>${items}</ul>`;
   });
 
+  // Handle Tables (GitHub-Flavored Markdown Tables with multi-line cell support)
+  const rawLines = html.split(/\r?\n/);
+  const normalizedLines: string[] = [];
+  let idx = 0;
+
+  while (idx < rawLines.length) {
+    const line = rawLines[idx];
+    const nextLine = idx + 1 < rawLines.length ? rawLines[idx + 1] : "";
+
+    const isHeaderLine = line.includes("|") && line.trim().startsWith("|");
+    const isSepLine = nextLine.includes("|") && /^[\|\s\-:]+$/.test(nextLine.trim()) && nextLine.includes("-");
+
+    if (isHeaderLine && isSepLine) {
+      const headerRow = line.trim();
+      const sepRow = nextLine.trim();
+      const colCount = headerRow.split("|").filter((_, i, arr) => i > 0 && i < arr.length - (headerRow.endsWith("|") ? 1 : 0)).length;
+
+      normalizedLines.push(headerRow);
+      normalizedLines.push(sepRow);
+      idx += 2;
+
+      let rowBuffer = "";
+      while (idx < rawLines.length) {
+        const bodyLine = rawLines[idx].trim();
+        if (!bodyLine || ((bodyLine.startsWith("#") || bodyLine.startsWith("<h") || bodyLine.startsWith("-") || bodyLine.startsWith("*")) && !rowBuffer)) {
+          break;
+        }
+
+        if (rowBuffer) {
+          rowBuffer += " " + bodyLine;
+        } else {
+          rowBuffer = bodyLine;
+        }
+
+        const pipes = (rowBuffer.match(/\|/g) || []).length;
+        if (pipes >= colCount + 1 || (pipes >= colCount && rowBuffer.endsWith("|"))) {
+          normalizedLines.push(rowBuffer);
+          rowBuffer = "";
+        }
+        idx++;
+      }
+
+      if (rowBuffer) {
+        normalizedLines.push(rowBuffer);
+      }
+      continue;
+    }
+
+    normalizedLines.push(line);
+    idx++;
+  }
+
+  const processedLines: string[] = [];
+  let inTable = false;
+  let tableBuffer: string[] = [];
+
+  const isTableRow = (line: string) => {
+    const trimmed = line.trim();
+    return trimmed.startsWith("|") || (trimmed.includes("|") && trimmed.split("|").length >= 2);
+  };
+
+  const isDividerRow = (line: string) => {
+    const trimmed = line.trim();
+    return /^[\|\s\-:]+$/.test(trimmed) && trimmed.includes("-");
+  };
+
+  const renderTable = (rows: string[]): string => {
+    if (rows.length < 2) return rows.join("\n");
+    const headerRow = rows[0];
+    const dividerRow = rows[1];
+
+    if (!isDividerRow(dividerRow)) {
+      return rows.join("\n");
+    }
+
+    const parseCells = (row: string): string[] => {
+      let trimmed = row.trim();
+      if (trimmed.startsWith("|")) trimmed = trimmed.substring(1);
+      if (trimmed.endsWith("|")) trimmed = trimmed.substring(0, trimmed.length - 1);
+      return trimmed.split("|").map((c) => c.trim());
+    };
+
+    const headers = parseCells(headerRow);
+    const bodyRows = rows.slice(2);
+
+    const thead = `<thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead>`;
+    const tbodyRows = bodyRows
+      .map((r) => {
+        const cells = parseCells(r);
+        if (cells.every((c) => c === "")) return "";
+        return `<tr>${cells.map((c) => `<td>${c}</td>`).join("")}</tr>`;
+      })
+      .filter(Boolean);
+
+    const tbody = tbodyRows.length > 0 ? `<tbody>${tbodyRows.join("")}</tbody>` : "";
+    return `<div class="table-container my-4 overflow-x-auto"><table class="w-full text-left border-collapse">${thead}${tbody}</table></div>`;
+  };
+
+  for (let i = 0; i < normalizedLines.length; i++) {
+    const line = normalizedLines[i];
+    if (isTableRow(line)) {
+      inTable = true;
+      tableBuffer.push(line);
+    } else {
+      if (inTable) {
+        processedLines.push(renderTable(tableBuffer));
+        tableBuffer = [];
+        inTable = false;
+      }
+      processedLines.push(line);
+    }
+  }
+  if (inTable) {
+    processedLines.push(renderTable(tableBuffer));
+  }
+  html = processedLines.join("\n");
 
   // Handle Paragraphs
   const blocks = html.split(/\n{2,}/);
@@ -52,7 +168,7 @@ export function mdToHtml(md: string): string {
       const trimmed = block.trim();
       if (!trimmed) return "";
       // If it's already a block tag, return it
-      if (/^<(h\d|ul|hr)/i.test(trimmed)) {
+      if (/^<(h\d|ul|ol|table|div|hr)/i.test(trimmed)) {
         return trimmed;
       }
       // Otherwise wrap in paragraph and convert single newlines to br
@@ -61,8 +177,8 @@ export function mdToHtml(md: string): string {
     .join("\n");
 
   // Clean up any double-wrapped tags or empty paragraphs
-  html = html.replace(/<p>\s*<(h\d|ul|hr)/gi, (match) => match.replace("<p>", ""));
-  html = html.replace(/<\/(h\d|ul|hr)>\s*<\/p>/gi, (match) => match.replace("</p>", ""));
+  html = html.replace(/<p>\s*<(h\d|ul|ol|table|div|hr)/gi, (match) => match.replace("<p>", ""));
+  html = html.replace(/<\/(h\d|ul|ol|table|div|hr)>\s*<\/p>/gi, (match) => match.replace("</p>", ""));
 
   // Handle common LaTeX-style symbols (Quick fix for user's request)
   html = html.replace(/\$\\rightarrow\$/g, "→");

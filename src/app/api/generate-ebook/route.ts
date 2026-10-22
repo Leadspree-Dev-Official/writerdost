@@ -253,7 +253,7 @@ CRITICAL DEPTH REQUIREMENT: You MUST generate ${bulletPointTarget} and for every
             }).join("\n")}\n</ul>`;
            }
 
-           const outlineHtml = `<h2>${coreTitle}</h2>\n<p><strong>Chapter Summary:</strong> ${summary}</p>\n<h3>Working Outline:</h3>\n${outlineListHtml}\n<blockquote><p><em>✏️ Review and edit this outline. The Writing Agent will follow the Ebook Formatting Standards V2 (H3/H4 headings, bulleted frameworks, numbered steps, tables, blockquotes, and a Chapter Wrap-Up) when generating the full prose. Click "Draft All Content" when ready.</em></p></blockquote>`;
+           const outlineHtml = `<h2>${coreTitle}</h2>\n<p><strong>Chapter Summary:</strong> ${summary}</p>\n<h3>Working Outline:</h3>\n${outlineListHtml}\n<p style="margin-top: 1rem; color: #64748b;"><em>✏️ Review and edit this outline. The Writing Agent will follow the Ebook Formatting Standards V2 when generating the full prose. Click "Draft All Content" when ready.</em></p>`;
           
           return {
             id: slugify(coreTitle),

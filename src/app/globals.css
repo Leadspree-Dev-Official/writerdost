@@ -869,22 +869,46 @@ body {
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
 }
 
-/* Fix for bullet points in the editor */
-.prose ul > li {
-  margin-top: 0.25em;
-  margin-bottom: 0.25em;
+/* Fix and optimize spacing for bullet points & headings in editor/manuscript */
+.prose ul,
+.prose ol {
+  margin-top: 0.35rem !important;
+  margin-bottom: 0.9rem !important;
+  list-style-type: disc;
+  padding-left: 1.35rem;
 }
 
-.prose ul > li p {
+.prose ol {
+  list-style-type: decimal;
+}
+
+.prose ul > li,
+.prose ol > li {
+  margin-top: 0.15rem !important;
+  margin-bottom: 0.15rem !important;
+  line-height: var(--line-height, 1.6) !important;
+}
+
+.prose ul > li p,
+.prose ol > li p {
   margin-top: 0 !important;
   margin-bottom: 0 !important;
 }
 
-.prose ul {
-  margin-top: 1rem;
-  margin-bottom: 1rem;
-  list-style-type: disc;
-  padding-left: 1.5rem;
+/* Eliminate awkward gap between headlines and immediate bullet pointers */
+.prose h1 + ul,
+.prose h2 + ul,
+.prose h3 + ul,
+.prose h4 + ul,
+.prose h5 + ul,
+.prose h6 + ul,
+.prose h1 + ol,
+.prose h2 + ol,
+.prose h3 + ol,
+.prose h4 + ol,
+.prose h5 + ol,
+.prose h6 + ol {
+  margin-top: 0.2rem !important;
 }
 
 /* Custom Typography Overrides */
@@ -913,10 +937,97 @@ body {
   margin-bottom: var(--p-margin-after) !important;
 }
 .custom-typography-container .prose h1,
-.custom-typography-container .prose h2,
+.custom-typography-container .prose h2 {
+  line-height: var(--line-height) !important;
+  margin-top: 1.5rem !important;
+  margin-bottom: 0.45rem !important;
+}
 .custom-typography-container .prose h3,
 .custom-typography-container .prose h4 {
   line-height: var(--line-height) !important;
+  margin-top: 1.15rem !important;
+  margin-bottom: 0.3rem !important;
+}
+
+/* Table Styling for Rendered Markdown Tables */
+.table-container {
+  margin: 1.25rem 0;
+  border-radius: var(--radius, 0.75rem);
+  border: 1px solid var(--hairline-strong, rgba(203, 213, 225, 0.6));
+  overflow: hidden;
+  background: var(--surface-container-lowest, #ffffff);
+}
+
+.prose table,
+.custom-typography-container .prose table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  margin: 0 !important;
+  font-size: 0.875rem !important;
+  line-height: 1.5 !important;
+}
+
+.prose th,
+.custom-typography-container .prose th {
+  background-color: rgba(99, 102, 241, 0.08) !important;
+  color: var(--on-surface, #1e293b) !important;
+  font-weight: 700 !important;
+  text-align: left !important;
+  padding: 0.65rem 0.9rem !important;
+  border-bottom: 1px solid var(--hairline-strong, rgba(203, 213, 225, 0.7)) !important;
+  border-right: 1px solid var(--hairline, rgba(226, 232, 240, 0.5)) !important;
+}
+
+.prose th:last-child,
+.custom-typography-container .prose th:last-child {
+  border-right: none !important;
+}
+
+.prose td,
+.custom-typography-container .prose td {
+  padding: 0.6rem 0.9rem !important;
+  border-bottom: 1px solid var(--hairline, rgba(226, 232, 240, 0.6)) !important;
+  border-right: 1px solid var(--hairline, rgba(226, 232, 240, 0.5)) !important;
+  vertical-align: top !important;
+  color: var(--on-surface-variant, #334155) !important;
+}
+
+.prose td:last-child,
+.custom-typography-container .prose td:last-child {
+  border-right: none !important;
+}
+
+.prose tbody tr:last-child td,
+.custom-typography-container .prose tbody tr:last-child td {
+  border-bottom: none !important;
+}
+
+.prose tr:nth-child(even) td,
+.custom-typography-container .prose tr:nth-child(even) td {
+  background-color: rgba(248, 250, 252, 0.5) !important;
+}
+
+.dark .table-container {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+}
+
+.dark .prose th,
+.dark .custom-typography-container .prose th {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  color: #f1f5f9 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.dark .prose td,
+.dark .custom-typography-container .prose td {
+  border-color: rgba(255, 255, 255, 0.07) !important;
+  color: #cbd5e1 !important;
+}
+
+.dark .prose tr:nth-child(even) td,
+.dark .custom-typography-container .prose tr:nth-child(even) td {
+  background-color: rgba(255, 255, 255, 0.02) !important;
 }
 
 /* Print Styling for Ebook PDF */

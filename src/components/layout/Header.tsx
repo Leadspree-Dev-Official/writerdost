@@ -13,7 +13,7 @@ const SECTION_LABELS: Record<string, string> = {
   "/dashboard": "Dashboard",
   "/projects": "Projects",
   "/create": "New ebook",
-  "/rewrite": "Rewrite",
+  "/rewrite": "Outline & Rewrite",
   "/blog-generator": "Blog draft",
   "/automations": "BlogGen",
   "/editor": "Editor",

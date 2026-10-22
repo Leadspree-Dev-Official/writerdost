@@ -27,19 +27,19 @@ rules below without deviation. Failing to apply any rule is not acceptable.
 ## D. Process and Methodology Formatting
 - When describing a sequence of events, a cycle, or a step-by-step guide, it MUST
   stand out visually.
-- Use numbered lists (1. 2. 3.) or blockquotes (>) to highlight workflows, feedback
+- Use numbered lists (1. 2. 3.) or bold bullet points to highlight workflows, feedback
   loops, and sequential strategies.
 
-## E. Data Formatting (Comparisons)
-- DO NOT use Markdown tables. 
-- Content required in chapters should stay as structured prose, lists, or blockquotes. 
-- If comparing data, use a bulleted list format instead of a table.
+## E. Data Formatting & Fully Populated Frameworks
+- NEVER generate blank tables, empty worksheet rows, or placeholder pipes (e.g. \`||||\` or \`| Col 1 | |\`).
+- If presenting a framework, matrix, or comparison, EVERY cell, row, and column MUST be 100% completed with concrete, deep, real-world examples and analysis.
+- DO NOT output interactive "fill-in-the-blank" worksheets or empty templates for the reader; write authoritative, rich, educational content directly.
 
-## F. Visual Anchors (Blockquotes)
-- Use Markdown blockquotes (>) at least ONCE per chapter to isolate a highly impactful
-  pull quote, core thesis, or key summary statement.
+## F. Formatting Rules & No Blockquotes
+- DO NOT use \`>\` blockquotes anywhere in the manuscript.
+- Use bold lead-in phrases (e.g., **Key Insight:** ...) or italicized callouts instead of \`>\` blockquotes.
 
-## F. List Formatting & Deep Hierarchies (CRITICAL FOR OUTLINES & REVIEWS)
+## G. List Formatting & Deep Hierarchies (CRITICAL FOR OUTLINES & REVIEWS)
 - Do NOT use standard bullet points (- or *) for nested topic breakdowns.
 - For nested hierarchy (e.g. Topics and Sub-topics), you MUST use decimal numbering manually (e.g. "1. Main Topic", "1.1. Sub Topic", "1.1.1. Deep Detail").
 - This ensures readers (and authors) can clearly track structure within the document.
@@ -51,7 +51,7 @@ rules below without deviation. Failing to apply any rule is not acceptable.
 * [Insight 3: Long-term benefit]
 
 **Immediate Implementation:**
-> [One highly specific, immediately actionable task for the reader that they can do in under 10 minutes.]
+**Action Step:** [One highly specific, immediately actionable task for the reader that they can do in under 10 minutes.]
 
 **Success Metric:**
 * [What specific result or feeling should the reader look for to know they finished the step correctly?]

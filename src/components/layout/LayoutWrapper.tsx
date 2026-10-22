@@ -37,6 +37,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
   const pathname = usePathname();
   const isAuthPage = pathname === "/login" || pathname === "/signup";
   const isPublicWebsite = pathname === "/";
+  const isEditorPage = pathname.startsWith("/editor");
   const isGlobalSidebarCollapsed = useAppStore((state) => state.isGlobalSidebarCollapsed);
   const toggleGlobalSidebar = useAppStore((state) => state.toggleGlobalSidebar);
 
@@ -167,12 +168,18 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
       )}
       <MainWrapper>
         <Header />
-        <div className="flex-1 flex flex-col justify-between w-full">
-          <div className="flex-1">
+        {isEditorPage ? (
+          <div className="flex-1 flex flex-col h-[calc(100vh-var(--app-header-h))] overflow-hidden w-full">
             {children}
           </div>
-          {footer}
-        </div>
+        ) : (
+          <div className="flex-1 flex flex-col justify-between w-full">
+            <div className="flex-1">
+              {children}
+            </div>
+            {footer}
+          </div>
+        )}
       </MainWrapper>
       <GlobalOverlay />
     </AuthGuard>
