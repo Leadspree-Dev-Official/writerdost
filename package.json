@@ -18,6 +18,7 @@
     "test:e2e:ui": "playwright test --ui",
     "appwrite:setup": "node appwrite/setup.mjs",
     "appwrite:grant-admin": "node appwrite/grant-admin.mjs",
+    "appwrite:seed-demo": "node scripts/seed-demo-accounts.mjs",
     "test:e2e:auth": "playwright test --project=chromium e2e/authenticated.spec.ts",
     "backup": "node scripts/backup.mjs",
     "restore": "node scripts/restore.mjs",
