@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAppStore } from "@/lib/app-store";
 
 export default function WebsiteNavbar() {
+  const [mounted, setMounted] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showBanner, setShowBanner] = useState(true);
@@ -14,6 +15,7 @@ export default function WebsiteNavbar() {
   const toggleDarkMode = useAppStore((state) => state.toggleDarkMode);
 
   useEffect(() => {
+    setMounted(true);
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
     };
@@ -111,10 +113,10 @@ export default function WebsiteNavbar() {
               onClick={toggleDarkMode}
               className="w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"
               aria-label="Toggle theme"
-              title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+              title={mounted && isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
             >
               <span className="material-symbols-outlined text-[19px]">
-                {isDarkMode ? "light_mode" : "dark_mode"}
+                {mounted && isDarkMode ? "light_mode" : "dark_mode"}
               </span>
             </button>
 

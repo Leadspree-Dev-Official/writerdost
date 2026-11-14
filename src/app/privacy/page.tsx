@@ -11,6 +11,11 @@ export default function PrivacyPage() {
   return (
     <main className="min-h-screen bg-surface text-on-surface py-16 px-4">
       <article className="max-w-3xl mx-auto prose prose-slate dark:prose-invert">
+        <div className="not-prose mb-8">
+          <Link href="/" className="inline-flex items-center gap-1.5 text-xs font-bold text-primary dark:text-indigo-400 hover:underline uppercase tracking-wider">
+            ← Back to Home
+          </Link>
+        </div>
         <h1>Privacy Policy</h1>
         <p className="text-sm text-on-surface-variant">Last updated: 22 October 2026</p>
         <p>

@@ -35,9 +35,14 @@ export default function Header() {
   const toggleSidebar = useAppStore((state) => state.toggleGlobalSidebar);
   const setManuscriptFullView = useAppStore((state) => state.setManuscriptFullView);
 
+  const [mounted, setMounted] = useState(false);
   const [notification, setNotification] = useState<{ message: string; type: "success" | "info" } | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!notification) return;
@@ -230,11 +235,11 @@ export default function Header() {
         <button
           type="button"
           onClick={toggleDarkMode}
-          aria-label={isDarkMode ? "Switch to light theme" : "Switch to dark theme"}
+          aria-label={mounted && isDarkMode ? "Switch to light theme" : "Switch to dark theme"}
           className="btn btn-ghost btn-icon btn-sm"
         >
           <span className="material-symbols-outlined text-[17px]">
-            {isDarkMode ? "light_mode" : "dark_mode"}
+            {mounted && isDarkMode ? "light_mode" : "dark_mode"}
           </span>
         </button>
       </div>

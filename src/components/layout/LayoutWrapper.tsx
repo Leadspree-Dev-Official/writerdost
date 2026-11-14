@@ -35,8 +35,13 @@ const STAR_FIELD = (() => {
 
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isAuthPage = pathname === "/login" || pathname === "/signup";
-  const isPublicWebsite = pathname === "/";
+  const isAuthPage =
+    pathname === "/login" ||
+    pathname === "/signup" ||
+    pathname === "/forgot-password" ||
+    pathname === "/reset-password";
+  const isPublicDoc = pathname === "/privacy" || pathname === "/terms";
+  const isPublicWebsite = pathname === "/" || isPublicDoc;
   const isEditorPage = pathname.startsWith("/editor");
   const isGlobalSidebarCollapsed = useAppStore((state) => state.isGlobalSidebarCollapsed);
   const toggleGlobalSidebar = useAppStore((state) => state.toggleGlobalSidebar);
@@ -58,8 +63,11 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
   if (isPublicWebsite) {
     return (
       <AuthGuard>
-        <div className="min-h-screen w-full bg-surface text-on-surface selection:bg-primary/20">
-          {children}
+        <div className="min-h-screen w-full bg-surface text-on-surface selection:bg-primary/20 flex flex-col justify-between">
+          <div className="flex-1">
+            {children}
+          </div>
+          {footer}
         </div>
       </AuthGuard>
     );

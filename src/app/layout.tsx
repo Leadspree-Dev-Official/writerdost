@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { headers } from "next/headers";
 import {
   Inter,
@@ -125,7 +126,9 @@ export default async function RootLayout({
   return (
     <html lang="en" className={fontVariables} suppressHydrationWarning>
       <head>
-        <script
+        <Script
+          id="writerdost-theme-init"
+          strategy="beforeInteractive"
           nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `
