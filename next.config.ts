@@ -21,7 +21,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  output: process.env.VERCEL ? undefined : "standalone",
   allowedDevOrigins: ["127.0.0.1", "localhost"],
   // Silences the multi-lockfile warning by pinning the workspace root here.
   turbopack: {
