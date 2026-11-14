@@ -19,5 +19,17 @@
 	],
 	"images": {
 		"binding": "IMAGES"
+	},
+	"routes": [
+		{
+			"pattern": "writerdost.leadspree.in",
+			"custom_domain": true
+		}
+	],
+	"vars": {
+		"WRITERDOST_SITE_URL": "https://writerdost.leadspree.in",
+		"WRITERDOST_APP_NAME": "Writerdost AI",
+		"WRITERDOST_PLATFORM_PROVIDER": "openai",
+		"WRITERDOST_PLATFORM_MODEL": "gpt-4o-mini"
 	}
 }
