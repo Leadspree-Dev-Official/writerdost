@@ -15,7 +15,10 @@
     "test:e2e:ui": "playwright test --ui",
     "appwrite:setup": "node appwrite/setup.mjs",
     "appwrite:grant-admin": "node appwrite/grant-admin.mjs",
-    "test:e2e:auth": "playwright test e2e/authenticated.spec.ts"
+    "test:e2e:auth": "playwright test e2e/authenticated.spec.ts",
+    "backup": "node scripts/backup.mjs",
+    "restore": "node scripts/restore.mjs",
+    "secrets:reencrypt": "node scripts/reencrypt-secrets.mjs"
   },
   "dependencies": {
     "@tiptap/core": "3.32.0",
@@ -42,6 +45,7 @@
     "next": "16.4.2",
     "node-appwrite": "^29.0.0",
     "pdf-parse": "^2.4.5",
+    "pino": "^10.4.0",
     "rate-limiter-flexible": "^11.2.3",
     "react": "19.2.4",
     "react-dom": "19.2.4",
