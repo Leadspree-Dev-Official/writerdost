@@ -15,7 +15,7 @@ import {
   processSubscriptionPayment,
   validateCoupon,
 } from "@/lib/subscription-service";
-import { PLAN_DEFINITIONS, type SubscriptionOrder, type UserPlan } from "@/lib/store-types";
+import { PLAN_DEFINITIONS, type UserPlan } from "@/lib/store-types";
 
 export const dynamic = "force-dynamic";
 

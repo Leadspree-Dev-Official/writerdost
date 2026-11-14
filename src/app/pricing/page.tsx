@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import clsx from "clsx";
 import { useAppStore } from "@/lib/app-store";
 import { PLAN_DEFINITIONS, UserPlan } from "@/lib/store-types";
@@ -10,7 +11,6 @@ import { generateReferralCode } from "@/lib/subscription-service";
 function PricingContent() {
   const searchParams = useSearchParams();
   const currentUser = useAppStore((state) => state.currentUser);
-  const usage = useAppStore((state) => state.usage);
   const purchaseSubscription = useAppStore((state) => state.purchaseSubscription);
   const userReferralCode = useAppStore((state) => state.userReferralCode);
   const referrals = useAppStore((state) => state.referrals);
@@ -27,7 +27,7 @@ function PricingContent() {
   } | null>(null);
   const [couponError, setCouponError] = useState<string | null>(null);
   const [validatingCoupon, setValidatingCoupon] = useState(false);
-  const [referralCodeInput, setReferralCodeInput] = useState("");
+  const [referralCodeInput, setReferralCodeInput] = useState(() => searchParams?.get("ref")?.toUpperCase() || "");
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutSuccess, setCheckoutSuccess] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
@@ -37,7 +37,7 @@ function PricingContent() {
   useEffect(() => {
     const ref = searchParams?.get("ref");
     if (ref) {
-      setReferralCodeInput(ref.toUpperCase());
+      setReferralCodeInput((prev) => prev || ref.toUpperCase());
     }
   }, [searchParams]);
 
@@ -274,6 +274,30 @@ function PricingContent() {
           </div>
         </div>
       )}
+
+      {/* 1-Click Demo Notice Banner */}
+      <div className="mb-8 p-4 rounded-xl bg-gradient-to-r from-primary/10 via-indigo-500/10 to-transparent border border-primary/25 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className="w-9 h-9 rounded-lg bg-primary text-white flex items-center justify-center shrink-0 shadow-sm">
+            <span className="material-symbols-outlined text-[20px]">bolt</span>
+          </span>
+          <div>
+            <h4 className="text-sm font-bold text-foreground">
+              Want to test every plan before subscribing?
+            </h4>
+            <p className="text-xs text-muted-foreground">
+              Try our 1-click demo accounts for Free, Basic, Pro, Enterprise, and Admin modes with zero password typing.
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/login"
+          className="btn btn-primary btn-sm shrink-0 flex items-center gap-1.5 shadow-sm"
+        >
+          <span>Launch 1-Click Demos</span>
+          <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
+        </Link>
+      </div>
 
       {/* Pricing Tiers Matrix */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

@@ -3,11 +3,8 @@ import { DEFAULT_COUPONS } from "./subscription-service";
 
 // In-memory persistent server state
 declare global {
-  // eslint-disable-next-line no-var
   var __writerdost_coupons: Coupon[] | undefined;
-  // eslint-disable-next-line no-var
   var __writerdost_referrals: ReferralRecord[] | undefined;
-  // eslint-disable-next-line no-var
   var __writerdost_subscriptions: SubscriptionOrder[] | undefined;
 }
 

@@ -6,7 +6,7 @@ import {
   isQuotaExceeded,
   generateReferralCode,
 } from "@/lib/subscription-service";
-import type { Coupon, UserPlan } from "@/lib/store-types";
+import type { Coupon } from "@/lib/store-types";
 
 describe("Subscription Service", () => {
   describe("Plan Quotas", () => {

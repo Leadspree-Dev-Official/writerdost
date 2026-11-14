@@ -8,8 +8,6 @@ import {
   UserFeatures,
   UpgradeRequest,
   Coupon,
-  ReferralRecord,
-  SubscriptionOrder,
 } from "@/lib/store-types";
 
 export default function AdminDashboard() {
