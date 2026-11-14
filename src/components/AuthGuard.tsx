@@ -48,7 +48,9 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     }
   }, [currentUser, pathname, isReady, router]);
 
-  if (!isReady) {
+  const isPublicPage = PUBLIC_PATHS.has(pathname);
+
+  if (!isReady && !isPublicPage) {
     return (
       <div className="min-h-screen bg-slate-955 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -68,7 +70,6 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   // If not logged in and on a protected route, or logged in as standard user on admin route,
   // hide children during transition to avoid content flashing
   const isAuthPage = pathname === "/login" || pathname === "/signup";
-  const isPublicPage = PUBLIC_PATHS.has(pathname);
   if (!currentUser && !isPublicPage) return null;
   if (currentUser && isAuthPage) return null;
   if (currentUser && pathname.startsWith("/admin") && currentUser.role !== "admin") return null;

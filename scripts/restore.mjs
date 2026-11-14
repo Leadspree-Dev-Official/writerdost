@@ -51,7 +51,6 @@ const RESTORE_ORDER = [
   "generated_posts",
   "seen_sources",
   "upgrade_requests",
-  "publish_jobs",
   "automation_leases",
 ];
 

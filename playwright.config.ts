@@ -1,4 +1,23 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { defineConfig, devices } from "@playwright/test";
+
+function loadEnv(name: string) {
+  try {
+    const text = readFileSync(resolve(process.cwd(), name), "utf8");
+    for (const line of text.split("\n")) {
+      const match = /^\s*(?:export\s+)?([A-Z0-9_]+)\s*=\s*(.*)$/i.exec(line);
+      if (!match) continue;
+      const [, key, rawValue] = match;
+      if (process.env[key]) continue;
+      const value = rawValue.trim().replace(/^(['"])(.*)\1$/s, "$2");
+      if (value) process.env[key] = value;
+    }
+  } catch {}
+}
+
+loadEnv(".env.local");
+loadEnv(".env");
 
 export default defineConfig({
   testDir: "./e2e",
