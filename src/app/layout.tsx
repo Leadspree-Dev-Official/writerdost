@@ -124,7 +124,7 @@ export default async function RootLayout({
 }>) {
   const nonce = (await headers()).get("x-nonce") ?? "";
   return (
-    <html lang="en" className={fontVariables} suppressHydrationWarning>
+    <html lang="en" className={`dark ${fontVariables}`} suppressHydrationWarning>
       <head>
         <script
           id="writerdost-theme-init"
@@ -161,7 +161,7 @@ export default async function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="bg-surface text-on-surface font-body selection:bg-primary/20 min-h-screen">
+      <body className="bg-[#0c0c14] text-slate-100 selection:bg-primary/20 min-h-screen">
         <LayoutWrapper>
           {children}
         </LayoutWrapper>

@@ -1,11 +1,22 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { useAppStore } from "@/lib/app-store";
 
+const AUTH_PATHS = new Set([
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/reset-password",
+]);
+
 export default function ThemeWrapper() {
+  const pathname = usePathname();
   const isDarkMode = useAppStore((state) => state.isDarkMode);
   const updateApiSettings = useAppStore((state) => state.updateApiSettings);
+
+  const isAuthPage = AUTH_PATHS.has(pathname);
 
   // On mount, sync store state if localStorage already had a preference
   useEffect(() => {
@@ -13,19 +24,22 @@ export default function ThemeWrapper() {
       const saved = localStorage.getItem("writerdost_theme");
       if (saved === "dark" && !isDarkMode) {
         useAppStore.setState({ isDarkMode: true });
-      } else if (saved !== "dark" && isDarkMode) {
+      } else if (saved !== "dark" && saved !== null && isDarkMode) {
         useAppStore.setState({ isDarkMode: false });
       }
     } catch {}
   }, [isDarkMode]);
 
   useEffect(() => {
-    if (isDarkMode) {
+    // Auth pages always enforce dark theme to protect cosmic visuals
+    if (isAuthPage || isDarkMode) {
       document.documentElement.classList.add("dark");
       document.documentElement.classList.remove("light");
-      try {
-        localStorage.setItem("writerdost_theme", "dark");
-      } catch {}
+      if (!isAuthPage) {
+        try {
+          localStorage.setItem("writerdost_theme", "dark");
+        } catch {}
+      }
     } else {
       document.documentElement.classList.remove("dark");
       document.documentElement.classList.add("light");
@@ -33,7 +47,7 @@ export default function ThemeWrapper() {
         localStorage.setItem("writerdost_theme", "light");
       } catch {}
     }
-  }, [isDarkMode]);
+  }, [isDarkMode, isAuthPage]);
 
   useEffect(() => {
     // Safety: Reset generation status on fresh app load
@@ -47,9 +61,6 @@ export default function ThemeWrapper() {
       useAppStore.getState().updateApiSettings({ siteUrl: window.location.origin });
     }
   }, [updateApiSettings]);
-
-  // The choice is part of the workspace, so it is saved to Appwrite with the
-  // rest of it and follows the account to the next device.
 
   return null;
 }
