@@ -10,7 +10,7 @@ function loadEnv(name: string) {
       if (!match) continue;
       const [, key, rawValue] = match;
       if (process.env[key]) continue;
-      const value = rawValue.trim().replace(/^(['"])(.*)\1$/s, "$2");
+      const value = rawValue.trim().replace(/^(['"])([\s\S]*)\1$/, "$2");
       if (value) process.env[key] = value;
     }
   } catch {}
