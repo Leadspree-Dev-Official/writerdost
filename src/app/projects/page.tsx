@@ -151,11 +151,19 @@ export default function ProjectsPage() {
               <button
                 type="button"
                 onClick={() => open(project.id)}
-                className="flex-1 min-w-0 text-left cursor-pointer"
+                className="flex-1 min-w-0 text-left cursor-pointer py-1"
               >
-                <span className="block row-title truncate">{project.title}</span>
-                <span className="block row-meta truncate mt-0.5">
-                  {project.tone} · {project.audience} · edited {project.updatedLabel}
+                <div className="flex items-center gap-2">
+                  <span className="row-title truncate">{project.title}</span>
+                  <span className={`chip ${statusChipClasses[project.status] ?? "chip-neutral"} md:hidden text-[10px] py-0 px-1.5`}>
+                    {project.status}
+                  </span>
+                </div>
+                <span className="block row-meta truncate mt-1">
+                  <span className="md:hidden text-on-surface-variant font-medium">
+                    {calculateProjectWords(project).toLocaleString()} words ·{" "}
+                  </span>
+                  {project.tone} · {project.audience} · {project.updatedLabel}
                 </span>
               </button>
 

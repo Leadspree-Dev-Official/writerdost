@@ -17,6 +17,7 @@ import { PublishDialog } from "@/components/PublishDialog";
 import { MARKETPLACE, isMarketplaceReady, marketplaceBlocker, publishToMarketplace } from "@/lib/marketplace";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
 import clsx from "clsx";
 
 
@@ -56,6 +57,8 @@ export default function EditorPage() {
   const [aiAssistLoading, setAiAssistLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [publishOpen, setPublishOpen] = useState(false);
+  const [mobileChaptersOpen, setMobileChaptersOpen] = useState(false);
+  const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -479,17 +482,11 @@ export default function EditorPage() {
           {/* Auto Title Page (if no custom title page exists) */}
           {!project.chapters.find(ch => ch.id === 'front-title-page') && (
             <div 
-              className="bg-white shadow-2xl shadow-black/10 relative"
-              style={{ 
-                width: "816px", 
-                minHeight: "1056px", 
-                padding: "96px",
-                boxSizing: "border-box",
-              }}
+              className="bg-white shadow-2xl shadow-black/10 relative w-full max-w-[816px] min-h-[500px] sm:min-h-[1056px] p-6 sm:p-16 md:p-24 box-border mx-auto"
             >
-              <div className="flex flex-col items-center justify-center h-full" style={{ minHeight: "864px" }}>
-                <h1 className="text-5xl font-bold text-slate-900 text-center mb-6 leading-tight">{project.title}</h1>
-                <p className="text-lg text-slate-500 italic text-center">Manuscript Version 1.0</p>
+              <div className="flex flex-col items-center justify-center h-full min-h-[360px] sm:min-h-[864px]">
+                <h1 className="text-3xl sm:text-5xl font-bold text-slate-900 text-center mb-6 leading-tight">{project.title}</h1>
+                <p className="text-base sm:text-lg text-slate-500 italic text-center">Manuscript Version 1.0</p>
               </div>
               <div className="absolute bottom-8 left-0 right-0 text-center">
                 <span className="text-[10px] text-slate-300 font-medium">i</span>
@@ -501,13 +498,7 @@ export default function EditorPage() {
           {(project?.chapters ?? []).map((ch, idx) => (
             <div 
               key={ch.id}
-              className="bg-white shadow-2xl shadow-black/10 relative chapter-page"
-              style={{ 
-                width: "816px", 
-                minHeight: "1056px", 
-                padding: "96px",
-                boxSizing: "border-box",
-              }}
+              className="bg-white shadow-2xl shadow-black/10 relative chapter-page w-full max-w-[816px] min-h-[500px] sm:min-h-[1056px] p-5 sm:p-14 md:p-24 box-border mx-auto"
             >
               <SafeHtml
                 className="prose max-w-none text-slate-800 prose-headings:text-slate-900 prose-headings:font-bold"
@@ -533,7 +524,7 @@ export default function EditorPage() {
   return (
     <div className="flex flex-1 overflow-hidden h-full">
       <aside className={clsx(
-        "bg-surface-container-low overflow-x-hidden border-r border-transparent no-print transition-all duration-300 flex flex-col h-full",
+        "hidden md:flex bg-surface-container-low overflow-x-hidden border-r border-transparent no-print transition-all duration-300 flex-col h-full shrink-0",
         isEditorSidebarCollapsed ? "w-14 px-1.5 py-2 items-center" : "w-64"
       )}>
         {/* Top Section: Settings & Tools (Placed on Top) */}
@@ -704,6 +695,64 @@ export default function EditorPage() {
           "--p-margin-after": project.designSettings?.paragraphAfter || "12px",
         } as React.CSSProperties}
       >
+        {/* Mobile Sub-Header: Chapter Selector & Navigation (md:hidden) */}
+        <div className="md:hidden shrink-0 border-b border-[var(--hairline)] bg-surface-container-low/95 backdrop-blur-md px-3 py-2 flex items-center justify-between gap-2 no-print">
+          <button
+            type="button"
+            onClick={() => setMobileChaptersOpen(true)}
+            className="flex-1 min-w-0 flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-on-surface/[0.05] active:bg-on-surface/[0.09] text-left transition-colors"
+          >
+            <span className="material-symbols-outlined text-[18px] text-primary shrink-0">
+              menu_book
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[12px] font-semibold text-on-surface truncate">
+                {chapter.title}
+              </p>
+              <p className="text-[10px] text-on-surface-variant truncate">
+                Chapter {project.chapters.findIndex((c) => c.id === chapter.id) + 1} of {project.chapters.length} · {chapter.wordCount.toLocaleString()} words
+              </p>
+            </div>
+            <span className="material-symbols-outlined text-[16px] text-on-surface-variant shrink-0">
+              unfold_more
+            </span>
+          </button>
+
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              disabled={project.chapters.findIndex((c) => c.id === chapter.id) <= 0}
+              onClick={() => {
+                const idx = project.chapters.findIndex((c) => c.id === chapter.id);
+                if (idx > 0) setActiveChapter(project.chapters[idx - 1].id);
+              }}
+              aria-label="Previous Chapter"
+              className="w-8 h-8 rounded-lg flex items-center justify-center bg-on-surface/[0.05] active:scale-95 text-on-surface disabled:opacity-30 disabled:pointer-events-none transition-all"
+            >
+              <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+            </button>
+            <button
+              type="button"
+              disabled={project.chapters.findIndex((c) => c.id === chapter.id) >= project.chapters.length - 1}
+              onClick={() => {
+                const idx = project.chapters.findIndex((c) => c.id === chapter.id);
+                if (idx < project.chapters.length - 1) setActiveChapter(project.chapters[idx + 1].id);
+              }}
+              aria-label="Next Chapter"
+              className="w-8 h-8 rounded-lg flex items-center justify-center bg-on-surface/[0.05] active:scale-95 text-on-surface disabled:opacity-30 disabled:pointer-events-none transition-all"
+            >
+              <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileToolsOpen(true)}
+              aria-label="Project Tools"
+              className="w-8 h-8 rounded-lg flex items-center justify-center bg-on-surface/[0.05] active:scale-95 text-on-surface hover:text-primary transition-all"
+            >
+              <span className="material-symbols-outlined text-[18px]">tune</span>
+            </button>
+          </div>
+        </div>
         <StageBar
           project={project}
           isGenerating={isGenerating}
@@ -892,6 +941,212 @@ export default function EditorPage() {
         </div>
       </div>
     </main>
+
+    {/* Mobile Chapters Drawer */}
+    <AnimatePresence>
+      {mobileChaptersOpen && (
+        <div className="fixed inset-0 z-50 md:hidden flex flex-col justify-end">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setMobileChaptersOpen(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+          />
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", damping: 28, stiffness: 300 }}
+            className="relative z-10 w-full max-h-[85vh] bg-surface-container-high border-t border-[var(--hairline)] rounded-t-[28px] shadow-2xl flex flex-col overflow-hidden"
+          >
+            {/* Grab Handle */}
+            <div className="pt-3 pb-1 flex justify-center">
+              <div className="w-10 h-1 rounded-full bg-on-surface/20" />
+            </div>
+
+            {/* Header */}
+            <div className="px-5 py-3 flex items-center justify-between border-b border-[var(--hairline)]">
+              <div>
+                <h3 className="text-base font-bold text-on-surface">Manuscript Chapters</h3>
+                <p className="text-xs text-on-surface-variant">
+                  {project.chapters.length} chapter{project.chapters.length === 1 ? "" : "s"} · {calculateProjectWords(project).toLocaleString()} total words
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFullView(!fullView);
+                    setMobileChaptersOpen(false);
+                  }}
+                  className={clsx(
+                    "px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors min-h-[38px]",
+                    fullView ? "bg-primary text-on-primary" : "bg-on-surface/[0.08] text-on-surface"
+                  )}
+                >
+                  <span className="material-symbols-outlined text-[16px]">menu_book</span>
+                  <span>{fullView ? "Chapter" : "Full View"}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMobileChaptersOpen(false)}
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-on-surface/[0.08]"
+                  aria-label="Close"
+                >
+                  <span className="material-symbols-outlined text-[20px]">close</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Chapters List */}
+            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
+              {project.chapters.map((item, index) => {
+                const isActive = item.id === chapter.id && !fullView;
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => {
+                      setMessage("");
+                      setFullView(false);
+                      setActiveChapter(item.id);
+                      setMobileChaptersOpen(false);
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    className={clsx(
+                      "w-full p-3.5 rounded-2xl flex items-center gap-3 text-left transition-all cursor-pointer border min-h-[56px]",
+                      isActive
+                        ? "bg-primary/10 border-primary/40 shadow-sm"
+                        : "bg-surface-container border-[var(--hairline)] hover:bg-surface-container-highest"
+                    )}
+                  >
+                    <div
+                      className={clsx(
+                        "w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs shrink-0",
+                        isActive ? "bg-primary text-on-primary" : "bg-on-surface/10 text-on-surface-variant"
+                      )}
+                    >
+                      {index + 1}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className={clsx("text-sm font-semibold truncate", isActive ? "text-primary" : "text-on-surface")}>
+                        {item.title}
+                      </p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[11px] text-on-surface-variant">
+                          {item.wordCount.toLocaleString()} words
+                        </span>
+                        <span className="text-[11px] text-on-surface-variant">·</span>
+                        <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-md bg-on-surface/[0.06] text-on-surface-variant">
+                          {item.status}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {isActive && (
+                        <span className="material-symbols-outlined text-primary text-[20px]">
+                          check_circle
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (window.confirm(`Delete "${item.title}"?`)) {
+                            deleteChapter(project.id, item.id);
+                          }
+                        }}
+                        className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
+                        aria-label={`Delete ${item.title}`}
+                      >
+                        <span className="material-symbols-outlined text-[18px]">delete</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Bottom Sheet Actions */}
+            <div className="p-4 border-t border-[var(--hairline)] bg-surface-container-high/90 backdrop-blur-sm pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+              <button
+                type="button"
+                onClick={() => {
+                  const title = window.prompt("Chapter Title:");
+                  if (title && project) {
+                    addChapter(project.id, title);
+                    setMessage(`Added chapter "${title}".`);
+                  }
+                }}
+                className="w-full h-12 rounded-2xl bg-primary text-on-primary font-semibold text-sm flex items-center justify-center gap-2 shadow-md active:scale-[0.99] transition-transform"
+              >
+                <span className="material-symbols-outlined text-[20px]">add</span>
+                <span>Add Chapter</span>
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+
+    {/* Mobile Project Tools Drawer */}
+    <AnimatePresence>
+      {mobileToolsOpen && (
+        <div className="fixed inset-0 z-50 md:hidden flex flex-col justify-end">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setMobileToolsOpen(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+          />
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", damping: 28, stiffness: 300 }}
+            className="relative z-10 w-full max-h-[85vh] bg-surface-container-high border-t border-[var(--hairline)] rounded-t-[28px] shadow-2xl flex flex-col overflow-hidden"
+          >
+            {/* Grab Handle */}
+            <div className="pt-3 pb-1 flex justify-center">
+              <div className="w-10 h-1 rounded-full bg-on-surface/20" />
+            </div>
+
+            {/* Header */}
+            <div className="px-5 py-3 flex items-center justify-between border-b border-[var(--hairline)]">
+              <div>
+                <h3 className="text-base font-bold text-on-surface">Project Tools</h3>
+                <p className="text-xs text-on-surface-variant">Design, cover & manuscript settings</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobileToolsOpen(false)}
+                className="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-on-surface/[0.08]"
+                aria-label="Close"
+              >
+                <span className="material-symbols-outlined text-[20px]">close</span>
+              </button>
+            </div>
+
+            {/* Tools Content */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+              <div className="bg-surface-container rounded-2xl p-4 border border-[var(--hairline)]">
+                <CoverSettings projectId={project.id} />
+              </div>
+              <div className="bg-surface-container rounded-2xl p-4 border border-[var(--hairline)]">
+                <DesignSettings projectId={project.id} />
+              </div>
+              <div className="bg-surface-container rounded-2xl p-4 border border-[var(--hairline)]">
+                <ProjectMetrics project={project} />
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
 
     {publishOpen && (
       <PublishDialog

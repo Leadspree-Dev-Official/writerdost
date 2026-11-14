@@ -161,7 +161,7 @@ export function GenerationOverlay({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.24, ease: EASE_OUT }}
           onClick={() => setMinimized(false)}
-          className="no-print fixed bottom-5 right-5 z-[100] flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--hairline-strong)] bg-surface-container-lowest px-3 py-2.5 text-left shadow-[0_10px_28px_-12px_rgb(0_0_0/0.35)] transition-colors hover:bg-surface-container dark:bg-surface-container dark:hover:bg-surface-container-high"
+          className="no-print fixed bottom-20 md:bottom-5 right-3 md:right-5 left-3 sm:left-auto z-[100] flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--hairline-strong)] bg-surface-container-lowest px-3 py-2.5 text-left shadow-[0_10px_28px_-12px_rgb(0_0_0/0.35)] transition-colors hover:bg-surface-container dark:bg-surface-container dark:hover:bg-surface-container-high"
         >
           <span className="material-symbols-outlined text-[20px] text-emerald-600 dark:text-emerald-400">
             check_circle
@@ -179,7 +179,7 @@ export function GenerationOverlay({
           initial={rise(12)}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.24, ease: EASE_OUT }}
-          className="no-print fixed bottom-5 right-5 z-[100] w-[19.5rem] rounded-[var(--radius-lg)] border border-[var(--hairline-strong)] bg-surface-container-lowest p-3 shadow-[0_10px_28px_-12px_rgb(0_0_0/0.35)] dark:bg-surface-container"
+          className="no-print fixed bottom-20 md:bottom-5 right-3 md:right-5 left-3 sm:left-auto z-[100] w-auto sm:w-[19.5rem] rounded-[var(--radius-lg)] border border-[var(--hairline-strong)] bg-surface-container-lowest p-3 shadow-[0_10px_28px_-12px_rgb(0_0_0/0.35)] dark:bg-surface-container"
         >
           <div className="flex items-center gap-2">
             <span

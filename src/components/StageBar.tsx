@@ -152,7 +152,7 @@ export const StageBar: React.FC<StageBarProps> = ({
                     }}
                     disabled={item.disabled}
                     title={item.title}
-                    className="w-full flex items-center gap-2 h-7 px-2 rounded-[var(--radius)] text-[12.5px] text-on-surface hover:bg-on-surface/[0.06] disabled:opacity-45 transition-colors text-left"
+                    className="w-full flex items-center gap-2.5 h-9 md:h-7 px-2.5 md:px-2 rounded-[var(--radius)] text-[13px] md:text-[12.5px] text-on-surface hover:bg-on-surface/[0.06] active:bg-on-surface/[0.1] disabled:opacity-45 transition-colors text-left"
                     type="button"
                   >
                     <span className="material-symbols-outlined text-[16px] text-on-surface-variant">

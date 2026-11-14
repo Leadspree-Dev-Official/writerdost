@@ -216,7 +216,7 @@ export default function Header() {
                         item.run();
                         setExportOpen(false);
                       }}
-                      className="w-full flex items-center gap-2 h-7 px-2 rounded-[var(--radius)] text-[12.5px] text-on-surface hover:bg-on-surface/[0.06] transition-colors text-left"
+                      className="w-full flex items-center gap-2.5 h-9 md:h-7 px-2.5 md:px-2 rounded-[var(--radius)] text-[13px] md:text-[12.5px] text-on-surface hover:bg-on-surface/[0.06] active:bg-on-surface/[0.1] transition-colors text-left"
                     >
                       <span className="material-symbols-outlined text-[16px] text-on-surface-variant">
                         {item.icon}

@@ -4,6 +4,14 @@
 @custom-variant dark (&:is(.dark *));
 
 @layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button, a, input, select, textarea {
+    touch-action: manipulation;
+  }
+
   html {
     /* Fixed, not fluid. Product UI is read at a consistent distance, and
        rescaling the root font rescaled every rem spacing value with it. */
@@ -277,6 +285,13 @@
     background: var(--color-surface-container-lowest);
   }
   .dark .metrics { background: rgb(255 255 255 / 0.022); }
+
+  @media (max-width: 639px) {
+    .metric:last-child {
+      grid-column: span 2;
+      border-right: 0;
+    }
+  }
 
   @media (min-width: 640px) { .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
   @media (min-width: 1024px) { .metrics { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
@@ -771,6 +786,20 @@
     box-shadow: none;
   }
 
+  @media (max-width: 640px) {
+    .segmented {
+      width: 100%;
+      padding: 3px;
+    }
+    .segment {
+      height: 2.125rem;
+      padding-inline: 0.625rem;
+      font-size: 0.8125rem;
+      flex: 1;
+      justify-content: center;
+    }
+  }
+
   /* ---- Misc ------------------------------------------------------------ */
 
   .divider { height: 1px; background: var(--hairline); border: 0; }
@@ -801,6 +830,13 @@
 }
 
 @layer utilities {
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
   .editorial-shadow {
     box-shadow: 0 4px 20px -2px rgba(25, 28, 30, 0.06);
   }

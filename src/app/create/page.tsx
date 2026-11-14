@@ -231,9 +231,9 @@ export default function IdeaAndInput() {
               plan and write the chapters for you.
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
             <button
-              className="btn btn-secondary btn-lg"
+              className="btn btn-secondary btn-lg w-full sm:w-auto justify-center min-h-[44px]"
               onClick={() => {
                 const project = createProjectFromDraft();
                 setMessage(`Created "${project.title}".`);
@@ -244,7 +244,7 @@ export default function IdeaAndInput() {
               Quick draft
             </button>
             <button
-              className="btn btn-primary btn-lg"
+              className="btn btn-primary btn-lg w-full sm:w-auto justify-center min-h-[44px]"
               onClick={handleGenerateWithAI}
               disabled={isGenerating}
               type="button"
@@ -446,7 +446,7 @@ export default function IdeaAndInput() {
                         {source.label}
                       </span>
                       <button
-                        className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 text-on-surface-variant hover:text-error transition-opacity shrink-0"
+                        className="opacity-70 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 text-on-surface-variant hover:text-error transition-opacity shrink-0 p-1 min-w-[32px] min-h-[32px] flex items-center justify-center"
                         onClick={() => removeResearchSource(source.id)}
                         aria-label={`Remove ${source.label}`}
                         type="button"

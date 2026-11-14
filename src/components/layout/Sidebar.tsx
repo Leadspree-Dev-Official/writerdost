@@ -172,7 +172,7 @@ export default function Sidebar() {
                     aria-current={active ? "page" : undefined}
                     className={clsx(
                       "relative flex items-center rounded-[var(--radius)] text-[13px] transition-colors duration-100",
-                      collapsed ? "justify-center h-8 w-8 mx-auto" : "h-[26px] gap-2 px-2",
+                      collapsed ? "justify-center h-8 w-8 mx-auto" : "h-10 md:h-[26px] gap-2.5 md:gap-2 px-2.5 md:px-2",
                       active
                         ? "bg-primary/10 text-primary dark:bg-primary/15 dark:text-indigo-300 font-semibold"
                         : "text-on-surface-variant hover:bg-on-surface/[0.055] hover:text-on-surface",
@@ -221,10 +221,12 @@ export default function Sidebar() {
         </Link>
       )}
 
-      <div className={clsx("border-t border-[var(--hairline)] shrink-0", collapsed ? "p-1.5" : "p-2")}>
+      <div
+        className={clsx("border-t border-[var(--hairline)] shrink-0", collapsed ? "p-1.5" : "p-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]")}
+      >
         {currentUser && !collapsed && (
-          <div className="flex items-center gap-2 px-1 py-1 mb-1 min-w-0">
-            <span className="w-[22px] h-[22px] rounded-full bg-primary/12 text-primary flex items-center justify-center text-[11px] font-bold uppercase shrink-0">
+          <div className="flex items-center gap-2 px-1 py-1.5 mb-1 min-w-0">
+            <span className="w-[24px] h-[24px] rounded-full bg-primary/12 text-primary flex items-center justify-center text-[11px] font-bold uppercase shrink-0">
               {currentUser.fullName.charAt(0)}
             </span>
             <span className="min-w-0 flex-1">
@@ -244,7 +246,7 @@ export default function Sidebar() {
             title="Help"
             className={clsx(
               "flex items-center rounded-[var(--radius)] text-[12.5px] text-on-surface-variant hover:bg-on-surface/[0.055] hover:text-on-surface transition-colors",
-              collapsed ? "justify-center h-8 w-8" : "flex-1 gap-2 h-[26px] px-2",
+              collapsed ? "justify-center h-8 w-8" : "flex-1 gap-2 h-9 md:h-[26px] px-2",
             )}
           >
             <span className="material-symbols-outlined text-[17px]">help</span>
@@ -256,7 +258,7 @@ export default function Sidebar() {
             title="Sign out"
             className={clsx(
               "flex items-center rounded-[var(--radius)] text-[12.5px] text-on-surface-variant hover:bg-error/10 hover:text-error transition-colors cursor-pointer",
-              collapsed ? "justify-center h-8 w-8" : "gap-2 h-[26px] px-2",
+              collapsed ? "justify-center h-8 w-8" : "gap-2 h-9 md:h-[26px] px-2",
             )}
           >
             <span className="material-symbols-outlined text-[17px]">logout</span>

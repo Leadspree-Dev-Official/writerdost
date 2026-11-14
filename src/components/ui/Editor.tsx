@@ -425,12 +425,12 @@ export default function Editor({
         type="file"
         onChange={handleImageFileChange}
       />
-      <div className="sticky top-2 mb-3 z-30 flex justify-center no-print">
-        <div className="bg-white/80 dark:bg-[#141420]/90 backdrop-blur-xl editorial-shadow rounded-xl px-2 py-1.5 flex items-center space-x-0.5 border border-outline-variant/20 dark:border-white/[0.06]">
+      <div className="sticky top-2 mb-3 z-30 flex justify-center no-print px-1 max-w-full">
+        <div className="bg-white/85 dark:bg-[#141420]/90 backdrop-blur-xl editorial-shadow rounded-xl px-2 py-1.5 flex items-center space-x-1 border border-outline-variant/20 dark:border-white/[0.06] max-w-full overflow-x-auto no-scrollbar scroll-smooth">
           <button
             onClick={() => editor?.chain().focus().toggleBold().run()}
             className={clsx(
-              "p-1.5 rounded-lg transition-all",
+              "p-2 rounded-lg transition-all shrink-0 min-w-[34px] min-h-[34px] flex items-center justify-center",
               editor?.isActive("bold") ? "bg-surface-container dark:bg-slate-800 text-primary dark:text-indigo-400" : "text-slate-600 dark:text-slate-400 hover:bg-surface-container dark:hover:bg-slate-800",
             )}
             type="button"
@@ -440,7 +440,7 @@ export default function Editor({
           <button
             onClick={() => editor?.chain().focus().toggleItalic().run()}
             className={clsx(
-              "p-1.5 rounded-lg transition-all",
+              "p-2 rounded-lg transition-all shrink-0 min-w-[34px] min-h-[34px] flex items-center justify-center",
               editor?.isActive("italic") ? "bg-surface-container dark:bg-slate-800 text-primary dark:text-indigo-400" : "text-slate-600 dark:text-slate-400 hover:bg-surface-container dark:hover:bg-slate-800",
             )}
             type="button"
@@ -450,7 +450,7 @@ export default function Editor({
           <button
             onClick={() => editor?.chain().focus().toggleStrike().run()}
             className={clsx(
-              "p-1.5 rounded-lg transition-all",
+              "p-2 rounded-lg transition-all shrink-0 min-w-[34px] min-h-[34px] flex items-center justify-center",
               editor?.isActive("strike") ? "bg-surface-container dark:bg-slate-800 text-primary dark:text-indigo-400" : "text-slate-600 dark:text-slate-400 hover:bg-surface-container dark:hover:bg-slate-800",
             )}
             type="button"
@@ -458,11 +458,11 @@ export default function Editor({
           >
             <span className="material-symbols-outlined text-[18px]">format_strikethrough</span>
           </button>
-          <div className="w-px h-4 bg-slate-200 dark:bg-white/10 mx-1"></div>
+          <div className="w-px h-4 bg-slate-200 dark:bg-white/10 mx-0.5 shrink-0"></div>
           <button
             onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
             className={clsx(
-              "p-1.5 rounded-lg transition-all",
+              "p-2 rounded-lg transition-all shrink-0 min-w-[34px] min-h-[34px] flex items-center justify-center",
               editor?.isActive("heading", { level: 2 }) ? "bg-surface-container text-primary" : "text-slate-600 hover:bg-surface-container",
             )}
             type="button"
@@ -472,16 +472,16 @@ export default function Editor({
           <button
             onClick={() => editor?.chain().focus().toggleBulletList().run()}
             className={clsx(
-              "p-1.5 rounded-lg transition-all",
+              "p-2 rounded-lg transition-all shrink-0 min-w-[34px] min-h-[34px] flex items-center justify-center",
               editor?.isActive("bulletList") ? "bg-surface-container text-primary" : "text-slate-600 hover:bg-surface-container",
             )}
             type="button"
           >
             <span className="material-symbols-outlined text-[18px]">format_list_bulleted</span>
           </button>
-          <div className="w-px h-4 bg-slate-200 dark:bg-white/10 mx-1"></div>
+          <div className="w-px h-4 bg-slate-200 dark:bg-white/10 mx-0.5 shrink-0"></div>
           <button
-            className="p-1.5 hover:bg-surface-container dark:hover:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-400 transition-all"
+            className="p-2 hover:bg-surface-container dark:hover:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-400 transition-all shrink-0 min-w-[34px] min-h-[34px] flex items-center justify-center"
             onClick={handleInsertImage}
             type="button"
             title="Insert image"
@@ -490,7 +490,7 @@ export default function Editor({
           </button>
           <button
             className={clsx(
-              "p-1.5 rounded-lg transition-all border-2",
+              "p-2 rounded-lg transition-all border-2 shrink-0 min-w-[34px] min-h-[34px] flex items-center justify-center",
               showAiCommand && aiMenuAnchor === "top"
                 ? "bg-primary text-white border-primary shadow-lg shadow-primary/20 scale-105" 
                 : "bg-primary/10 text-primary border-transparent hover:bg-primary/20"
@@ -502,12 +502,12 @@ export default function Editor({
           >
             <span className="material-symbols-outlined text-[18px]">auto_awesome</span>
           </button>
-          <div className="w-px h-4 bg-slate-200 dark:bg-white/10 mx-1"></div>
-          <div className="flex items-center gap-1">
+          <div className="w-px h-4 bg-slate-200 dark:bg-white/10 mx-0.5 shrink-0"></div>
+          <div className="flex items-center gap-1 shrink-0">
             <select
               aria-label="Font"
               title="Font for the selected text"
-              className="select w-auto max-w-[9.5rem] !h-7 !text-[12px]"
+              className="select w-auto max-w-[8.5rem] !h-8 !text-[12px] shrink-0"
               onChange={(e) => applyFont(e.target.value)}
               value={activeFontId}
             >

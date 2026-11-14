@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import MainWrapper from "@/components/layout/MainWrapper";
+import BottomNavigation from "@/components/layout/BottomNavigation";
 import GlobalOverlay from "@/components/GlobalOverlay";
 import AuthGuard from "@/components/AuthGuard";
 import { useAppStore } from "@/lib/app-store";
@@ -181,7 +182,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
             {children}
           </div>
         ) : (
-          <div className="flex-1 flex flex-col justify-between w-full">
+          <div className="flex-1 flex flex-col justify-between w-full pb-16 md:pb-0">
             <div className="flex-1">
               {children}
             </div>
@@ -189,6 +190,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
           </div>
         )}
       </MainWrapper>
+      {!isEditorPage && <BottomNavigation />}
       <GlobalOverlay />
     </AuthGuard>
   );
