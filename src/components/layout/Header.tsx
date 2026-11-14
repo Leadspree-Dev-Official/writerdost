@@ -18,6 +18,7 @@ const SECTION_LABELS: Record<string, string> = {
   "/automations": "BlogGen",
   "/editor": "Editor",
   "/settings": "Settings",
+  "/pricing": "Pricing & Plans",
   "/profile": "Profile",
   "/admin": "Admin",
   "/help": "Help",

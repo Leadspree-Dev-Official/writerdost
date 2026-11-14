@@ -19,7 +19,7 @@ export default function Hero() {
         <div className="flex justify-center mb-6">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-primary/30 bg-primary/5 text-primary text-[12px] font-semibold tracking-wide backdrop-blur-xs shadow-xs hover:border-primary/50 transition-colors">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span>Autonomous Multi-Agent AI Writing &amp; Publishing Studio</span>
+            <span>AI-Powered Book Writing Studio</span>
             <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
           </div>
         </div>
@@ -27,16 +27,15 @@ export default function Hero() {
         {/* Main Headline */}
         <div className="text-center max-w-4xl mx-auto space-y-6">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-on-surface leading-[1.12]">
-            From Raw Ideas to{" "}
+            AI Writing Tools Break Down After 3,000 Words.{" "}
             <span className="text-primary">
-              Published Ebooks
-            </span>{" "}
-            &amp; WordPress Campaigns in Minutes.
+              Writerdost Writes 30,000.
+            </span>
           </h1>
 
           {/* Subtitle */}
           <p className="text-base sm:text-lg lg:text-xl text-on-surface-variant max-w-2xl mx-auto leading-relaxed font-normal">
-            Writerdost coordinates collaborative AI agent swarms to deeply research, plan narrative arcs, write chapters in parallel, and polish manuscripts — complete with 1-click WordPress scheduled publishing and print-ready EPUB exports.
+            Four AI agents research, outline, write chapters in parallel, and polish your manuscript. You review the final draft, then publish to Kindle or WordPress with one click.
           </p>
 
           {/* Call to Action Buttons */}
@@ -64,7 +63,7 @@ export default function Hero() {
               className="btn btn-secondary btn-lg w-full sm:w-auto px-7 py-3.5 text-base flex items-center justify-center gap-2"
             >
               <span className="material-symbols-outlined text-[18px]">play_circle</span>
-              <span>Watch Studio Simulation</span>
+              <span>See It in Action</span>
             </a>
           </div>
 
@@ -85,37 +84,37 @@ export default function Hero() {
           </div>
         </div>
 
+        {/* Hero Interactive Studio Mockup — Prominently above the fold */}
+        <div className="mt-12">
+          <HeroInteractivePreview />
+        </div>
+
         {/* Key Metrics Strip */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto my-12 pt-6 border-y border-outline-variant/30">
           <div className="text-center p-3">
-            <p className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">30k+</p>
+            <p className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">30,000+</p>
             <p className="text-[12px] font-semibold text-on-surface-variant uppercase tracking-wider mt-1">
-              Words per Project
+              Words per Manuscript
             </p>
           </div>
           <div className="text-center p-3 border-l border-outline-variant/30">
             <p className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">4 Agents</p>
             <p className="text-[12px] font-semibold text-on-surface-variant uppercase tracking-wider mt-1">
-              Collaborative Pipeline
+              Working in Parallel
             </p>
           </div>
           <div className="text-center p-3 border-l border-outline-variant/30">
-            <p className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">1-Click</p>
+            <p className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">&lt; 5 min</p>
             <p className="text-[12px] font-semibold text-on-surface-variant uppercase tracking-wider mt-1">
-              WordPress Rest Sync
+              Average Draft Time
             </p>
           </div>
           <div className="text-center p-3 border-l border-outline-variant/30">
-            <p className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">BYO</p>
+            <p className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">100%</p>
             <p className="text-[12px] font-semibold text-on-surface-variant uppercase tracking-wider mt-1">
-              API Keys
+              Copyright Ownership
             </p>
           </div>
-        </div>
-
-        {/* Hero Interactive Studio Mockup */}
-        <div className="mt-8">
-          <HeroInteractivePreview />
         </div>
       </div>
     </section>

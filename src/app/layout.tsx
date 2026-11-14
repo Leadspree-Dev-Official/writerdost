@@ -126,16 +126,17 @@ export default async function RootLayout({
   return (
     <html lang="en" className={fontVariables} suppressHydrationWarning>
       <head>
-        <Script
+        <script
           id="writerdost-theme-init"
-          strategy="beforeInteractive"
           nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
                 try {
+                  var p = window.location.pathname;
+                  var isAuth = p === '/login' || p === '/signup' || p === '/forgot-password' || p === '/reset-password';
                   var saved = localStorage.getItem('writerdost_theme');
-                  var isDark = saved === 'dark' || (!saved && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                  var isDark = isAuth || saved === 'dark' || (!saved && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
                   if (isDark) {
                     document.documentElement.classList.add('dark');
                     document.documentElement.classList.remove('light');
@@ -160,7 +161,7 @@ export default async function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="bg-surface text-on-surface font-body selection:bg-primary/20 min-h-screen transition-colors duration-300">
+      <body className="bg-surface text-on-surface font-body selection:bg-primary/20 min-h-screen">
         <LayoutWrapper>
           {children}
         </LayoutWrapper>

@@ -41,13 +41,13 @@ export default function WebsiteNavbar() {
             New
           </span>
           <span>
-            Writerdost Autonomous Agent Swarm 2.0 with WordPress Automated Sync is live!
+            New: WordPress auto-publishing is here
           </span>
           <a
             href="#agents"
             className="underline underline-offset-2 font-semibold hover:opacity-90 ml-1 hidden sm:inline"
           >
-            See how it works &rarr;
+            Learn more &rarr;
           </a>
           <button
             type="button"

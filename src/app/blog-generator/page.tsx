@@ -21,6 +21,8 @@ export default function BlogGeneratorPage() {
   const startBlogFromTopic = useAppStore((state) => state.startBlogFromTopic);
   const resetBlogSource = useAppStore((state) => state.resetBlogSource);
   const setCurrentProject = useAppStore((state) => state.setCurrentProject);
+  const checkQuota = useAppStore((state) => state.checkQuota);
+  const recordMonthlyUsage = useAppStore((state) => state.recordMonthlyUsage);
   const [message, setMessage] = useState("");
   const [generatingSuggestions, setGeneratingSuggestions] = useState(false);
   const [generatingDraft, setGeneratingDraft] = useState(false);
@@ -227,6 +229,11 @@ export default function BlogGeneratorPage() {
               <button
                 className="btn btn-primary btn-sm"
                 onClick={async () => {
+                  const quota = checkQuota("blog");
+                  if (!quota.allowed) {
+                    setMessage(`Monthly blog limit reached (${quota.used}/${quota.limit}) on your ${quota.plan} plan. Please upgrade to write more blogs.`);
+                    return;
+                  }
 
                   if (!api.baseUrl || !api.model || (!api.apiKey && api.provider !== "ollama")) {
                     setMessage("Add API settings first to generate a live AI draft.");
@@ -254,6 +261,7 @@ export default function BlogGeneratorPage() {
                     updateBlog({ draft: mdToHtml(text) });
                     setBlogDraftTime(duration);
                     setBlogTokens(estimatedTokens);
+                    recordMonthlyUsage("blog");
                     setMessage(`AI draft (~${targetWords} words) generated and inserted into the canvas.`);
                   } catch (error) {
                     setMessage(error instanceof Error ? error.message : "AI draft generation failed.");

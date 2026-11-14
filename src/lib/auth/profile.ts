@@ -30,6 +30,12 @@ import type { User, UserFeatures, UserPlan } from "@/lib/store-types";
 
 /** Feature gates by plan. `Custom` is whatever an admin last saved. */
 export const PLAN_FEATURES: Record<Exclude<UserPlan, "Custom">, UserFeatures> = {
+  Free: {
+    createEbook: true,
+    rewriteEbook: false,
+    blogGenerator: true,
+    advancedModels: false,
+  },
   Basic: {
     createEbook: true,
     rewriteEbook: false,
@@ -81,10 +87,10 @@ export function isAdminAccount(account: AppwriteAccount): boolean {
   return Array.isArray(account.labels) && account.labels.includes(ADMIN_LABEL);
 }
 
-const PLANS: UserPlan[] = ["Basic", "Pro", "Enterprise", "Custom"];
+const PLANS: UserPlan[] = ["Free", "Basic", "Pro", "Enterprise", "Custom"];
 
 function readPlan(value: unknown): UserPlan {
-  return PLANS.includes(value as UserPlan) ? (value as UserPlan) : "Basic";
+  return PLANS.includes(value as UserPlan) ? (value as UserPlan) : "Free";
 }
 
 /** Fills in every gate, so a half-written prefs bag cannot crash a guard. */

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { useAppStore } from "@/lib/app-store";
 
 interface AccessLockedProps {
@@ -100,7 +101,14 @@ export default function AccessLocked({ featureName, featureKey }: AccessLockedPr
           </p>
 
           {/* Action Trigger */}
-          <div className="mt-8">
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              href="/pricing"
+              className="btn btn-primary btn-lg inline-flex items-center gap-2"
+            >
+              <span className="material-symbols-outlined text-base">loyalty</span>
+              View Plans & Upgrade
+            </Link>
             {success || isAlreadyRequested ? (
               <div className="inline-flex items-center gap-2 px-6 py-3 rounded-[var(--radius)] bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-semibold">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -111,7 +119,7 @@ export default function AccessLocked({ featureName, featureKey }: AccessLockedPr
             ) : (
               <button
                 onClick={handleRequest}
-                className="btn btn-primary btn-lg relative group overflow-hidden"
+                className="btn btn-secondary btn-lg relative group overflow-hidden"
               >
                 Request Access from Admin
               </button>

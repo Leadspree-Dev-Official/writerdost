@@ -3,16 +3,20 @@
 import WebsiteNavbar from "@/components/website/Navbar";
 import Hero from "@/components/website/Hero";
 import LogosTicker from "@/components/website/LogosTicker";
-import AgentSwarmDeepDive from "@/components/website/AgentSwarmDeepDive";
-import FeatureBentoGrid from "@/components/website/FeatureBentoGrid";
+import ProblemSection from "@/components/website/ProblemSection";
 import HowItWorks from "@/components/website/HowItWorks";
+import FeatureBentoGrid from "@/components/website/FeatureBentoGrid";
 import ComparisonMatrix from "@/components/website/ComparisonMatrix";
-import PersonasSection from "@/components/website/PersonasSection";
-import RoiCalculator from "@/components/website/RoiCalculator";
+import TestimonialsSection from "@/components/website/TestimonialsSection";
 import PricingSection from "@/components/website/PricingSection";
 import FaqSection from "@/components/website/FaqSection";
 import CtaBanner from "@/components/website/CtaBanner";
 import WebsiteFooter from "@/components/website/WebsiteFooter";
+
+// Deferred sections available if needed:
+// import AgentSwarmDeepDive from "@/components/website/AgentSwarmDeepDive";
+// import PersonasSection from "@/components/website/PersonasSection";
+// import RoiCalculator from "@/components/website/RoiCalculator";
 
 export default function HomePage() {
   return (
@@ -22,37 +26,34 @@ export default function HomePage() {
 
       {/* Main Marketing Content Flow */}
       <main className="flex-1 w-full overflow-hidden">
-        {/* 1. Hero with Live Interactive Studio Simulation */}
+        {/* 1. Hero with Live Interactive Studio Simulation & Metrics */}
         <Hero />
 
         {/* 2. Supported LLM & Ecosystem Integrations */}
         <LogosTicker />
 
-        {/* 3. The 4-Agent Autonomous Swarm Deep-Dive */}
-        <AgentSwarmDeepDive />
+        {/* 3. The Core Problem: Why Existing AI Writing Tools Break Down */}
+        <ProblemSection />
 
-        {/* 4. Complete Feature Bento Grid */}
-        <FeatureBentoGrid />
-
-        {/* 5. 4-Step Interactive How-It-Works */}
+        {/* 4. 4-Step Interactive How-It-Works */}
         <HowItWorks />
+
+        {/* 5. Complete Feature Bento Grid */}
+        <FeatureBentoGrid />
 
         {/* 6. Direct Comparison: Writerdost vs Generic AI vs Ghostwriters */}
         <ComparisonMatrix />
 
-        {/* 7. Tailored Solutions by Persona (Authors, Agencies, Bloggers, Experts) */}
-        <PersonasSection />
+        {/* 7. Early Adopter Showcase (Real Beta Projects) */}
+        <TestimonialsSection />
 
-        {/* 8. Interactive ROI & Cost-Savings Calculator */}
-        <RoiCalculator />
-
-        {/* 9. Beta access */}
+        {/* 8. Free Beta Access */}
         <PricingSection />
 
-        {/* 10. Frequently Asked Questions Accordion */}
+        {/* 9. Frequently Asked Questions Accordion */}
         <FaqSection />
 
-        {/* 12. Final High-Energy Cosmic Conversion CTA */}
+        {/* 10. Final High-Conversion CTA */}
         <CtaBanner />
       </main>
 

@@ -865,6 +865,10 @@
   background-clip: content-box;
 }
 
+html.dark, .dark {
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
 /* Dropdown styles for the new AI menu */
 .ai-dropdown-content {
     display: none;

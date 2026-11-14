@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import clsx from "clsx";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import MainWrapper from "@/components/layout/MainWrapper";
@@ -47,8 +48,15 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
   const isGlobalSidebarCollapsed = useAppStore((state) => state.isGlobalSidebarCollapsed);
   const toggleGlobalSidebar = useAppStore((state) => state.toggleGlobalSidebar);
 
-  const footer = (
-    <footer className="w-full text-center py-5 mt-auto border-t border-slate-200/50 dark:border-white/[0.04] text-[11px] font-semibold text-slate-500 dark:text-slate-400 tracking-wider bg-transparent">
+  const footer = (isAuth = false) => (
+    <footer
+      className={clsx(
+        "w-full text-center py-5 mt-auto text-[11px] font-semibold tracking-wider bg-transparent",
+        isAuth
+          ? "border-t border-white/[0.06] text-slate-400"
+          : "border-t border-slate-200/50 dark:border-white/[0.04] text-slate-500 dark:text-slate-400",
+      )}
+    >
       Developed by{" "}
       <a
         href="https://leadspree.in"
@@ -68,7 +76,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
           <div className="flex-1">
             {children}
           </div>
-          {footer}
+          {footer(false)}
         </div>
       </AuthGuard>
     );
@@ -77,7 +85,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
   if (isAuthPage) {
     return (
       <AuthGuard>
-        <div className="relative min-h-screen w-full bg-[#0c0c14] text-slate-100 selection:bg-primary/20 transition-colors duration-300 flex flex-col justify-between overflow-hidden">
+        <div className="dark relative min-h-screen w-full bg-[#0c0c14] text-slate-100 selection:bg-primary/20 flex flex-col justify-between overflow-x-hidden [color-scheme:dark]">
           {/* Galaxy Animated Background */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none select-none z-0">
             {/* Galaxy Image Layer */}
@@ -159,7 +167,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
 
           {/* Footer */}
           <div className="relative z-10 w-full">
-            {footer}
+            {footer(true)}
           </div>
         </div>
       </AuthGuard>
@@ -186,7 +194,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
             <div className="flex-1">
               {children}
             </div>
-            {footer}
+            {footer(false)}
           </div>
         )}
       </MainWrapper>

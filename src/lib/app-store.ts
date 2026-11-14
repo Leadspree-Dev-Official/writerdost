@@ -31,7 +31,12 @@ import type {
   UpgradeRequest,
   UserPlan,
   UserFeatures,
+  Coupon,
+  ReferralRecord,
+  SubscriptionOrder,
 } from "@/lib/store-types";
+import * as subApi from "@/lib/subscription-client-api";
+import { getPlanQuotas, DEFAULT_COUPONS } from "@/lib/subscription-service";
 
 /** Whether the session has been resolved yet. See `restoreSession`. */
 export type AuthStatus = "unknown" | "authenticated" | "anonymous";
@@ -316,6 +321,11 @@ type UsageState = {
   totalCost: number;
   inputTokenRate: number;
   outputTokenRate: number;
+  monthlyUsage?: {
+    month: string;
+    projectsCreated: number;
+    blogsGenerated: number;
+  };
   timingHistory: {
     outlineDuration: number;
     draftDuration: number;
@@ -480,6 +490,29 @@ type AppStore = {
   loadUpgradeRequests: () => Promise<void>;
   adminResolveUpgradeRequest: (requestId: string) => Promise<void>;
   requestFeatureUpgrade: (userId: string, feature: string) => Promise<AuthResult>;
+  subscriptions: SubscriptionOrder[];
+  coupons: Coupon[];
+  referrals: ReferralRecord[];
+  userReferralCode: string;
+  loadSubscriptions: (all?: boolean) => Promise<void>;
+  loadCoupons: () => Promise<void>;
+  loadReferrals: (all?: boolean) => Promise<void>;
+  purchaseSubscription: (
+    plan: UserPlan,
+    interval: "monthly" | "yearly",
+    couponCode?: string,
+    referralCode?: string,
+  ) => Promise<{ success: boolean; error?: string }>;
+  adminCreateCoupon: (coupon: Partial<Coupon>) => Promise<{ success: boolean; error?: string }>;
+  adminUpdateCoupon: (id: string, updates: Partial<Coupon>) => Promise<{ success: boolean; error?: string }>;
+  adminDeleteCoupon: (id: string) => Promise<{ success: boolean; error?: string }>;
+  recordMonthlyUsage: (type: "project" | "blog") => void;
+  checkQuota: (type: "project" | "blog") => {
+    allowed: boolean;
+    used: number;
+    limit: number;
+    plan: UserPlan;
+  };
 };
 
 const defaultCreateDraft: CreateDraft = {
@@ -1028,7 +1061,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     generationStatus: defaultGenerationStatus,
     usage: defaultUsage,
     isDarkMode: typeof window !== "undefined"
-      ? (localStorage.getItem("writerdost_theme") === "dark" || (!localStorage.getItem("writerdost_theme") && window.matchMedia("(prefers-color-scheme: dark)").matches))
+      ? localStorage.getItem("writerdost_theme") === "dark"
       : false,
     isGlobalSidebarCollapsed: false,
     isEditorSidebarCollapsed: false,
@@ -1061,6 +1094,10 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     currentUser: null,
     authStatus: "unknown",
     upgradeRequests: [],
+    subscriptions: [],
+    coupons: DEFAULT_COUPONS,
+    referrals: [],
+    userReferralCode: "",
     
     // Global abort mechanism (not persisted)
     cancelGeneration: () => {},
@@ -1160,6 +1197,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         createDraft: defaultCreateDraft,
       });
 
+      get().recordMonthlyUsage("project");
       return project;
     },
     addGeneratedProject: (payload) => {
@@ -1220,6 +1258,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         createDraft: defaultCreateDraft,
       });
 
+      get().recordMonthlyUsage("project");
       return project;
     },
     applyDraftToProject: (projectId, draftedProject) => {
@@ -1560,6 +1599,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         rewrite: defaultRewrite,
       });
 
+      get().recordMonthlyUsage("project");
       return project;
     },
     startBlankBlog: () =>
@@ -1970,6 +2010,161 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           error: error instanceof Error ? error.message : "Could not send the request.",
         };
       }
+    },
+
+    loadSubscriptions: async (all = false) => {
+      try {
+        const subscriptions = await subApi.fetchSubscriptions(all);
+        set({ subscriptions });
+      } catch {
+        // preserve local
+      }
+    },
+
+    loadCoupons: async () => {
+      try {
+        const coupons = await subApi.fetchCoupons();
+        set({ coupons });
+      } catch {
+        // preserve existing
+      }
+    },
+
+    loadReferrals: async (all = false) => {
+      try {
+        const data = await subApi.fetchReferrals(all);
+        set({
+          referrals: data.referrals || [],
+          userReferralCode: data.referralCode || "",
+        });
+      } catch {
+        // preserve existing
+      }
+    },
+
+    purchaseSubscription: async (plan, interval, couponCode, referralCode) => {
+      try {
+        const result = await subApi.purchaseSubscriptionApi({
+          plan,
+          billingInterval: interval,
+          couponCode,
+          referralCode,
+        });
+
+        if (result.success) {
+          set((state) => ({
+            currentUser: state.currentUser
+              ? {
+                  ...state.currentUser,
+                  plan: result.plan,
+                  allowedFeatures: {
+                    ...state.currentUser.allowedFeatures,
+                    ...result.allowedFeatures,
+                  },
+                }
+              : null,
+            subscriptions: [result.order, ...state.subscriptions],
+          }));
+          return { success: true };
+        }
+        return { success: false, error: "Subscription could not be activated." };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : "Purchase failed.",
+        };
+      }
+    },
+
+    adminCreateCoupon: async (coupon) => {
+      try {
+        const created = await subApi.createCoupon(coupon);
+        set((state) => ({ coupons: [created, ...state.coupons] }));
+        return { success: true };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : "Failed to create coupon.",
+        };
+      }
+    },
+
+    adminUpdateCoupon: async (id, updates) => {
+      try {
+        const updated = await subApi.updateCouponApi(id, updates);
+        set((state) => ({
+          coupons: state.coupons.map((c) => (c.id === id ? updated : c)),
+        }));
+        return { success: true };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : "Failed to update coupon.",
+        };
+      }
+    },
+
+    adminDeleteCoupon: async (id) => {
+      try {
+        await subApi.deleteCouponApi(id);
+        set((state) => ({
+          coupons: state.coupons.filter((c) => c.id !== id),
+        }));
+        return { success: true };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : "Failed to delete coupon.",
+        };
+      }
+    },
+
+    recordMonthlyUsage: (type) => {
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      set((state) => {
+        const existing = state.usage.monthlyUsage?.month === currentMonth
+          ? state.usage.monthlyUsage
+          : { month: currentMonth, projectsCreated: 0, blogsGenerated: 0 };
+
+        const updated = {
+          ...existing,
+          projectsCreated:
+            type === "project" ? existing.projectsCreated + 1 : existing.projectsCreated,
+          blogsGenerated:
+            type === "blog" ? existing.blogsGenerated + 1 : existing.blogsGenerated,
+        };
+
+        return {
+          usage: {
+            ...state.usage,
+            monthlyUsage: updated,
+          },
+        };
+      });
+    },
+
+    checkQuota: (type) => {
+      const currentPlan = get().currentUser?.plan || "Free";
+      const quotas = getPlanQuotas(currentPlan);
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      const usage = get().usage.monthlyUsage;
+      const count =
+        usage?.month === currentMonth
+          ? type === "project"
+            ? usage.projectsCreated
+            : usage.blogsGenerated
+          : 0;
+
+      const limit =
+        type === "project" ? quotas.maxProjectsPerMonth : quotas.maxBlogsPerMonth;
+      const allowed = limit === -1 || count < limit;
+
+      return {
+        allowed,
+        used: count,
+        limit,
+        plan: currentPlan,
+      };
     },
 
     updateSettings: (payload) =>

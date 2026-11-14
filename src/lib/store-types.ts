@@ -41,13 +41,185 @@ export type GeneratedProjectPayload = {
   tokensUsed?: number;
 };
 
-export type UserPlan = 'Basic' | 'Pro' | 'Enterprise' | 'Custom';
+export type UserPlan = 'Free' | 'Basic' | 'Pro' | 'Enterprise' | 'Custom';
+
+export interface PlanLimits {
+  maxProjectsPerMonth: number;
+  maxBlogsPerMonth: number;
+}
 
 export interface UserFeatures {
   createEbook: boolean;
   rewriteEbook: boolean;
   blogGenerator: boolean;
   advancedModels: boolean;
+}
+
+export interface PlanDefinition {
+  id: UserPlan;
+  name: string;
+  description: string;
+  priceMonthly: number;
+  priceYearly: number;
+  currency: string;
+  limits: PlanLimits;
+  features: UserFeatures;
+  featureList: string[];
+  isPopular?: boolean;
+  buttonLabel: string;
+}
+
+export const PLAN_DEFINITIONS: Record<Exclude<UserPlan, "Custom">, PlanDefinition> = {
+  Free: {
+    id: "Free",
+    name: "Free Forever",
+    description: "Ideal for trying out Writerdost AI with basic monthly limits.",
+    priceMonthly: 0,
+    priceYearly: 0,
+    currency: "USD",
+    limits: {
+      maxProjectsPerMonth: 2,
+      maxBlogsPerMonth: 2,
+    },
+    features: {
+      createEbook: true,
+      rewriteEbook: false,
+      blogGenerator: true,
+      advancedModels: false,
+    },
+    featureList: [
+      "2 Ebook projects per month",
+      "2 Blog posts generated per month",
+      "Standard AI models",
+      "Draft & outline editor",
+      "Export to EPUB & PDF",
+    ],
+    buttonLabel: "Current Plan",
+  },
+  Basic: {
+    id: "Basic",
+    name: "Basic",
+    description: "For passionate writers publishing books and articles steadily.",
+    priceMonthly: 9,
+    priceYearly: 89,
+    currency: "USD",
+    limits: {
+      maxProjectsPerMonth: 10,
+      maxBlogsPerMonth: 20,
+    },
+    features: {
+      createEbook: true,
+      rewriteEbook: true,
+      blogGenerator: true,
+      advancedModels: false,
+    },
+    featureList: [
+      "10 Ebook projects per month",
+      "20 Blog posts generated per month",
+      "Rewrite passage tool",
+      "Standard AI models",
+      "Direct CMS publishing",
+    ],
+    buttonLabel: "Upgrade to Basic",
+  },
+  Pro: {
+    id: "Pro",
+    name: "Pro Writer",
+    description: "Maximum productivity for high-volume authors and content teams.",
+    priceMonthly: 29,
+    priceYearly: 289,
+    currency: "USD",
+    isPopular: true,
+    limits: {
+      maxProjectsPerMonth: 50,
+      maxBlogsPerMonth: 100,
+    },
+    features: {
+      createEbook: true,
+      rewriteEbook: true,
+      blogGenerator: true,
+      advancedModels: true,
+    },
+    featureList: [
+      "50 Ebook projects per month",
+      "100 Blog posts generated per month",
+      "BlogGen scheduled automations",
+      "Advanced AI Models (Claude, DeepSeek, OpenAI)",
+      "Priority generation speed",
+      "Priority customer support",
+    ],
+    buttonLabel: "Upgrade to Pro",
+  },
+  Enterprise: {
+    id: "Enterprise",
+    name: "Enterprise",
+    description: "Limitless generation, bespoke workflows, and dedicated power.",
+    priceMonthly: 99,
+    priceYearly: 990,
+    currency: "USD",
+    limits: {
+      maxProjectsPerMonth: -1,
+      maxBlogsPerMonth: -1,
+    },
+    features: {
+      createEbook: true,
+      rewriteEbook: true,
+      blogGenerator: true,
+      advancedModels: true,
+    },
+    featureList: [
+      "Unlimited Ebook projects",
+      "Unlimited Blog posts",
+      "Custom AI models & BYO endpoints",
+      "BlogGen multi-destination automations",
+      "Dedicated account manager",
+      "Full API & Webhook access",
+    ],
+    buttonLabel: "Upgrade to Enterprise",
+  },
+};
+
+export interface Coupon {
+  id: string;
+  code: string;
+  discountType: 'percent' | 'fixed';
+  discountValue: number;
+  validUntil?: string | null;
+  maxUses?: number | null;
+  timesUsed: number;
+  isActive: boolean;
+  minPlan?: UserPlan;
+  createdAt: string;
+}
+
+export interface ReferralRecord {
+  id: string;
+  referrerUserId: string;
+  referrerCode: string;
+  refereeUserId: string;
+  refereeEmail?: string;
+  plan: UserPlan;
+  discountApplied: number;
+  status: 'pending' | 'completed';
+  createdAt: string;
+}
+
+export interface SubscriptionOrder {
+  id: string;
+  userId: string;
+  userEmail: string;
+  plan: UserPlan;
+  billingInterval: 'monthly' | 'yearly';
+  amountPaid: number;
+  currency: string;
+  couponCode?: string;
+  discountAmount?: number;
+  referralCode?: string;
+  paymentProvider: 'simulated' | 'paypal' | 'stripe';
+  status: 'active' | 'cancelled' | 'expired';
+  startDate: string;
+  renewDate: string;
+  createdAt: string;
 }
 
 export interface User {

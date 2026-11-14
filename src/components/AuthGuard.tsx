@@ -52,7 +52,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
   if (!isReady && !isPublicPage) {
     return (
-      <div className="min-h-screen bg-slate-955 flex items-center justify-center">
+      <div className="min-h-screen bg-[#0c0c14] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           {/* Glowing Spinner with LeadSpree Color Scheme */}
           <div className="relative w-14 h-14">
@@ -68,11 +68,53 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   }
 
   // If not logged in and on a protected route, or logged in as standard user on admin route,
-  // hide children during transition to avoid content flashing
+  // render a seamless dark loader during transition to avoid white screen flashing
   const isAuthPage = pathname === "/login" || pathname === "/signup";
-  if (!currentUser && !isPublicPage) return null;
-  if (currentUser && isAuthPage) return null;
-  if (currentUser && pathname.startsWith("/admin") && currentUser.role !== "admin") return null;
+  if (!currentUser && !isPublicPage) {
+    return (
+      <div className="min-h-screen bg-[#0c0c14] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative w-12 h-12">
+            <div className="absolute inset-0 rounded-full border-3 border-slate-800" />
+            <div className="absolute inset-0 rounded-full border-3 border-indigo-600 border-t-transparent animate-spin" />
+          </div>
+          <p className="text-slate-400 font-bold text-xs tracking-[0.2em] uppercase animate-pulse">
+            Redirecting to sign in...
+          </p>
+        </div>
+      </div>
+    );
+  }
+  if (currentUser && isAuthPage) {
+    return (
+      <div className="min-h-screen bg-[#0c0c14] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative w-12 h-12">
+            <div className="absolute inset-0 rounded-full border-3 border-slate-800" />
+            <div className="absolute inset-0 rounded-full border-3 border-indigo-600 border-t-transparent animate-spin" />
+          </div>
+          <p className="text-slate-400 font-bold text-xs tracking-[0.2em] uppercase animate-pulse">
+            Entering Workspace...
+          </p>
+        </div>
+      </div>
+    );
+  }
+  if (currentUser && pathname.startsWith("/admin") && currentUser.role !== "admin") {
+    return (
+      <div className="min-h-screen bg-[#0c0c14] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative w-12 h-12">
+            <div className="absolute inset-0 rounded-full border-3 border-slate-800" />
+            <div className="absolute inset-0 rounded-full border-3 border-indigo-600 border-t-transparent animate-spin" />
+          </div>
+          <p className="text-slate-400 font-bold text-xs tracking-[0.2em] uppercase animate-pulse">
+            Redirecting...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // Intercept locked features for standard users
   if (currentUser && currentUser.role !== "admin") {

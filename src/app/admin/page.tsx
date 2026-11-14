@@ -2,7 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useAppStore } from "@/lib/app-store";
-import { User, UserPlan, UserFeatures, UpgradeRequest } from "@/lib/store-types";
+import {
+  User,
+  UserPlan,
+  UserFeatures,
+  UpgradeRequest,
+  Coupon,
+  ReferralRecord,
+  SubscriptionOrder,
+} from "@/lib/store-types";
 
 export default function AdminDashboard() {
   const users = useAppStore((state) => state.users);
@@ -16,15 +24,28 @@ export default function AdminDashboard() {
   const loadUsers = useAppStore((state) => state.loadUsers);
   const loadUpgradeRequests = useAppStore((state) => state.loadUpgradeRequests);
 
-  // Accounts and requests come from Appwrite, so the screen starts empty and
-  // fills in. Both calls are admin-guarded server-side.
+  // Coupons, subscriptions & referrals
+  const coupons = useAppStore((state) => state.coupons);
+  const subscriptions = useAppStore((state) => state.subscriptions);
+  const referrals = useAppStore((state) => state.referrals);
+  const loadCoupons = useAppStore((state) => state.loadCoupons);
+  const loadSubscriptions = useAppStore((state) => state.loadSubscriptions);
+  const loadReferrals = useAppStore((state) => state.loadReferrals);
+  const adminCreateCoupon = useAppStore((state) => state.adminCreateCoupon);
+  const adminUpdateCoupon = useAppStore((state) => state.adminUpdateCoupon);
+  const adminDeleteCoupon = useAppStore((state) => state.adminDeleteCoupon);
+
+  // Accounts, requests, coupons & subscriptions come from Appwrite / API
   useEffect(() => {
     void loadUsers();
     void loadUpgradeRequests();
-  }, [loadUsers, loadUpgradeRequests]);
+    void loadCoupons();
+    void loadSubscriptions(true);
+    void loadReferrals(true);
+  }, [loadUsers, loadUpgradeRequests, loadCoupons, loadSubscriptions, loadReferrals]);
 
   // Tab State
-  const [activeTab, setActiveTab] = useState<"users" | "requests">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "requests" | "coupons" | "referrals">("users");
 
   // Search and Filter State
   const [searchTerm, setSearchTerm] = useState("");
@@ -55,6 +76,17 @@ export default function AdminDashboard() {
 
   // Server-side failures from the row actions (suspend, promote, delete).
   const [actionError, setActionError] = useState<string | null>(null);
+
+  // Coupon Creation State
+  const [showAddCouponModal, setShowAddCouponModal] = useState(false);
+  const [newCouponCode, setNewCouponCode] = useState("");
+  const [newCouponType, setNewCouponType] = useState<"percent" | "fixed">("percent");
+  const [newCouponValue, setNewCouponValue] = useState<number>(20);
+  const [newCouponMaxUses, setNewCouponMaxUses] = useState<string>("");
+  const [newCouponExpiry, setNewCouponExpiry] = useState<string>("");
+  const [newCouponMinPlan, setNewCouponMinPlan] = useState<UserPlan | "">("");
+  const [couponFormError, setCouponFormError] = useState<string | null>(null);
+  const [couponFormSuccess, setCouponFormSuccess] = useState<string | null>(null);
 
   // Calculate Metrics
   const totalUsers = users.length;
@@ -146,7 +178,9 @@ export default function AdminDashboard() {
 
   const handlePlanChange = (plan: UserPlan) => {
     setSelectedPlan(plan);
-    if (plan === "Basic") {
+    if (plan === "Free") {
+      setSelectedFeatures({ createEbook: true, rewriteEbook: false, blogGenerator: true, advancedModels: false });
+    } else if (plan === "Basic") {
       setSelectedFeatures({ createEbook: true, rewriteEbook: false, blogGenerator: false, advancedModels: false });
     } else if (plan === "Pro") {
       setSelectedFeatures({ createEbook: true, rewriteEbook: true, blogGenerator: true, advancedModels: false });
@@ -210,6 +244,53 @@ export default function AdminDashboard() {
       month: "short",
       day: "numeric",
     });
+  };
+
+  const handleCreateCoupon = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCouponFormError(null);
+    setCouponFormSuccess(null);
+
+    if (!newCouponCode.trim()) {
+      setCouponFormError("Coupon code is required.");
+      return;
+    }
+
+    const res = await adminCreateCoupon({
+      code: newCouponCode.trim().toUpperCase(),
+      discountType: newCouponType,
+      discountValue: Number(newCouponValue),
+      maxUses: newCouponMaxUses ? parseInt(newCouponMaxUses, 10) : null,
+      validUntil: newCouponExpiry ? new Date(newCouponExpiry).toISOString() : null,
+      minPlan: newCouponMinPlan || undefined,
+      isActive: true,
+    });
+
+    if (res.success) {
+      setCouponFormSuccess("Coupon created successfully!");
+      setNewCouponCode("");
+      setNewCouponValue(20);
+      setNewCouponMaxUses("");
+      setNewCouponExpiry("");
+      setNewCouponMinPlan("");
+      setTimeout(() => {
+        setShowAddCouponModal(false);
+        setCouponFormSuccess(null);
+      }, 1200);
+    } else {
+      setCouponFormError(res.error || "Failed to create coupon.");
+    }
+  };
+
+  const handleToggleCouponActive = async (c: Coupon) => {
+    const res = await adminUpdateCoupon(c.id, { isActive: !c.isActive });
+    if (!res.success) setActionError(res.error || "Failed to toggle coupon status.");
+  };
+
+  const handleDeleteCoupon = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this coupon?")) return;
+    const res = await adminDeleteCoupon(id);
+    if (!res.success) setActionError(res.error || "Failed to delete coupon.");
   };
 
   return (
@@ -288,6 +369,24 @@ export default function AdminDashboard() {
               {upgradeRequests.filter(r => r.status === 'pending').length}
             </span>
           )}
+        </button>
+        <button
+          onClick={() => { setActiveTab("coupons"); setShowAddForm(false); }}
+          className="tab"
+          data-active={activeTab === "coupons"}
+          role="tab"
+          type="button"
+        >
+          Coupons ({coupons.length})
+        </button>
+        <button
+          onClick={() => { setActiveTab("referrals"); setShowAddForm(false); }}
+          className="tab"
+          data-active={activeTab === "referrals"}
+          role="tab"
+          type="button"
+        >
+          Subscriptions & Referrals ({subscriptions.length})
         </button>
       </div>
 
@@ -458,6 +557,223 @@ export default function AdminDashboard() {
             </table>
           </div>
         </section>
+      ) : activeTab === "coupons" ? (
+        /* Coupons Management Section */
+        <section className="panel overflow-hidden">
+          <div className="p-4 border-b border-outline-variant/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h3 className="text-base font-semibold text-on-surface">Discount Coupons</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Create promotional discount codes for subscription checkouts.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setShowAddCouponModal(true);
+                setCouponFormError(null);
+                setCouponFormSuccess(null);
+              }}
+              className="btn btn-primary btn-sm flex items-center gap-1.5 shrink-0"
+            >
+              <span className="material-symbols-outlined text-[16px]">add</span>
+              Create Coupon
+            </button>
+          </div>
+
+          <div className="table-wrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Coupon Code</th>
+                  <th>Discount</th>
+                  <th>Usage Count</th>
+                  <th>Valid Until</th>
+                  <th>Status</th>
+                  <th className="text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {coupons.length > 0 ? (
+                  coupons.map((c) => (
+                    <tr key={c.id}>
+                      <td className="font-mono font-bold text-xs text-primary">
+                        {c.code}
+                      </td>
+                      <td className="text-xs font-semibold">
+                        {c.discountType === "percent" ? `${c.discountValue}% OFF` : `$${c.discountValue} OFF`}
+                        {c.minPlan && (
+                          <span className="block text-[10px] text-muted-foreground font-normal">
+                            Min plan: {c.minPlan}
+                          </span>
+                        )}
+                      </td>
+                      <td className="text-xs text-slate-500">
+                        {c.timesUsed} {c.maxUses ? `/ ${c.maxUses}` : "uses"}
+                      </td>
+                      <td className="text-xs text-slate-500">
+                        {c.validUntil ? formatDate(c.validUntil) : "Never expires"}
+                      </td>
+                      <td>
+                        <span
+                          className={`badge ${
+                            c.isActive ? "badge-success" : "badge-neutral"
+                          }`}
+                        >
+                          {c.isActive ? "Active" : "Inactive"}
+                        </span>
+                      </td>
+                      <td className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleCouponActive(c)}
+                            title={c.isActive ? "Deactivate coupon" : "Activate coupon"}
+                            className="btn btn-ghost btn-icon btn-sm"
+                          >
+                            <span className="material-symbols-outlined text-sm">
+                              {c.isActive ? "toggle_on" : "toggle_off"}
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCoupon(c.id)}
+                            title="Delete coupon"
+                            className="btn btn-ghost btn-icon btn-sm hover:text-error"
+                          >
+                            <span className="material-symbols-outlined text-sm">delete</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-slate-500 font-bold uppercase text-xs tracking-wider">
+                      No discount coupons found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : activeTab === "referrals" ? (
+        /* Subscriptions & Referrals Section */
+        <div className="space-y-6">
+          {/* Subscriptions Table */}
+          <section className="panel overflow-hidden">
+            <div className="p-4 border-b border-outline-variant/10">
+              <h3 className="text-base font-semibold text-on-surface">Active Subscriptions</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Overview of all processed subscription orders and billing cycles.
+              </p>
+            </div>
+            <div className="table-wrap">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>User / Account</th>
+                    <th>Plan Tier</th>
+                    <th>Interval</th>
+                    <th>Amount Paid</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {subscriptions.length > 0 ? (
+                    subscriptions.map((s) => (
+                      <tr key={s.id}>
+                        <td className="font-mono text-xs text-muted-foreground">{s.id.slice(0, 16)}</td>
+                        <td className="text-xs font-medium">{s.userEmail || s.userId}</td>
+                        <td>
+                          <span className="badge badge-accent font-semibold">{s.plan}</span>
+                        </td>
+                        <td className="text-xs capitalize">{s.billingInterval}</td>
+                        <td className="text-xs font-bold text-foreground">
+                          ${s.amountPaid}
+                          {s.couponCode && (
+                            <span className="block text-[10px] text-emerald-600 font-normal">
+                              Coupon: {s.couponCode}
+                            </span>
+                          )}
+                        </td>
+                        <td className="text-xs text-slate-500">{formatDate(s.createdAt)}</td>
+                        <td>
+                          <span className="badge badge-success text-[10px] font-bold">
+                            {s.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-slate-500 font-bold uppercase text-xs tracking-wider">
+                        No subscription orders found yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          {/* Referral Redemptions Table */}
+          <section className="panel overflow-hidden">
+            <div className="p-4 border-b border-outline-variant/10">
+              <h3 className="text-base font-semibold text-on-surface">Referral Program Attributions</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Track users who signed up or upgraded through community referral links.
+              </p>
+            </div>
+            <div className="table-wrap">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Referral Code</th>
+                    <th>Referee User</th>
+                    <th>Plan Chosen</th>
+                    <th>Discount Given</th>
+                    <th>Created</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {referrals.length > 0 ? (
+                    referrals.map((r) => (
+                      <tr key={r.id}>
+                        <td className="font-mono font-bold text-xs text-indigo-600 dark:text-indigo-400">
+                          {r.referrerCode}
+                        </td>
+                        <td className="text-xs">{r.refereeEmail || r.refereeUserId}</td>
+                        <td>
+                          <span className="badge badge-neutral text-xs">{r.plan}</span>
+                        </td>
+                        <td className="text-xs font-semibold text-emerald-600">
+                          {r.discountApplied}% OFF
+                        </td>
+                        <td className="text-xs text-slate-500">{formatDate(r.createdAt)}</td>
+                        <td>
+                          <span className="badge badge-success text-[10px]">
+                            {r.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="py-8 text-center text-slate-500 font-bold uppercase text-xs tracking-wider">
+                        No referral attributions logged yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
       ) : (
         /* Users Table Dashboard */
         <section className="panel overflow-hidden">
@@ -678,6 +994,7 @@ export default function AdminDashboard() {
                     onChange={(e) => handlePlanChange(e.target.value as UserPlan)}
                     className="w-full bg-slate-950 border border-white/[0.08] rounded-[var(--radius)] py-3 px-4 text-white text-sm font-semibold outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
                   >
+                    <option value="Free">Free Plan (2 Projects, 2 Blogs/mo)</option>
                     <option value="Basic">Basic Plan (Create Only)</option>
                     <option value="Pro">Pro Plan (Create, Rewrite, Blog)</option>
                     <option value="Enterprise">Enterprise Plan (All Features)</option>
@@ -739,6 +1056,122 @@ export default function AdminDashboard() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Create Coupon Modal */}
+      {showAddCouponModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-md p-4 animate-fade-in">
+          <div className="relative w-full max-w-md rounded-[var(--radius-lg)] border border-white/[0.08] bg-slate-900 p-5 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-white/[0.06] pb-3 mb-4">
+              <h3 className="text-base font-semibold text-white">Create Discount Coupon</h3>
+              <button
+                type="button"
+                onClick={() => setShowAddCouponModal(false)}
+                className="w-7 h-7 rounded-[var(--radius)] hover:bg-white/[0.04] text-slate-400 hover:text-white flex items-center justify-center"
+              >
+                <span className="material-symbols-outlined text-sm">close</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateCoupon} className="space-y-3.5">
+              {couponFormError && (
+                <p className="text-xs text-rose-400 bg-rose-500/10 p-2 rounded border border-rose-500/20">
+                  {couponFormError}
+                </p>
+              )}
+              {couponFormSuccess && (
+                <p className="text-xs text-emerald-400 bg-emerald-500/10 p-2 rounded border border-emerald-500/20">
+                  {couponFormSuccess}
+                </p>
+              )}
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Coupon Code</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. FLASH30"
+                  value={newCouponCode}
+                  onChange={(e) => setNewCouponCode(e.target.value.toUpperCase())}
+                  className="w-full bg-slate-950 border border-white/10 rounded-[var(--radius)] p-2.5 text-xs text-white uppercase font-mono outline-none focus:border-primary"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Discount Type</label>
+                  <select
+                    value={newCouponType}
+                    onChange={(e) => setNewCouponType(e.target.value as "percent" | "fixed")}
+                    className="w-full bg-slate-950 border border-white/10 rounded-[var(--radius)] p-2.5 text-xs text-white outline-none focus:border-primary"
+                  >
+                    <option value="percent">Percentage (%)</option>
+                    <option value="fixed">Fixed Amount ($)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Discount Value</label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={newCouponValue}
+                    onChange={(e) => setNewCouponValue(Number(e.target.value))}
+                    className="w-full bg-slate-950 border border-white/10 rounded-[var(--radius)] p-2.5 text-xs text-white outline-none focus:border-primary"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Usage Limit (Optional)</label>
+                  <input
+                    type="number"
+                    placeholder="Unlimited"
+                    value={newCouponMaxUses}
+                    onChange={(e) => setNewCouponMaxUses(e.target.value)}
+                    className="w-full bg-slate-950 border border-white/10 rounded-[var(--radius)] p-2.5 text-xs text-white outline-none focus:border-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Minimum Plan</label>
+                  <select
+                    value={newCouponMinPlan}
+                    onChange={(e) => setNewCouponMinPlan(e.target.value as UserPlan | "")}
+                    className="w-full bg-slate-950 border border-white/10 rounded-[var(--radius)] p-2.5 text-xs text-white outline-none focus:border-primary"
+                  >
+                    <option value="">Any Plan</option>
+                    <option value="Basic">Basic</option>
+                    <option value="Pro">Pro</option>
+                    <option value="Enterprise">Enterprise</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Expiration Date (Optional)</label>
+                <input
+                  type="date"
+                  value={newCouponExpiry}
+                  onChange={(e) => setNewCouponExpiry(e.target.value)}
+                  className="w-full bg-slate-950 border border-white/10 rounded-[var(--radius)] p-2.5 text-xs text-white outline-none focus:border-primary"
+                />
+              </div>
+
+              <div className="flex gap-2 justify-end pt-3 border-t border-white/[0.06]">
+                <button
+                  type="button"
+                  onClick={() => setShowAddCouponModal(false)}
+                  className="btn btn-secondary btn-sm"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary btn-sm">
+                  Save Coupon
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

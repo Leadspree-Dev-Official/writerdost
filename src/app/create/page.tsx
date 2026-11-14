@@ -21,6 +21,7 @@ export default function IdeaAndInput() {
   const resetCreateDraft = useAppStore((state) => state.resetCreateDraft);
   const addResearchSource = useAppStore((state) => state.addResearchSource);
   const removeResearchSource = useAppStore((state) => state.removeResearchSource);
+  const checkQuota = useAppStore((state) => state.checkQuota);
   
   const [linkInput, setLinkInput] = useState("");
   const [activeTab, setActiveTab] = useState<"file" | "link" | "youtube">("file");
@@ -74,6 +75,12 @@ export default function IdeaAndInput() {
   };
 
   const handleGenerateWithAI = async () => {
+    const quota = checkQuota("project");
+    if (!quota.allowed) {
+      setMessage(`Monthly project limit reached (${quota.used}/${quota.limit}) on your ${quota.plan} plan. Please upgrade to create more ebooks.`);
+      return;
+    }
+
     startGeneration({ 
       title: "Writing your ebook",
       subtitle: "Researching, outlining and drafting. This usually takes a few minutes."
@@ -235,6 +242,11 @@ export default function IdeaAndInput() {
             <button
               className="btn btn-secondary btn-lg w-full sm:w-auto justify-center min-h-[44px]"
               onClick={() => {
+                const quota = checkQuota("project");
+                if (!quota.allowed) {
+                  setMessage(`Monthly project limit reached (${quota.used}/${quota.limit}) on your ${quota.plan} plan. Please upgrade to create more ebooks.`);
+                  return;
+                }
                 const project = createProjectFromDraft();
                 setMessage(`Created "${project.title}".`);
                 router.push("/editor");

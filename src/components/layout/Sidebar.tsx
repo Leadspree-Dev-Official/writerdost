@@ -50,6 +50,7 @@ const NAV_GROUPS: Array<{
   {
     label: "Account",
     items: [
+      { name: "Pricing & Plans", href: "/pricing", icon: "loyalty" },
       { name: "Settings", href: "/settings", icon: "settings" },
       { name: "Profile", href: "/profile", icon: "account_circle" },
     ],

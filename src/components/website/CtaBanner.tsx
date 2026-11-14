@@ -17,20 +17,20 @@ export default function CtaBanner() {
           {/* Badge */}
           <div className="relative z-10 inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/10 backdrop-blur-xs text-[12px] font-bold tracking-wide uppercase mb-6 text-indigo-200 border border-white/15">
             <span className="material-symbols-outlined text-[15px] text-amber-300">auto_awesome</span>
-            <span>Your Manuscript Awaits</span>
+            <span>Start Your Book Today</span>
           </div>
 
           {/* Headline */}
           <h2 className="relative z-10 text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight max-w-2xl mx-auto">
-            Stop Dreaming About Your Book. <br className="hidden sm:inline" />
+            Your manuscript is closer than you think. <br className="hidden sm:inline" />
             <span className="text-amber-300">
-              Publish It in Record Time.
+              Start your first AI-drafted ebook today.
             </span>
           </h2>
 
           {/* Subtitle */}
           <p className="relative z-10 text-base sm:text-lg text-slate-300 max-w-xl mx-auto mt-4 mb-8 leading-relaxed font-normal">
-            Orchestrate your first 4-agent swarm today. Research, plan, write, and push straight to WordPress or Kindle without hitting context ceilings.
+            Tell Writerdost your book idea and let four AI agents handle the research, outlining, writing, and polishing. Export to Kindle or publish straight to WordPress.
           </p>
 
           {/* Action Buttons */}
@@ -58,7 +58,7 @@ export default function CtaBanner() {
               className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-semibold text-base transition-all border border-white/15 flex items-center justify-center gap-2"
             >
               <span className="material-symbols-outlined text-[18px]">play_circle</span>
-              <span>Explore Studio Simulation</span>
+              <span>See It in Action</span>
             </a>
           </div>
 
@@ -66,7 +66,7 @@ export default function CtaBanner() {
           <div className="relative z-10 flex flex-wrap items-center justify-center gap-6 mt-8 text-[12px] text-slate-300 font-medium">
             <span>✓ No credit card required</span>
             <span>✓ 100% intellectual property ownership</span>
-            <span>✓ Cancel anytime</span>
+            <span>✓ BYO API key — zero lock-in</span>
           </div>
         </div>
       </div>

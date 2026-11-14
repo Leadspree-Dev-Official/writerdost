@@ -13,7 +13,7 @@ export default function ThemeWrapper() {
       const saved = localStorage.getItem("writerdost_theme");
       if (saved === "dark" && !isDarkMode) {
         useAppStore.setState({ isDarkMode: true });
-      } else if (saved === "light" && isDarkMode) {
+      } else if (saved !== "dark" && isDarkMode) {
         useAppStore.setState({ isDarkMode: false });
       }
     } catch {}
