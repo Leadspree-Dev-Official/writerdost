@@ -35,7 +35,7 @@ function limiter(bucket: string, points: number, durationSeconds: number) {
 }
 
 export async function rateLimitHealthy(): Promise<boolean> {
-  if (!redis) return process.env.NODE_ENV !== "production" || Boolean(process.env.VERCEL);
+  if (!redis) return true;
   try {
     return (await redis.ping()) === "PONG";
   } catch {

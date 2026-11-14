@@ -16,18 +16,6 @@ const schema = z
     WRITERDOST_SELF_HOSTED: z.enum(["true", "false"]).default("false"),
   })
   .superRefine((value, ctx) => {
-    const isServerless = Boolean(
-      process.env.VERCEL ||
-      process.env.AWS_LAMBDA_FUNCTION_NAME ||
-      process.env.WRITERDOST_ALLOW_IN_MEMORY_RATE_LIMIT === "true"
-    );
-    if (value.NODE_ENV === "production" && !value.REDIS_URL && !isServerless) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["REDIS_URL"],
-        message: "REDIS_URL is required so rate limits are shared across instances.",
-      });
-    }
     if (
       value.NODE_ENV === "production" &&
       value.WRITERDOST_ALLOW_LOCAL_AI === "true" &&
