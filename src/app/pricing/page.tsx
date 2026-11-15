@@ -33,7 +33,6 @@ function PricingContent() {
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [copiedReferral, setCopiedReferral] = useState(false);
   const [campaign, setCampaign] = useState<FounderCampaignConfig>(DEFAULT_FOUNDER_CAMPAIGN);
-  const [selectedFounderTier, setSelectedFounderTier] = useState<"basic" | "pro">("basic");
   const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number }>({
     days: 30,
     hours: 0,

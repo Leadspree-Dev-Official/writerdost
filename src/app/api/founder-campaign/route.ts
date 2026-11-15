@@ -8,16 +8,13 @@ export async function GET() {
   try {
     const config = getFounderCampaign();
     return NextResponse.json({ config: config || DEFAULT_FOUNDER_CAMPAIGN });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ config: DEFAULT_FOUNDER_CAMPAIGN });
   }
 }
 
 export async function POST(request: Request) {
   try {
-    // Check Authorization header for admin
-    const authHeader = request.headers.get("authorization") || "";
-    // Allow admin mutation
     const body = (await request.json()) as Partial<FounderCampaignConfig> & { resetCycle?: boolean };
     
     const updates: Partial<FounderCampaignConfig> = {};

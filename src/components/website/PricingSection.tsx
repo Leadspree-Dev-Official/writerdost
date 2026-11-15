@@ -326,7 +326,7 @@ export default function PricingSection() {
                     {/* Features */}
                     <div className="space-y-2.5">
                       <p className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
-                        What's Included:
+                        Included Features:
                       </p>
                       {[
                         "5 Full Years (60 Months) of Basic Creator features",
@@ -400,7 +400,7 @@ export default function PricingSection() {
                     {/* Features */}
                     <div className="space-y-2.5">
                       <p className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
-                        What's Included:
+                        Included Features:
                       </p>
                       {[
                         "5 Full Years (60 Months) of Pro Writer features",

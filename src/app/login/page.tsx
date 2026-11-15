@@ -270,7 +270,7 @@ export default function LoginPage() {
                   htmlFor="login-email"
                   className="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-1.5"
                 >
-                  Email Address
+                  Work Email Address
                 </label>
                 <input
                   id="login-email"

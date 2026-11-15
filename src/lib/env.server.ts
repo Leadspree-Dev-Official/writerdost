@@ -5,7 +5,7 @@ const schema = z
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     APPWRITE_ENDPOINT: z.string().url().default("https://sgp.cloud.appwrite.io/v1"),
     APPWRITE_PROJECT_ID: z.string().min(1).default("6aa84ecb00304c7935ad"),
-    APPWRITE_API_KEY: z.string().min(1).default("standard_b0772ddebd2e1a3c016468ab1588670a7d5f36ebc7b97bfa7561d04823ee0b62f6e01ef7b5c970547c358d62d97b16cc751d795228f599627348e4eead2c6fd3e4a477c0006ddce613c5526a6346417f645cbfdee7aeb72d84700d371d2a05b40f73f3478b0ce270b10f270c4a743bea0fa170dbad8eea3522c1930cdbe6a3c3"),
+    APPWRITE_API_KEY: z.string().min(1),
     APPWRITE_DATABASE_ID: z.string().min(1).default("writerdost"),
     WRITERDOST_ENCRYPTION_KEY: z.string().min(1).default("ZrJTgIrIcf0JgWM7GAn2KNyAGn3ZHts9TbxgFHyoP5Q="),
     WRITERDOST_ENCRYPTION_KEY_PREVIOUS: z.string().optional(),
