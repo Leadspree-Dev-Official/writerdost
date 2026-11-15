@@ -33,6 +33,7 @@ function PricingContent() {
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [copiedReferral, setCopiedReferral] = useState(false);
   const [campaign, setCampaign] = useState<FounderCampaignConfig>(DEFAULT_FOUNDER_CAMPAIGN);
+  const [selectedFounderTier, setSelectedFounderTier] = useState<"basic" | "pro">("basic");
   const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number }>({
     days: 30,
     hours: 0,
@@ -338,145 +339,6 @@ function PricingContent() {
         </Link>
       </div>
 
-      {/* 🌟 EXCLUSIVE LIMITED-TIME FOUNDER PASS BANNER & CARDS 🌟 */}
-      {campaign.isEnabled && (
-        <div className="mb-10 rounded-2xl p-6 sm:p-8 bg-gradient-to-br from-amber-500/10 via-purple-600/10 to-primary/10 border-2 border-amber-500/30 dark:border-amber-400/25 shadow-xl relative overflow-hidden">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-6 pb-6 border-b border-slate-200 dark:border-slate-800">
-            <div className="text-center lg:text-left space-y-1.5">
-              <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-amber-500 text-amber-950 font-black text-[11px] tracking-wider uppercase shadow-xs">
-                <span className="material-symbols-outlined text-[15px]">stars</span>
-                Limited Early Backer Event
-              </div>
-              <h3 className="text-2xl font-black text-foreground tracking-tight">
-                Founder 5-Year Access Passes
-              </h3>
-              <p className="text-xs text-muted-foreground max-w-lg">
-                Pay once, write for 5 full years. Zero recurring monthly fees, locked-in generation limits, and priority AI routing.
-              </p>
-            </div>
-
-            {/* Rolling 30-Day Scarcity Countdown Counter */}
-            <div className="flex flex-col items-center sm:items-end gap-1.5 bg-background/90 p-3.5 rounded-xl border border-amber-500/30 shadow-sm">
-              <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
-                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                <span>Rolling Batch Closes In:</span>
-              </div>
-              <div className="flex items-center gap-1.5 font-mono text-sm font-bold">
-                <span className="px-2 py-1 bg-muted rounded-md">{timeLeft.days}d</span>
-                <span>:</span>
-                <span className="px-2 py-1 bg-muted rounded-md">{String(timeLeft.hours).padStart(2, "0")}h</span>
-                <span>:</span>
-                <span className="px-2 py-1 bg-muted rounded-md">{String(timeLeft.minutes).padStart(2, "0")}m</span>
-                <span>:</span>
-                <span className="px-2 py-1 bg-muted text-amber-500 rounded-md">{String(timeLeft.seconds).padStart(2, "0")}s</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-            {/* Founder Basic */}
-            <div className="p-6 rounded-xl bg-card border border-slate-200 dark:border-slate-800 shadow-md flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-700 dark:text-amber-400">
-                    Indie Author Deal
-                  </span>
-                  <span className="text-xs font-semibold text-rose-500 flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[14px]">local_fire_department</span>
-                    Only {Math.max(0, campaign.basicTotalSlots - campaign.basicClaimedSlots)} spots left
-                  </span>
-                </div>
-                <h4 className="text-xl font-bold text-foreground">Founder Basic Pass</h4>
-                <p className="text-xs text-muted-foreground mt-1">5-Year Full Basic Creator Access. Ideal for indie novelists.</p>
-
-                <div className="my-4 pt-2 pb-3 border-y border-slate-200/80 dark:border-slate-800 flex items-baseline gap-2">
-                  <span className="text-3xl font-extrabold text-foreground">${campaign.basicPrice}</span>
-                  <span className="text-xs text-muted-foreground font-semibold">/ 5-Year Flat Pass</span>
-                  <span className="ml-auto text-[10.5px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                    Save $146 vs Annual
-                  </span>
-                </div>
-
-                <div className="space-y-1.5 text-xs text-slate-700 dark:text-slate-300">
-                  <div className="flex items-start gap-2">
-                    <span className="material-symbols-outlined text-emerald-500 text-[15px] shrink-0 mt-0.5">check_circle</span>
-                    <span>5 Full Years (60 Months) of Basic Creator features</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="material-symbols-outlined text-emerald-500 text-[15px] shrink-0 mt-0.5">check_circle</span>
-                    <span>10 Ebook Projects & 20 Blogs generated each month</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="material-symbols-outlined text-emerald-500 text-[15px] shrink-0 mt-0.5">check_circle</span>
-                    <span>Full commercial publishing rights & copyright</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 pt-3 border-t border-slate-200/80 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => handleOpenCheckout("Basic")}
-                  className="w-full py-2.5 px-3 rounded-lg text-xs font-bold uppercase tracking-wider bg-amber-500 hover:bg-amber-400 text-amber-950 transition-all shadow-sm"
-                >
-                  Claim Founder Basic (${campaign.basicPrice})
-                </button>
-              </div>
-            </div>
-
-            {/* Founder Pro */}
-            <div className="p-6 rounded-xl bg-gradient-to-b from-primary/10 via-card to-card border-2 border-primary shadow-lg flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold uppercase tracking-wider bg-primary/20 text-primary">
-                    Pro Author & Agency Deal
-                  </span>
-                  <span className="text-xs font-semibold text-rose-500 flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[14px]">local_fire_department</span>
-                    Only {Math.max(0, campaign.proTotalSlots - campaign.proClaimedSlots)} spots left
-                  </span>
-                </div>
-                <h4 className="text-xl font-bold text-foreground">Founder Pro Pass</h4>
-                <p className="text-xs text-muted-foreground mt-1">5-Year Full Pro Writer Access with Claude 3.5 & GPT-4o.</p>
-
-                <div className="my-4 pt-2 pb-3 border-y border-slate-200/80 dark:border-slate-800 flex items-baseline gap-2">
-                  <span className="text-3xl font-extrabold text-foreground">${campaign.proPrice}</span>
-                  <span className="text-xs text-muted-foreground font-semibold">/ 5-Year Flat Pass</span>
-                  <span className="ml-auto text-[10.5px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                    Save $646 vs Annual
-                  </span>
-                </div>
-
-                <div className="space-y-1.5 text-xs text-slate-700 dark:text-slate-300">
-                  <div className="flex items-start gap-2">
-                    <span className="material-symbols-outlined text-primary text-[15px] shrink-0 mt-0.5">verified</span>
-                    <span>5 Full Years (60 Months) of Pro Writer features</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="material-symbols-outlined text-primary text-[15px] shrink-0 mt-0.5">verified</span>
-                    <span>50 Ebook Projects & 100 Blogs generated each month</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="material-symbols-outlined text-primary text-[15px] shrink-0 mt-0.5">verified</span>
-                    <span>Advanced AI Models: Claude 3.5 Sonnet, GPT-4o, DeepSeek</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 pt-3 border-t border-slate-200/80 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => handleOpenCheckout("Pro")}
-                  className="w-full py-2.5 px-3 rounded-lg text-xs font-bold uppercase tracking-wider btn-primary transition-all shadow-md shadow-primary/25"
-                >
-                  Claim Founder Pro (${campaign.proPrice})
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Pricing Tiers Matrix */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {(["Free", "Basic", "Pro", "Enterprise"] as const).map((planId) => {
@@ -551,6 +413,155 @@ function PricingContent() {
           );
         })}
       </div>
+
+      {/* 🌟 SPECIAL LIMITED-TIME FOUNDER OFFER (AFTER NORMAL PRICING) 🌟 */}
+      {campaign.isEnabled && (
+        <div className="mt-14 rounded-2xl p-6 sm:p-8 bg-gradient-to-br from-amber-500/10 via-purple-600/10 to-primary/10 border-2 border-amber-500/30 dark:border-amber-400/25 shadow-xl relative overflow-hidden">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-6 pb-6 border-b border-slate-200 dark:border-slate-800">
+            <div className="text-center lg:text-left space-y-1.5">
+              <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-amber-500 text-amber-950 font-black text-[11px] tracking-wider uppercase shadow-xs">
+                <span className="material-symbols-outlined text-[15px]">stars</span>
+                Special Early Backer Offer
+              </div>
+              <h3 className="text-2xl font-black text-foreground tracking-tight">
+                Founder 5-Year Access Pass
+              </h3>
+              <p className="text-xs text-muted-foreground max-w-lg">
+                Pay once, write for 5 full years. Zero recurring monthly fees, locked-in generation limits, and priority AI routing.
+              </p>
+            </div>
+
+            {/* Rolling 30-Day Scarcity Countdown Counter */}
+            <div className="flex flex-col items-center sm:items-end gap-1.5 bg-background/90 p-3.5 rounded-xl border border-amber-500/30 shadow-sm">
+              <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                <span>Limited Batch Closes In:</span>
+              </div>
+              <div className="flex items-center gap-1.5 font-mono text-sm font-bold">
+                <span className="px-2 py-1 bg-muted rounded-md">{timeLeft.days}d</span>
+                <span>:</span>
+                <span className="px-2 py-1 bg-muted rounded-md">{String(timeLeft.hours).padStart(2, "0")}h</span>
+                <span>:</span>
+                <span className="px-2 py-1 bg-muted rounded-md">{String(timeLeft.minutes).padStart(2, "0")}m</span>
+                <span>:</span>
+                <span className="px-2 py-1 bg-muted text-amber-500 rounded-md">{String(timeLeft.seconds).padStart(2, "0")}s</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Single Founder Pass Hero Offer Card */}
+          <div className="mt-8 max-w-4xl mx-auto rounded-xl bg-card border-2 border-amber-500/40 p-6 sm:p-8 shadow-xl">
+            <div className="flex flex-col md:flex-row items-stretch justify-between gap-6">
+              
+              <div className="flex-1 space-y-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-700 dark:text-amber-400">
+                    Indie & Pro Author Deal
+                  </span>
+                  <span className="text-xs font-semibold text-rose-500 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[14px]">local_fire_department</span>
+                    Only {selectedFounderTier === "basic"
+                      ? Math.max(0, campaign.basicTotalSlots - campaign.basicClaimedSlots)
+                      : Math.max(0, campaign.proTotalSlots - campaign.proClaimedSlots)} spots remaining
+                  </span>
+                </div>
+
+                <h4 className="text-2xl font-black text-foreground">
+                  {selectedFounderTier === "basic" ? "Founder Basic Pass" : "Founder Pro Pass"}
+                </h4>
+
+                {/* Tier Switcher inside the card */}
+                <div className="inline-flex p-1 rounded-lg bg-muted border border-border">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedFounderTier("basic")}
+                    className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+                      selectedFounderTier === "basic"
+                        ? "bg-amber-500 text-amber-950 shadow-xs"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Basic Tier (${campaign.basicPrice})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedFounderTier("pro")}
+                    className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+                      selectedFounderTier === "pro"
+                        ? "bg-primary text-white shadow-xs"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Pro Tier (${campaign.proPrice})
+                  </button>
+                </div>
+
+                <div className="space-y-1.5 text-xs text-slate-700 dark:text-slate-300 pt-1">
+                  {(selectedFounderTier === "basic"
+                    ? [
+                        "5 Full Years (60 Months) of Basic Creator features",
+                        "10 Ebook Projects & 20 AI Blog Articles generated per month",
+                        "Rewrite passage tool included with direct CMS export",
+                        "Full commercial publishing rights and copyright ownership",
+                      ]
+                    : [
+                        "5 Full Years (60 Months) of Pro Writer power features",
+                        "50 Ebooks & 100 AI Blog Articles generated per month",
+                        "Advanced AI Models: Claude 3.5 Sonnet, GPT-4o, DeepSeek",
+                        "BlogGen automated scheduled publishing pipelines",
+                      ]
+                  ).map((feat, idx) => (
+                    <div key={idx} className="flex items-start gap-2">
+                      <span className="material-symbols-outlined text-emerald-500 text-[15px] shrink-0 mt-0.5">
+                        check_circle
+                      </span>
+                      <span>{feat}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Price & Action */}
+              <div className="md:w-64 flex flex-col justify-between p-5 rounded-xl bg-muted/40 border border-border text-center">
+                <div>
+                  <span className="text-[11px] uppercase font-bold tracking-wider text-muted-foreground">
+                    One-Time Investment
+                  </span>
+                  <div className="my-2 flex items-baseline justify-center gap-1">
+                    <span className="text-4xl font-black text-foreground">
+                      ${selectedFounderTier === "basic" ? campaign.basicPrice : campaign.proPrice}
+                    </span>
+                    <span className="text-xs text-muted-foreground font-semibold">
+                      / 5 Years
+                    </span>
+                  </div>
+                  <span className="inline-block text-[10.5px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                    {selectedFounderTier === "basic" ? "Save $146 vs Annual" : "Save $646 vs Annual"}
+                  </span>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-border">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenCheckout(selectedFounderTier === "basic" ? "Basic" : "Pro")}
+                    className={`w-full py-2.5 px-3 rounded-lg text-xs font-bold uppercase tracking-wider transition-all shadow-sm ${
+                      selectedFounderTier === "basic"
+                        ? "bg-amber-500 hover:bg-amber-400 text-amber-950"
+                        : "btn-primary shadow-primary/25"
+                    }`}
+                  >
+                    Claim 5-Year Pass
+                  </button>
+                  <p className="text-[10px] text-muted-foreground mt-1.5">
+                    30-Day Money-Back Guarantee
+                  </p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Refer & Earn Section */}
       <div className="mt-14 panel p-7 border border-slate-200/90 dark:border-slate-800 bg-gradient-to-br from-indigo-500/5 via-primary/5 to-purple-500/5">
