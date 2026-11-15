@@ -217,7 +217,7 @@ export default function PricingSection() {
                       {planId === "Free"
                         ? "Get Started Free"
                         : planId === "Enterprise"
-                        ? "Contact Enterprise"
+                        ? "Get Custom Enterprise ($49/mo)"
                         : `Get Started with ${plan.name}`}
                     </span>
                     <span className="material-symbols-outlined text-[15px]">arrow_forward</span>

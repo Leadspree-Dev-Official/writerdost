@@ -152,10 +152,10 @@ export const PLAN_DEFINITIONS: Record<Exclude<UserPlan, "Custom">, PlanDefinitio
   },
   Enterprise: {
     id: "Enterprise",
-    name: "Enterprise & Private Server",
-    description: "Dedicated private server instance, custom AI models, and limitless generation.",
-    priceMonthly: 99,
-    priceYearly: 990,
+    name: "Custom Enterprise & Private Server",
+    description: "Dedicated private server instance, unlimited everything, and custom AI models.",
+    priceMonthly: 49,
+    priceYearly: 490,
     currency: "USD",
     limits: {
       maxProjectsPerMonth: -1,
@@ -169,13 +169,13 @@ export const PLAN_DEFINITIONS: Record<Exclude<UserPlan, "Custom">, PlanDefinitio
     },
     featureList: [
       "Unlimited Ebook projects",
-      "Unlimited Blog posts",
+      "Unlimited Blog posts generated",
+      "Dedicated Private Server instance",
       "Custom AI models & BYO endpoints",
       "BlogGen multi-destination automations",
-      "Dedicated account manager",
-      "Full API & Webhook access",
+      "Dedicated account manager & SLA",
     ],
-    buttonLabel: "Upgrade to Enterprise",
+    buttonLabel: "Get Custom Enterprise",
   },
 };
 
