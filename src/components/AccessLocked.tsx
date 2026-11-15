@@ -17,15 +17,12 @@ export default function AccessLocked({ featureName, featureKey }: AccessLockedPr
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Requests live in Appwrite so an admin can see them, which means this
-  // screen has to ask whether one is already outstanding.
   useEffect(() => {
     void loadUpgradeRequests();
   }, [loadUpgradeRequests]);
 
   if (!currentUser) return null;
 
-  // Check if there is already a pending request for this user and feature
   const isAlreadyRequested = upgradeRequests.some(
     (req) => req.userId === currentUser.id && req.feature === featureKey && req.status === "pending"
   );
@@ -36,143 +33,180 @@ export default function AccessLocked({ featureName, featureKey }: AccessLockedPr
       setSuccess(true);
       setError(null);
     } else {
-      setError(result.error || "Could not send the request.");
+      setError(result.error || "Could not send upgrade request.");
     }
   };
 
-  const planFeatures = [
+  const planMatrix = [
     {
-      name: "Basic Plan",
-      desc: "Perfect for starting out",
-      features: ["Create Ebook drafts"],
+      id: "Basic",
+      name: "Basic Creator",
+      price: "$5/mo",
+      annual: "$49/yr",
+      desc: "Unlock Rewrite Passage & steadily publish books and blogs.",
+      features: [
+        "10 Ebook projects per month",
+        "20 Blog posts per month",
+        "Rewrite passage tool included",
+        "Direct CMS publishing",
+      ],
+      isTarget: featureKey === "rewriteEbook",
       highlight: currentUser.plan === "Basic",
     },
     {
-      name: "Pro Plan",
-      desc: "Ideal for power authors",
-      features: ["Create Ebook drafts", "Rewrite passage tool", "Blog post generator"],
+      id: "Pro",
+      name: "Pro Writer",
+      price: "$19/mo",
+      annual: "$189/yr",
+      desc: "Full creative firepower with Claude 3.5 Sonnet & OpenAI models.",
+      features: [
+        "50 Ebooks & 100 Blog articles/mo",
+        "Advanced models (Claude, GPT-4o, DeepSeek)",
+        "BlogGen automated pipelines",
+        "Priority AI generation speed",
+      ],
+      isTarget: featureKey === "blogGenerator" || featureKey === "advancedModels",
       highlight: currentUser.plan === "Pro",
     },
     {
-      name: "Enterprise Plan",
-      desc: "Unlimited AI control",
+      id: "Founder",
+      name: "Founder 5-Year Pass",
+      price: "$99 or $299",
+      annual: "5-Year Flat",
+      desc: "Pay once, write for 5 full years. Zero monthly renewals.",
       features: [
-        "Create Ebook drafts",
-        "Rewrite passage tool",
-        "Blog post generator",
-        "Custom AI settings & keys",
+        "Founder Basic ($99) or Pro ($299)",
+        "5 Full Years of access locked in",
+        "Commercial publishing license",
+        "Early Backer profile badge",
       ],
-      highlight: currentUser.plan === "Enterprise",
+      isTarget: false,
+      highlight: false,
     },
   ];
 
   return (
-    <div className="flex-1 flex items-center justify-center p-4 min-h-[calc(100vh-80px)]">
-      <div className="relative w-full max-w-4xl rounded-[var(--radius-lg)] border border-white/[0.06] bg-slate-900/40 backdrop-blur-xl p-4 md:p-12 shadow-2xl overflow-hidden">
-        {/* Glow Effects */}
-        <div className="absolute top-[-20%] left-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-500/10 blur-[100px] pointer-events-none" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[40%] h-[40%] rounded-full bg-amber-500/5 blur-[100px] pointer-events-none" />
+    <div className="flex-1 flex items-center justify-center p-4 sm:p-6 min-h-[calc(100vh-80px)] font-body">
+      <div className="relative w-full max-w-4xl rounded-3xl border border-outline-variant/30 bg-surface-container-lowest dark:bg-[#121224] p-6 sm:p-10 md:p-12 shadow-2xl overflow-hidden">
+        
+        {/* Subtle Ambient Glow */}
+        <div className="absolute -top-24 -left-24 w-72 h-72 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -right-24 w-72 h-72 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col items-center text-center">
-          {/* Glowing Shield Icon */}
-          <div className="relative flex items-center justify-center w-12 h-12 rounded-[var(--radius-lg)] bg-primary/10 border border-white/10 mb-4">
-            <svg
-              className="w-10 h-10 text-indigo-400 animate-pulse"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-              />
-            </svg>
-            <div className="absolute inset-0 rounded-[var(--radius-lg)] border border-indigo-500/20 scale-95 animate-ping [animation-duration:3s]" />
+          
+          {/* Lock Icon Badge */}
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-5 text-primary shadow-sm">
+            <span className="material-symbols-outlined text-[32px]">lock</span>
           </div>
 
-          <h2 className="text-3xl font-semibold text-white tracking-tight">
-            Access Restricted
+          <span className="text-[11px] font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 mb-3">
+            Upgrade Required
+          </span>
+
+          <h2 className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">
+            Unlock {featureName}
           </h2>
-          <p className="text-slate-400 max-w-lg mt-3 text-sm leading-relaxed">
-            The <strong className="text-white font-semibold">{featureName}</strong> feature is not enabled for your account under the current <strong className="text-white font-semibold">{currentUser.plan} Plan</strong>.
+
+          <p className="text-sm sm:text-base text-on-surface-variant max-w-xl mt-3 leading-relaxed">
+            The <strong className="text-on-surface font-bold">{featureName}</strong> tool is not included in the <strong className="text-on-surface font-bold">{currentUser.plan}</strong> tier. Upgrade starting at just <strong className="text-primary font-bold">$5/month</strong> to unlock it immediately.
           </p>
 
-          {/* Action Trigger */}
-          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+          {/* Action Buttons */}
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/pricing"
-              className="btn btn-primary btn-lg inline-flex items-center gap-2"
+              className="btn btn-primary px-6 py-3 rounded-xl text-xs font-bold shadow-md shadow-primary/25 flex items-center gap-2 cursor-pointer"
             >
-              <span className="material-symbols-outlined text-base">loyalty</span>
-              View Plans & Upgrade
+              <span className="material-symbols-outlined text-[18px]">workspace_premium</span>
+              <span>Upgrade Plan (From $5/mo)</span>
             </Link>
+
+            <Link
+              href="/login"
+              className="btn btn-secondary px-5 py-3 rounded-xl text-xs font-bold border border-outline-variant/40 flex items-center gap-2 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[18px]">bolt</span>
+              <span>Try in 1-Click Demo</span>
+            </Link>
+
             {success || isAlreadyRequested ? (
-              <div className="inline-flex items-center gap-2 px-6 py-3 rounded-[var(--radius)] bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-semibold">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Upgrade Request Pending Admin Review
+              <div className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
+                <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                <span>Upgrade Request Pending Review</span>
               </div>
             ) : (
               <button
+                type="button"
                 onClick={handleRequest}
-                className="btn btn-secondary btn-lg relative group overflow-hidden"
+                className="px-5 py-3 rounded-xl text-xs font-bold text-on-surface-variant hover:text-on-surface border border-outline-variant/30 hover:border-outline-variant transition-all cursor-pointer"
               >
-                Request Access from Admin
+                Request Free Admin Access
               </button>
-            )}
-            {error && (
-              <p className="mt-3 text-xs font-semibold text-red-400">{error}</p>
             )}
           </div>
 
-          {/* Plans Comparison Grid */}
-          <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 text-left">
-            {planFeatures.map((plan, i) => (
+          {error && (
+            <p className="mt-3 text-xs font-bold text-rose-500">{error}</p>
+          )}
+
+          {/* Plan Comparison Cards */}
+          <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-5 mt-10 text-left">
+            {planMatrix.map((item, idx) => (
               <div
-                key={i}
-                className={`relative rounded-[var(--radius-lg)] border p-4 flex flex-col justify-between transition-all duration-300 ${
-                  plan.highlight
-                    ? "bg-indigo-950/20 border-indigo-500/40 shadow-lg shadow-indigo-950/30"
-                    : "bg-slate-950/30 border-white/[0.05]"
+                key={idx}
+                className={`relative rounded-2xl p-5 border transition-all flex flex-col justify-between ${
+                  item.isTarget
+                    ? "bg-primary/5 border-primary shadow-md ring-1 ring-primary/40"
+                    : "bg-surface-container-lowest dark:bg-[#16162a] border-outline-variant/30"
                 }`}
               >
-                {plan.highlight && (
-                  <span className="absolute top-3 right-3 text-[10px] font-bold bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full">
+                {item.isTarget && (
+                  <span className="absolute -top-2.5 right-4 text-[10px] font-black uppercase tracking-wider bg-primary text-white px-2.5 py-0.5 rounded-full shadow-xs">
+                    Recommended
+                  </span>
+                )}
+                {item.highlight && (
+                  <span className="absolute -top-2.5 right-4 text-[10px] font-black uppercase tracking-wider bg-surface-container border border-outline-variant/40 text-on-surface-variant px-2.5 py-0.5 rounded-full shadow-xs">
                     Current Plan
                   </span>
                 )}
+
                 <div>
-                  <h3 className="text-base font-bold text-white">{plan.name}</h3>
-                  <p className="text-xs text-slate-500 mt-1">{plan.desc}</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="text-base font-black text-on-surface">{item.name}</h4>
+                  </div>
+                  <p className="text-xs text-on-surface-variant mt-1">{item.desc}</p>
                   
-                  <ul className="mt-5 space-y-3">
-                    {plan.features.map((feat, fi) => (
-                      <li key={fi} className="flex items-start gap-2 text-xs text-slate-300">
-                        <svg
-                          className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2.5}
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
-                        <span>{feat}</span>
-                      </li>
+                  <div className="my-4 pt-2 pb-3 border-y border-outline-variant/20 flex items-baseline gap-1.5">
+                    <span className="text-2xl font-black text-on-surface">{item.price}</span>
+                    <span className="text-[11px] text-on-surface-variant font-medium">({item.annual})</span>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    {item.features.map((f, fIdx) => (
+                      <div key={fIdx} className="flex items-start gap-2 text-xs text-on-surface/90">
+                        <span className="material-symbols-outlined text-emerald-500 text-[15px] shrink-0 mt-0.5">
+                          check_circle
+                        </span>
+                        <span>{f}</span>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
+                </div>
+
+                <div className="mt-5 pt-3 border-t border-outline-variant/20">
+                  <Link
+                    href="/pricing"
+                    className="w-full py-2 px-3 rounded-lg text-xs font-bold text-center block bg-surface-container hover:bg-surface-container-high transition-colors text-on-surface"
+                  >
+                    View & Upgrade &rarr;
+                  </Link>
                 </div>
               </div>
             ))}
           </div>
+
         </div>
       </div>
     </div>
