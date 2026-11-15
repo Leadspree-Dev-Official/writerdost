@@ -205,12 +205,24 @@ ${points}
 </ncx>`;
 }
 
+/** Parses a data URL into its media type, file extension, and raw base64 data. */
+function parseDataUrl(dataUrl: string): { mediaType: string; extension: string; base64: string } | null {
+  const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+  if (!match) return null;
+  const mediaType = match[1].toLowerCase();
+  const extension = mediaType.includes("png") ? "png" : mediaType.includes("webp") ? "webp" : "jpg";
+  return { mediaType, extension, base64: match[2] };
+}
+
 /** The package document: metadata, manifest and reading order. */
 function buildOpf(
   project: Project,
   uuid: string,
   entries: Array<{ id: string; title: string }>,
   author: string,
+  hasCover = false,
+  coverExt = "png",
+  coverMediaType = "image/png",
 ): string {
   const manifest = entries
     .map((e) => `    <item id="${e.id}" href="${e.id}.xhtml" media-type="application/xhtml+xml"/>`)
@@ -221,6 +233,16 @@ function buildOpf(
     .map((k) => `    <dc:subject>${xmlEscape(k)}</dc:subject>`)
     .join("\n");
 
+  const coverMetadata = hasCover
+    ? `    <meta name="cover" content="cover-image"/>\n`
+    : "";
+
+  const coverManifest = hasCover
+    ? `    <item id="cover-image" href="images/cover.${coverExt}" media-type="${coverMediaType}" properties="cover-image"/>\n    <item id="coverpage" href="coverpage.xhtml" media-type="application/xhtml+xml"/>\n`
+    : "";
+
+  const coverSpine = hasCover ? `    <itemref idref="coverpage"/>\n` : "";
+
   return `<?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="book-id" xml:lang="en">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -230,16 +252,16 @@ function buildOpf(
     <dc:creator>${xmlEscape(author)}</dc:creator>
     <dc:description>${xmlEscape(project.description || "")}</dc:description>
 ${keywords}
-    <meta property="dcterms:modified">${new Date().toISOString().replace(/\.\d{3}Z$/, "Z")}</meta>
+${coverMetadata}    <meta property="dcterms:modified">${new Date().toISOString().replace(/\.\d{3}Z$/, "Z")}</meta>
   </metadata>
   <manifest>
-    <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
+${coverManifest}    <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
     <item id="style" href="style.css" media-type="text/css"/>
 ${manifest}
   </manifest>
   <spine toc="ncx">
-${spine}
+${coverSpine}${spine}
   </spine>
 </package>`;
 }
@@ -295,10 +317,39 @@ export async function buildEpubBlob(project: Project, author = "Writerdost AI"):
   // The reader-facing contents list covers the chapters, not the title page.
   const navEntries = entries.slice(1).map((e) => ({ id: e.id, title: e.title }));
 
+  // Process cover image if present
+  const coverInfo = project.coverImage ? parseDataUrl(project.coverImage) : null;
+  const hasCover = Boolean(coverInfo);
+
+  if (coverInfo) {
+    const imagesFolder = oebps.folder("images");
+    if (imagesFolder) {
+      imagesFolder.file(`cover.${coverInfo.extension}`, coverInfo.base64, { base64: true });
+    }
+    oebps.file(
+      "coverpage.xhtml",
+      buildXhtml(
+        "Cover",
+        `<div style="text-align: center; margin: 0; padding: 0;"><img src="images/cover.${coverInfo.extension}" alt="Cover" style="max-height: 100vh; max-width: 100%; height: auto; width: auto; object-fit: contain; margin: 0 auto; display: block;" /></div>`,
+      ),
+    );
+  }
+
   oebps.file("style.css", buildStylesheet(project));
   oebps.file("nav.xhtml", buildNav(navEntries));
   oebps.file("toc.ncx", buildNcx(project.title, uuid, navEntries));
-  oebps.file("content.opf", buildOpf(project, uuid, entries, author));
+  oebps.file(
+    "content.opf",
+    buildOpf(
+      project,
+      uuid,
+      entries,
+      author,
+      hasCover,
+      coverInfo?.extension || "png",
+      coverInfo?.mediaType || "image/png",
+    ),
+  );
 
   oebps.file(
     "titlepage.xhtml",

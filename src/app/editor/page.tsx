@@ -14,6 +14,7 @@ import { useAppStore, type ProjectChapter } from "@/lib/app-store";
 import { findChapterById, findProjectById, calculateProjectWords, robustParseJson, STREAM_DELIMITER } from "@/lib/app-utils";
 import { htmlToText, mdToHtml } from "@/lib/markdown-utils";
 import { PublishDialog } from "@/components/PublishDialog";
+import { KdpLaunchModal } from "@/components/KdpLaunchModal";
 import { MARKETPLACE, isMarketplaceReady, marketplaceBlocker, publishToMarketplace } from "@/lib/marketplace";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -57,6 +58,7 @@ export default function EditorPage() {
   const [aiAssistLoading, setAiAssistLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [publishOpen, setPublishOpen] = useState(false);
+  const [kdpModalOpen, setKdpModalOpen] = useState(false);
   const [mobileChaptersOpen, setMobileChaptersOpen] = useState(false);
   const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
@@ -548,6 +550,25 @@ export default function EditorPage() {
               <CoverSettings projectId={project.id} />
               <DesignSettings projectId={project.id} />
               <ProjectMetrics project={project} />
+
+              {/* Amazon KDP Launch Kit Launch Button */}
+              <button
+                type="button"
+                onClick={() => setKdpModalOpen(true)}
+                className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-[var(--radius-lg)] border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent hover:border-amber-500/60 transition-all text-left group"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-amber-500 text-sm group-hover:scale-110 transition-transform">
+                    rocket_launch
+                  </span>
+                  <span className="text-[10px] font-bold text-on-surface">
+                    KDP Launch Kit
+                  </span>
+                </div>
+                <span className="material-symbols-outlined text-slate-400 text-xs group-hover:translate-x-0.5 transition-transform">
+                  chevron_right
+                </span>
+              </button>
             </div>
           ) : (
             /* Quick Access Icon Buttons When Collapsed */
@@ -575,6 +596,14 @@ export default function EditorPage() {
                 type="button"
               >
                 <span className="material-symbols-outlined text-[18px]">query_stats</span>
+              </button>
+              <button
+                onClick={() => setKdpModalOpen(true)}
+                title="Amazon KDP Launch Kit"
+                className="w-9 h-9 rounded-[var(--radius)] flex items-center justify-center text-amber-500 hover:bg-amber-500/15 transition-colors"
+                type="button"
+              >
+                <span className="material-symbols-outlined text-[18px]">rocket_launch</span>
               </button>
             </div>
           )}
@@ -1141,6 +1170,27 @@ export default function EditorPage() {
               <div className="bg-surface-container rounded-2xl p-4 border border-[var(--hairline)]">
                 <ProjectMetrics project={project} />
               </div>
+              <div className="bg-surface-container rounded-2xl p-4 border border-amber-500/30 bg-amber-500/5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileToolsOpen(false);
+                    setKdpModalOpen(true);
+                  }}
+                  className="w-full flex items-center justify-between text-left"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center">
+                      <span className="material-symbols-outlined text-sm">rocket_launch</span>
+                    </span>
+                    <div>
+                      <h4 className="text-xs font-bold text-on-surface">Amazon KDP Launch Kit</h4>
+                      <p className="text-[10px] text-on-surface-variant">Keywords, description, BISAC categories</p>
+                    </div>
+                  </div>
+                  <span className="material-symbols-outlined text-slate-400 text-sm">chevron_right</span>
+                </button>
+              </div>
             </div>
           </motion.div>
         </div>
@@ -1152,6 +1202,14 @@ export default function EditorPage() {
         projectId={project.id}
         onClose={() => setPublishOpen(false)}
         onDone={setMessage}
+      />
+    )}
+
+    {kdpModalOpen && (
+      <KdpLaunchModal
+        projectId={project.id}
+        isOpen={kdpModalOpen}
+        onClose={() => setKdpModalOpen(false)}
       />
     )}
   </div>

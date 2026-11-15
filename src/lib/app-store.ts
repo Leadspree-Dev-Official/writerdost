@@ -35,6 +35,7 @@ import type {
   ReferralRecord,
   SubscriptionOrder,
 } from "@/lib/store-types";
+import type { KdpLaunchKit } from "@/lib/kdp-types";
 import * as subApi from "@/lib/subscription-client-api";
 import { getPlanQuotas, DEFAULT_COUPONS } from "@/lib/subscription-service";
 
@@ -227,6 +228,8 @@ export type Project = {
   designSettings?: ProjectDesignSettings;
   /** Marketplace listing state. Absent until the project is first published. */
   publish?: PublishState;
+  /** Amazon KDP Launch Kit and marketing pack. */
+  kdpLaunchKit?: KdpLaunchKit;
 };
 
 type CreateDraft = {
@@ -396,6 +399,7 @@ type AppStore = {
   updateChapterContentById: (projectId: string, chapterId: string, content: string) => void;
   updateProjectDesign: (projectId: string, settings: ProjectDesignSettings) => void;
   setProjectCover: (projectId: string, dataUrl?: string) => void;
+  setProjectKdpLaunchKit: (projectId: string, launchKit: KdpLaunchKit) => void;
   deleteChapter: (projectId: string, chapterId: string) => void;
   addChapter: (projectId: string, title: string) => void;
   updateProfile: (payload: Partial<ProfileState>) => void;
@@ -1757,6 +1761,14 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         projects: state.projects.map((p) =>
           p.id === projectId
             ? { ...p, coverImage: dataUrl, updatedLabel: "just now" }
+            : p
+        ),
+      })),
+    setProjectKdpLaunchKit: (projectId, launchKit) =>
+      set((state) => ({
+        projects: state.projects.map((p) =>
+          p.id === projectId
+            ? { ...p, kdpLaunchKit: launchKit, updatedLabel: "just now" }
             : p
         ),
       })),
