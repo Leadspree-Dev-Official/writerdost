@@ -1,4 +1,4 @@
-import { Coupon, ReferralRecord, SubscriptionOrder } from "./store-types";
+import { Coupon, DEFAULT_FOUNDER_CAMPAIGN, FounderCampaignConfig, ReferralRecord, SubscriptionOrder } from "./store-types";
 import { DEFAULT_COUPONS } from "./subscription-service";
 
 // In-memory persistent server state
@@ -6,6 +6,11 @@ declare global {
   var __writerdost_coupons: Coupon[] | undefined;
   var __writerdost_referrals: ReferralRecord[] | undefined;
   var __writerdost_subscriptions: SubscriptionOrder[] | undefined;
+  var __writerdost_founder_campaign: FounderCampaignConfig | undefined;
+}
+
+if (!globalThis.__writerdost_founder_campaign) {
+  globalThis.__writerdost_founder_campaign = { ...DEFAULT_FOUNDER_CAMPAIGN };
 }
 
 if (!globalThis.__writerdost_coupons) {
@@ -75,4 +80,36 @@ export function getUserSubscriptions(userId: string): SubscriptionOrder[] {
 export function addSubscription(order: SubscriptionOrder): SubscriptionOrder {
   globalThis.__writerdost_subscriptions = [order, ...(globalThis.__writerdost_subscriptions || [])];
   return order;
+}
+
+export function getFounderCampaign(): FounderCampaignConfig {
+  const config = globalThis.__writerdost_founder_campaign || { ...DEFAULT_FOUNDER_CAMPAIGN };
+  
+  // Calculate rolling cycle if autoRenew is enabled
+  if (config.isEnabled && config.autoRenew && config.durationDays > 0) {
+    const cycleMs = config.durationDays * 24 * 60 * 60 * 1000;
+    const startTime = new Date(config.cycleStartedAt).getTime();
+    const now = Date.now();
+    const elapsed = now - startTime;
+    
+    if (elapsed > cycleMs) {
+      // Advance cycle
+      const cyclesPassed = Math.floor(elapsed / cycleMs);
+      const newStart = new Date(startTime + cyclesPassed * cycleMs).toISOString();
+      config.cycleStartedAt = newStart;
+      globalThis.__writerdost_founder_campaign = config;
+    }
+  }
+
+  return config;
+}
+
+export function updateFounderCampaign(updates: Partial<FounderCampaignConfig>): FounderCampaignConfig {
+  const current = getFounderCampaign();
+  const next: FounderCampaignConfig = {
+    ...current,
+    ...updates,
+  };
+  globalThis.__writerdost_founder_campaign = next;
+  return next;
 }

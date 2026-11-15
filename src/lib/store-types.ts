@@ -100,8 +100,8 @@ export const PLAN_DEFINITIONS: Record<Exclude<UserPlan, "Custom">, PlanDefinitio
     id: "Basic",
     name: "Basic",
     description: "For passionate writers publishing books and articles steadily.",
-    priceMonthly: 9,
-    priceYearly: 89,
+    priceMonthly: 5,
+    priceYearly: 49,
     currency: "USD",
     limits: {
       maxProjectsPerMonth: 10,
@@ -126,8 +126,8 @@ export const PLAN_DEFINITIONS: Record<Exclude<UserPlan, "Custom">, PlanDefinitio
     id: "Pro",
     name: "Pro Writer",
     description: "Maximum productivity for high-volume authors and content teams.",
-    priceMonthly: 29,
-    priceYearly: 289,
+    priceMonthly: 19,
+    priceYearly: 189,
     currency: "USD",
     isPopular: true,
     limits: {
@@ -152,8 +152,8 @@ export const PLAN_DEFINITIONS: Record<Exclude<UserPlan, "Custom">, PlanDefinitio
   },
   Enterprise: {
     id: "Enterprise",
-    name: "Enterprise",
-    description: "Limitless generation, bespoke workflows, and dedicated power.",
+    name: "Enterprise & Private Server",
+    description: "Dedicated private server instance, custom AI models, and limitless generation.",
     priceMonthly: 99,
     priceYearly: 990,
     currency: "USD",
@@ -177,6 +177,32 @@ export const PLAN_DEFINITIONS: Record<Exclude<UserPlan, "Custom">, PlanDefinitio
     ],
     buttonLabel: "Upgrade to Enterprise",
   },
+};
+
+export interface FounderCampaignConfig {
+  isEnabled: boolean;
+  durationDays: number;
+  autoRenew: boolean;
+  cycleStartedAt: string;
+  basicPrice: number;
+  proPrice: number;
+  basicTotalSlots: number;
+  basicClaimedSlots: number;
+  proTotalSlots: number;
+  proClaimedSlots: number;
+}
+
+export const DEFAULT_FOUNDER_CAMPAIGN: FounderCampaignConfig = {
+  isEnabled: true,
+  durationDays: 30,
+  autoRenew: true,
+  cycleStartedAt: new Date().toISOString(),
+  basicPrice: 99,
+  proPrice: 299,
+  basicTotalSlots: 100,
+  basicClaimedSlots: 78,
+  proTotalSlots: 50,
+  proClaimedSlots: 36,
 };
 
 export interface Coupon {

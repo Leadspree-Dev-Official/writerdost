@@ -8,6 +8,8 @@ import {
   UserFeatures,
   UpgradeRequest,
   Coupon,
+  FounderCampaignConfig,
+  DEFAULT_FOUNDER_CAMPAIGN,
 } from "@/lib/store-types";
 
 export default function AdminDashboard() {
@@ -43,7 +45,44 @@ export default function AdminDashboard() {
   }, [loadUsers, loadUpgradeRequests, loadCoupons, loadSubscriptions, loadReferrals]);
 
   // Tab State
-  const [activeTab, setActiveTab] = useState<"users" | "requests" | "coupons" | "referrals">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "requests" | "coupons" | "referrals" | "campaign">("users");
+
+  // Founder Campaign Admin State
+  const [campaignConfig, setCampaignConfig] = useState<FounderCampaignConfig>(DEFAULT_FOUNDER_CAMPAIGN);
+  const [campaignSaving, setCampaignSaving] = useState(false);
+  const [campaignMsg, setCampaignMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/founder-campaign")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.config) setCampaignConfig(d.config);
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleSaveCampaign = async (resetCycle = false) => {
+    setCampaignSaving(true);
+    setCampaignMsg(null);
+    try {
+      const res = await fetch("/api/founder-campaign", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ...campaignConfig, resetCycle }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update campaign");
+      setCampaignConfig(data.config);
+      setCampaignMsg({
+        type: "success",
+        text: resetCycle ? "Campaign cycle restarted with a new start time!" : "Campaign settings saved successfully!",
+      });
+    } catch (err) {
+      setCampaignMsg({ type: "error", text: err instanceof Error ? err.message : "Save failed" });
+    } finally {
+      setCampaignSaving(false);
+    }
+  };
 
   // Search and Filter State
   const [searchTerm, setSearchTerm] = useState("");
@@ -385,6 +424,15 @@ export default function AdminDashboard() {
           type="button"
         >
           Subscriptions & Referrals ({subscriptions.length})
+        </button>
+        <button
+          onClick={() => { setActiveTab("campaign"); setShowAddForm(false); }}
+          className="tab"
+          data-active={activeTab === "campaign"}
+          role="tab"
+          type="button"
+        >
+          Founder Campaign {campaignConfig.isEnabled ? "🟢" : "⚪"}
         </button>
       </div>
 
@@ -772,6 +820,215 @@ export default function AdminDashboard() {
             </div>
           </section>
         </div>
+      ) : activeTab === "campaign" ? (
+        /* Founder Campaign Control Section */
+        <section className="panel panel-pad max-w-4xl space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-outline-variant/10">
+            <div>
+              <h3 className="text-xl font-bold text-on-surface">Founder Pass & Scarcity Campaign Settings</h3>
+              <p className="text-xs text-on-surface-variant mt-1">
+                Configure the rolling scarcity counter, set duration in days, toggle automatic renewal, and edit prices & slots.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => handleSaveCampaign(false)}
+                disabled={campaignSaving}
+                className="btn btn-primary btn-sm flex items-center gap-1.5"
+              >
+                {campaignSaving ? "Saving..." : "Save Settings"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirm("Restart campaign countdown now? This resets the cycle timer to Day 0.")) {
+                    handleSaveCampaign(true);
+                  }
+                }}
+                disabled={campaignSaving}
+                className="btn btn-secondary btn-sm flex items-center gap-1.5"
+              >
+                Restart Countdown Now
+              </button>
+            </div>
+          </div>
+
+          {campaignMsg && (
+            <div
+              className={`p-3 rounded-lg text-xs font-semibold ${
+                campaignMsg.type === "success"
+                  ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+                  : "bg-rose-500/10 border border-rose-500/30 text-rose-500"
+              }`}
+            >
+              {campaignMsg.text}
+            </div>
+          )}
+
+          {/* Master Toggle & Rolling Auto-Renew */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4 rounded-xl border border-outline-variant/20 bg-surface-container-low/30 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-bold text-on-surface">Campaign Active Status</h4>
+                  <p className="text-xs text-on-surface-variant">Display the Founder 5-Year banner on the landing and pricing pages.</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={campaignConfig.isEnabled}
+                    onChange={(e) => setCampaignConfig({ ...campaignConfig, isEnabled: e.target.checked })}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                </label>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl border border-outline-variant/20 bg-surface-container-low/30 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-bold text-on-surface">Auto-Renew Rolling Cycle</h4>
+                  <p className="text-xs text-on-surface-variant">When countdown reaches 0, automatically restart another cycle until manually switched off.</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={campaignConfig.autoRenew}
+                    onChange={(e) => setCampaignConfig({ ...campaignConfig, autoRenew: e.target.checked })}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Duration in Days */}
+          <div className="p-5 rounded-xl border border-outline-variant/20 bg-surface-container-low/30 space-y-3">
+            <h4 className="text-sm font-bold text-on-surface">Cycle Duration</h4>
+            <p className="text-xs text-on-surface-variant">Select how many days each rolling countdown cycle should run before renewing.</p>
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              {[7, 10, 14, 20, 30].map((days) => (
+                <button
+                  key={days}
+                  type="button"
+                  onClick={() => setCampaignConfig({ ...campaignConfig, durationDays: days })}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    campaignConfig.durationDays === days
+                      ? "bg-primary text-white shadow-sm"
+                      : "bg-surface border border-outline-variant/40 text-on-surface-variant hover:text-on-surface"
+                  }`}
+                >
+                  {days} Days
+                </button>
+              ))}
+              <div className="flex items-center gap-2 ml-2">
+                <span className="text-xs text-on-surface-variant">Custom Days:</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="365"
+                  value={campaignConfig.durationDays}
+                  onChange={(e) => setCampaignConfig({ ...campaignConfig, durationDays: Math.max(1, parseInt(e.target.value) || 1) })}
+                  className="input py-1 px-2 w-20 text-xs"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Tiers, Slots & Prices */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Founder Basic */}
+            <div className="p-5 rounded-xl border border-amber-500/30 bg-amber-500/5 space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-base font-black text-on-surface">Founder Basic Pass</h4>
+                <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-500/20 text-amber-700 dark:text-amber-400">
+                  Indie Deal
+                </span>
+              </div>
+              <div className="space-y-3 text-xs">
+                <div>
+                  <label className="block text-on-surface-variant font-semibold mb-1">Pass Price ($ USD)</label>
+                  <input
+                    type="number"
+                    value={campaignConfig.basicPrice}
+                    onChange={(e) => setCampaignConfig({ ...campaignConfig, basicPrice: Math.max(1, parseInt(e.target.value) || 1) })}
+                    className="input py-1.5 text-xs"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-on-surface-variant font-semibold mb-1">Total Cap Slots</label>
+                    <input
+                      type="number"
+                      value={campaignConfig.basicTotalSlots}
+                      onChange={(e) => setCampaignConfig({ ...campaignConfig, basicTotalSlots: Math.max(1, parseInt(e.target.value) || 1) })}
+                      className="input py-1.5 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-on-surface-variant font-semibold mb-1">Claimed Count</label>
+                    <input
+                      type="number"
+                      value={campaignConfig.basicClaimedSlots}
+                      onChange={(e) => setCampaignConfig({ ...campaignConfig, basicClaimedSlots: Math.max(0, parseInt(e.target.value) || 0) })}
+                      className="input py-1.5 text-xs"
+                    />
+                  </div>
+                </div>
+                <p className="text-[11px] text-on-surface-variant font-medium">
+                  Remaining spots shown to buyers: <strong className="text-amber-600 dark:text-amber-400">{Math.max(0, campaignConfig.basicTotalSlots - campaignConfig.basicClaimedSlots)}</strong>
+                </p>
+              </div>
+            </div>
+
+            {/* Founder Pro */}
+            <div className="p-5 rounded-xl border border-primary/30 bg-primary/5 space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-base font-black text-on-surface">Founder Pro Pass</h4>
+                <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-primary/20 text-primary">
+                  Pro Author Deal
+                </span>
+              </div>
+              <div className="space-y-3 text-xs">
+                <div>
+                  <label className="block text-on-surface-variant font-semibold mb-1">Pass Price ($ USD)</label>
+                  <input
+                    type="number"
+                    value={campaignConfig.proPrice}
+                    onChange={(e) => setCampaignConfig({ ...campaignConfig, proPrice: Math.max(1, parseInt(e.target.value) || 1) })}
+                    className="input py-1.5 text-xs"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-on-surface-variant font-semibold mb-1">Total Cap Slots</label>
+                    <input
+                      type="number"
+                      value={campaignConfig.proTotalSlots}
+                      onChange={(e) => setCampaignConfig({ ...campaignConfig, proTotalSlots: Math.max(1, parseInt(e.target.value) || 1) })}
+                      className="input py-1.5 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-on-surface-variant font-semibold mb-1">Claimed Count</label>
+                    <input
+                      type="number"
+                      value={campaignConfig.proClaimedSlots}
+                      onChange={(e) => setCampaignConfig({ ...campaignConfig, proClaimedSlots: Math.max(0, parseInt(e.target.value) || 0) })}
+                      className="input py-1.5 text-xs"
+                    />
+                  </div>
+                </div>
+                <p className="text-[11px] text-on-surface-variant font-medium">
+                  Remaining spots shown to buyers: <strong className="text-primary">{Math.max(0, campaignConfig.proTotalSlots - campaignConfig.proClaimedSlots)}</strong>
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
       ) : (
         /* Users Table Dashboard */
         <section className="panel overflow-hidden">
