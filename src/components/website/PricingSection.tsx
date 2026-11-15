@@ -55,12 +55,17 @@ export default function PricingSection() {
       return { days, hours, minutes, seconds };
     };
 
-    setTimeLeft(calculateTimeLeft());
     const interval = setInterval(() => {
       setTimeLeft(calculateTimeLeft());
     }, 1000);
+    const timeout = setTimeout(() => {
+      setTimeLeft(calculateTimeLeft());
+    }, 0);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
   }, [campaign]);
 
   const basicRemaining = Math.max(0, campaign.basicTotalSlots - campaign.basicClaimedSlots);

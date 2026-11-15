@@ -67,16 +67,22 @@ function PricingContent() {
         seconds: Math.floor((diff % (1000 * 60)) / 1000),
       };
     };
-    setTimeLeft(calculateTimeLeft());
     const interval = setInterval(() => setTimeLeft(calculateTimeLeft()), 1000);
-    return () => clearInterval(interval);
+    const timeout = setTimeout(() => setTimeLeft(calculateTimeLeft()), 0);
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
   }, [campaign]);
 
   // Check URL referral code
   useEffect(() => {
     const ref = searchParams?.get("ref");
     if (ref) {
-      setReferralCodeInput((prev) => prev || ref.toUpperCase());
+      const timeout = setTimeout(() => {
+        setReferralCodeInput((prev) => prev || ref.toUpperCase());
+      }, 0);
+      return () => clearTimeout(timeout);
     }
   }, [searchParams]);
 

@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useAppStore } from "@/lib/app-store";
 import WorkspaceStatus from "@/components/WorkspaceStatus";
 import { useState, useEffect, useRef } from "react";
+import { useMounted } from "@/lib/use-mounted";
 import { calculateProjectWords } from "@/lib/app-utils";
 import { AnimatePresence, motion } from "framer-motion";
 import { downloadTxt, generateProjectText, triggerPdfExport, downloadDocx, downloadEpub, downloadMarkdown } from "@/lib/export-utils";
@@ -36,14 +37,10 @@ export default function Header() {
   const toggleSidebar = useAppStore((state) => state.toggleGlobalSidebar);
   const setManuscriptFullView = useAppStore((state) => state.setManuscriptFullView);
 
-  const [mounted, setMounted] = useState(false);
+  const mounted = useMounted();
   const [notification, setNotification] = useState<{ message: string; type: "success" | "info" } | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     if (!notification) return;

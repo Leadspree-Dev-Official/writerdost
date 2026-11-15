@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import clsx from "clsx";
 import { useAppStore } from "@/lib/app-store";
+import { useMounted } from "@/lib/use-mounted";
 
 export default function BottomNavigation() {
   const pathname = usePathname();
@@ -16,16 +17,14 @@ export default function BottomNavigation() {
   const toggleDarkMode = useAppStore((state) => state.toggleDarkMode);
 
   const [moreOpen, setMoreOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useMounted();
 
   // Close the sheet on route change
-  useEffect(() => {
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
     setMoreOpen(false);
-  }, [pathname]);
+  }
 
   // Prevent background scrolling when bottom sheet is open
   useEffect(() => {

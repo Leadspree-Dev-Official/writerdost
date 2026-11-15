@@ -1,8 +1,11 @@
 node_modules
 .next
+.open-next
+.wrangler
 .git
 .env*
 coverage
 playwright-report
 test-results
 docs
+.claude

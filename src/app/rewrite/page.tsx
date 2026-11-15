@@ -29,6 +29,10 @@ const FLOW_DETAILS: Record<RewriteFlow, { title: string; subtitle: string }> = {
   },
 };
 
+function getCurrentTimestamp(): number {
+  return Date.now();
+}
+
 export default function RewritePage() {
   const router = useRouter();
   const rewrite = useAppStore((state) => state.rewrite);
@@ -181,7 +185,7 @@ export default function RewritePage() {
       return;
     }
 
-    const startTime = Date.now();
+    const startTime = getCurrentTimestamp();
 
     startGeneration({ 
       title: "Rewriting your manuscript",
@@ -204,7 +208,7 @@ export default function RewritePage() {
       }
 
       interval = setInterval(() => {
-        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const elapsed = Math.floor((getCurrentTimestamp() - startTime) / 1000);
         setMetrics(prev => ({ ...prev, draftingTime: elapsed }));
       }, 1000);
 
@@ -276,7 +280,7 @@ export default function RewritePage() {
       addGenerationLog({ agent: "System", message: "Full deep rewrite completed. Finalizing project...", status: "success" });
       setGenerationProgress(100);
 
-      const duration = Math.floor((Date.now() - startTime) / 1000);
+      const duration = Math.floor((getCurrentTimestamp() - startTime) / 1000);
       const estimatedTokens = Math.floor(accumulatedContent.split(/\s+/).length * 1.35);
       setMetrics(prev => ({ ...prev, draftingTime: duration, tokens: estimatedTokens }));
 
@@ -313,7 +317,7 @@ export default function RewritePage() {
       outlineCompletedChaptersRef.current = [];
       outlineSpunChaptersRef.current = null;
       outlineTotalChaptersRef.current = outlineGenerator.chapters.length;
-      outlineStartTimeRef.current = Date.now();
+      outlineStartTimeRef.current = getCurrentTimestamp();
 
       startGeneration({ 
         title: "Building from your outline",
@@ -342,7 +346,7 @@ export default function RewritePage() {
     useAppStore.getState().setCancelGeneration(handleCancel);
     setResumeGeneration(null);
 
-    const startTime = outlineStartTimeRef.current || Date.now();
+    const startTime = outlineStartTimeRef.current || getCurrentTimestamp();
     let receivedFinal = false;
 
     try {
@@ -373,7 +377,7 @@ export default function RewritePage() {
       }
 
       interval = setInterval(() => {
-        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const elapsed = Math.floor((getCurrentTimestamp() - startTime) / 1000);
         setMetrics(prev => ({ ...prev, draftingTime: elapsed }));
       }, 1000);
 
@@ -429,7 +433,7 @@ export default function RewritePage() {
             receivedFinal = true;
             setPaused(false);
             setResumeGeneration(null);
-            const duration = Math.floor((Date.now() - startTime) / 1000);
+            const duration = Math.floor((getCurrentTimestamp() - startTime) / 1000);
             const tokensUsed = useAppStore.getState().generationStatus.sessionTokens || 0;
             setMetrics(prev => ({ ...prev, draftingTime: duration, tokens: tokensUsed }));
             
@@ -510,7 +514,7 @@ export default function RewritePage() {
       return;
     }
 
-    const startTime = Date.now();
+    const startTime = getCurrentTimestamp();
 
     startGeneration({ 
       title: "Translating your project",
@@ -538,7 +542,7 @@ export default function RewritePage() {
       });
 
       interval = setInterval(() => {
-        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const elapsed = Math.floor((getCurrentTimestamp() - startTime) / 1000);
         setMetrics(prev => ({ ...prev, draftingTime: elapsed }));
       }, 1000);
 
@@ -574,7 +578,7 @@ export default function RewritePage() {
             }
           } else if (event.type === "final" && event.project) {
             receivedFinal = true;
-            const duration = Math.floor((Date.now() - startTime) / 1000);
+            const duration = Math.floor((getCurrentTimestamp() - startTime) / 1000);
             const tokensUsed = useAppStore.getState().generationStatus.sessionTokens || 0;
             setMetrics(prev => ({ ...prev, draftingTime: duration, tokens: tokensUsed }));
             
@@ -1153,7 +1157,7 @@ export default function RewritePage() {
                     }
 
                     setGenerating(true);
-                    const startTime = Date.now();
+                    const startTime = getCurrentTimestamp();
                     try {
                       const currentLang = rewrite.language || DEFAULT_LANGUAGE;
                       const text = await generateAiText({
@@ -1165,7 +1169,7 @@ export default function RewritePage() {
                         topP: settings.topP,
                       });
 
-                      const duration = Math.floor((Date.now() - startTime) / 1000);
+                      const duration = Math.floor((getCurrentTimestamp() - startTime) / 1000);
                       const estimatedTokens = Math.floor(text.split(/\s+/).length * 1.35);
                       setMetrics((prev) => ({ ...prev, draftingTime: duration, tokens: estimatedTokens }));
 

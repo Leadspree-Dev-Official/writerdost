@@ -30,6 +30,10 @@ import type {
 type RouteMode = "both" | "landing" | "store";
 type AssetType = "ebook" | "prompts" | "template";
 
+function createFallbackProductId(): string {
+  return `prod_${Date.now()}`;
+}
+
 interface BundleKartPublishModalProps {
   projectId: string;
   onClose: () => void;
@@ -281,9 +285,9 @@ export function BundleKartPublishModal({
       setProjectPublishState(project.id, {
         status: "published",
         revision: newRevision,
-        listingId: response.data?.id || `prod_${Date.now()}`,
+        listingId: response.data?.id || createFallbackProductId(),
         listingUrl: storeUrl,
-        bundlekartProductId: response.data?.id || `prod_${Date.now()}`,
+        bundlekartProductId: response.data?.id || createFallbackProductId(),
         bundlekartStoreUrl: storeUrl,
         bundlekartLandingUrl: landingUrl,
         bundlekartRevision: newRevision,

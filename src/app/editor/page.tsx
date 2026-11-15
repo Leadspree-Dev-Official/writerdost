@@ -164,7 +164,6 @@ export default function EditorPage() {
               }
             } else if (event.type === "ping") {
                // Heartbeat received, helps UI know server is still alive
-               console.log("Pipeline heartbeat received.");
             } else if (event.type === "usage" && typeof event.tokens === "number") {
               useAppStore.getState().recordUsage(event.tokens, api.provider, api.model);
             } else if (event.type === "final" && event.project) {

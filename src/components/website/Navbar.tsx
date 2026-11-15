@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAppStore } from "@/lib/app-store";
+import { useMounted } from "@/lib/use-mounted";
 
 export default function WebsiteNavbar() {
-  const [mounted, setMounted] = useState(false);
+  const mounted = useMounted();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showBanner, setShowBanner] = useState(true);
@@ -15,7 +16,6 @@ export default function WebsiteNavbar() {
   const toggleDarkMode = useAppStore((state) => state.toggleDarkMode);
 
   useEffect(() => {
-    setMounted(true);
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
     };
