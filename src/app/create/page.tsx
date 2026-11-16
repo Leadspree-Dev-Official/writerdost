@@ -44,7 +44,10 @@ export default function IdeaAndInput() {
   const [isExtendedOmnibus, setIsExtendedOmnibus] = useState<boolean>(createDraft.length > 100000);
 
   useEffect(() => {
-    setSavedDossiers(getSavedDossiers());
+    const timer = setTimeout(() => {
+      setSavedDossiers(getSavedDossiers());
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
   
   // Generation State Actions

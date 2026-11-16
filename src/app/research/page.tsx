@@ -113,14 +113,18 @@ export default function ResearchPage() {
 
   // Load dossiers on mount & listen for storage updates
   useEffect(() => {
-    const list = getSavedDossiers();
-    setSavedDossiers(list);
+    const timer = setTimeout(() => {
+      setSavedDossiers(getSavedDossiers());
+    }, 0);
 
     const handleUpdate = () => {
       setSavedDossiers(getSavedDossiers());
     };
     window.addEventListener("writerdost_dossiers_updated", handleUpdate);
-    return () => window.removeEventListener("writerdost_dossiers_updated", handleUpdate);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("writerdost_dossiers_updated", handleUpdate);
+    };
   }, []);
 
   // Filtered Dossiers List
