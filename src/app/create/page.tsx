@@ -8,6 +8,9 @@ import { robustParseJson, STREAM_DELIMITER } from "@/lib/app-utils";
 
 import { TONES, TONE_GUIDE } from "@/lib/tone-standards";
 import { LANGUAGE_GROUPS, DEFAULT_LANGUAGE } from "@/lib/languages";
+import { AiEngineSelectorModal } from "@/components/AiEngineSelectorModal";
+import type { GenerationEngine } from "@/lib/store-types";
+import { AD_EBOOK_TEMPLATES } from "@/lib/ad-ebook-templates";
 
 
 export default function IdeaAndInput() {
@@ -22,9 +25,14 @@ export default function IdeaAndInput() {
   const addResearchSource = useAppStore((state) => state.addResearchSource);
   const removeResearchSource = useAppStore((state) => state.removeResearchSource);
   const checkQuota = useAppStore((state) => state.checkQuota);
+  const spendCredits = useAppStore((state) => state.spendCredits);
+  const recordMonthlyUsage = useAppStore((state) => state.recordMonthlyUsage);
   
   const [linkInput, setLinkInput] = useState("");
   const [activeTab, setActiveTab] = useState<"file" | "link" | "youtube">("file");
+  const [engineModalOpen, setEngineModalOpen] = useState(false);
+  const [templateModalOpen, setTemplateModalOpen] = useState(false);
+  const [selectedNicheFilter, setSelectedNicheFilter] = useState<string>("All");
   
   // Generation State Actions
   const startGeneration = useAppStore((state) => state.startGeneration);
@@ -74,16 +82,31 @@ export default function IdeaAndInput() {
     }
   };
 
-  const handleGenerateWithAI = async () => {
-    const quota = checkQuota("project");
+  const executeGenerateWithAI = async (engine: GenerationEngine) => {
+    setEngineModalOpen(false);
+    const quota = checkQuota("project", engine);
     if (!quota.allowed) {
-      setMessage(`Monthly project limit reached (${quota.used}/${quota.limit}) on your ${quota.plan} plan. Please upgrade to create more ebooks.`);
+      setMessage(
+        quota.source === "none"
+          ? `Monthly project limit reached (${quota.used}/${quota.limit}) and insufficient credits (${quota.userCredits} available, 5 required). Please top-up credits or use BYOK.`
+          : `Monthly project limit reached on your ${quota.plan} plan. Please upgrade or top-up credits.`
+      );
       return;
+    }
+
+    if (engine === "bizai") {
+      if (quota.source === "credits") {
+        spendCredits(5);
+      } else {
+        recordMonthlyUsage("project");
+      }
     }
 
     startGeneration({ 
       title: "Writing your ebook",
-      subtitle: "Researching, outlining and drafting. This usually takes a few minutes."
+      subtitle: engine === "byok"
+        ? `Researching & drafting via BYOK (${api.provider.toUpperCase()} • Unlimited)`
+        : "Researching, outlining and drafting via BizAI Managed Gateway."
     });
     setGenerationProgress(5);
     setActiveAgent("System");
@@ -103,6 +126,7 @@ export default function IdeaAndInput() {
           api,
           settings,
           draft: createDraft,
+          engine,
         }),
         signal: controller.signal,
       });
@@ -240,6 +264,15 @@ export default function IdeaAndInput() {
           </div>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
             <button
+              className="btn btn-secondary btn-lg w-full sm:w-auto justify-center min-h-[44px] border-primary/40 hover:border-primary text-primary hover:bg-primary/5"
+              onClick={() => setTemplateModalOpen(true)}
+              disabled={isGenerating}
+              type="button"
+            >
+              <span className="material-symbols-outlined text-[20px]">auto_stories</span>
+              FB Ad Micro-Ebook Templates
+            </button>
+            <button
               className="btn btn-secondary btn-lg w-full sm:w-auto justify-center min-h-[44px]"
               onClick={() => {
                 const quota = checkQuota("project");
@@ -257,7 +290,7 @@ export default function IdeaAndInput() {
             </button>
             <button
               className="btn btn-primary btn-lg w-full sm:w-auto justify-center min-h-[44px]"
-              onClick={handleGenerateWithAI}
+              onClick={() => setEngineModalOpen(true)}
               disabled={isGenerating}
               type="button"
             >
@@ -489,6 +522,153 @@ export default function IdeaAndInput() {
           </div>
         </div>
       </div>
+
+      <AiEngineSelectorModal
+        isOpen={engineModalOpen}
+        onClose={() => setEngineModalOpen(false)}
+        onConfirm={executeGenerateWithAI}
+        taskType="project"
+        taskTitle={createDraft.vision.slice(0, 45) || "New Ebook"}
+      />
+
+      {/* FB Ad Low-Ticket Ebook Templates Modal */}
+      {templateModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-surface border border-[var(--hairline)] rounded-[var(--radius-xl)] shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="p-5 border-b border-[var(--hairline)] flex items-start justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-[24px]">rocket_launch</span>
+                  <h2 className="text-[18px] font-semibold text-on-surface">
+                    FB Ads & Micro-Niche Ebook Templates
+                  </h2>
+                </div>
+                <p className="text-[13px] text-on-surface-variant mt-1">
+                  Proven blueprints modeled after viral micro-books sold directly via Facebook/Instagram Ads at ₹99 – ₹499 impulse price points.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm -mr-2"
+                onClick={() => setTemplateModalOpen(false)}
+                aria-label="Close template modal"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            {/* Filter bar */}
+            <div className="px-5 py-3 border-b border-[var(--hairline)] bg-surface-variant/20 flex items-center gap-1.5 flex-wrap">
+              {["All", "Business & Freelancing", "Marketing & Ads", "Health & Fitness", "Productivity & Wealth", "Creator Economy"].map((niche) => (
+                <button
+                  key={niche}
+                  type="button"
+                  onClick={() => setSelectedNicheFilter(niche)}
+                  className={`btn btn-xs ${
+                    selectedNicheFilter === niche ? "btn-primary" : "btn-ghost"
+                  }`}
+                >
+                  {niche}
+                </button>
+              ))}
+            </div>
+
+            {/* Template Grid */}
+            <div className="p-5 overflow-y-auto space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {AD_EBOOK_TEMPLATES.filter(
+                  (t) => selectedNicheFilter === "All" || t.niche === selectedNicheFilter
+                ).map((tpl) => (
+                  <div
+                    key={tpl.id}
+                    className="panel panel-pad flex flex-col gap-3 border border-[var(--hairline)] hover:border-primary/50 transition-all rounded-[var(--radius-lg)] group"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="w-9 h-9 rounded-[var(--radius)] bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                        <span className="material-symbols-outlined text-[20px]">{tpl.icon}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                        <span className="chip text-[11px] font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                          {tpl.pricePoint} Ad Price
+                        </span>
+                        <span className="chip text-[11px] bg-on-surface/5 text-on-surface-variant">
+                          {tpl.niche}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="tile-name text-[15px] font-bold text-on-surface group-hover:text-primary transition-colors">
+                        {tpl.name}
+                      </h3>
+                      <p className="text-[12px] font-medium text-primary mt-0.5">
+                        {tpl.headline}
+                      </p>
+                      <p className="text-[12.5px] text-on-surface-variant mt-1.5 line-clamp-2">
+                        {tpl.description}
+                      </p>
+                    </div>
+
+                    {/* Chapters preview */}
+                    <div className="bg-surface-variant/30 rounded-[var(--radius-sm)] p-2.5 space-y-1 text-[11.5px] text-on-surface-variant">
+                      <span className="font-semibold text-on-surface block text-[11px] uppercase tracking-wider">
+                        Included Blueprint Modules:
+                      </span>
+                      {tpl.chaptersPreview.slice(0, 3).map((ch, i) => (
+                        <div key={i} className="flex items-center gap-1.5 truncate">
+                          <span className="text-primary font-bold">•</span>
+                          <span className="truncate">{ch}</span>
+                        </div>
+                      ))}
+                      {tpl.chaptersPreview.length > 3 && (
+                        <p className="text-[11px] text-primary pt-0.5 font-medium">
+                          + {tpl.chaptersPreview.length - 3} more modules
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11.5px] text-on-surface-variant mt-auto pt-2 border-t border-[var(--hairline)]">
+                      <span>Target: ~{tpl.suggestedLength.toLocaleString()} words</span>
+                      <span>Tone: {tpl.tone}</span>
+                    </div>
+
+                    <button
+                      className="btn btn-primary btn-sm w-full mt-1"
+                      type="button"
+                      onClick={() => {
+                        updateCreateDraft({
+                          vision: tpl.visionPrompt,
+                          audience: tpl.audience,
+                          length: tpl.suggestedLength,
+                          tone: tpl.tone,
+                        });
+                        setTemplateModalOpen(false);
+                        setMessage(`Loaded "${tpl.name}" template (${tpl.pricePoint} funnel format). Click "Generate with agents" to start!`);
+                      }}
+                    >
+                      <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                      Use This Ebook Funnel Blueprint
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Footer notice */}
+            <div className="p-3.5 px-5 bg-surface-variant/40 border-t border-[var(--hairline)] text-[12px] text-on-surface-variant flex items-center justify-between">
+              <span>💡 Designed for instant-delivery low-ticket funnels via Meta Ads (Instamojo, Razorpay, Gumroad, Stripe).</span>
+              <button
+                type="button"
+                className="btn btn-ghost btn-xs"
+                onClick={() => setTemplateModalOpen(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

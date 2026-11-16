@@ -64,6 +64,7 @@ export const PLAN_FEATURES: Record<Exclude<UserPlan, "Custom">, UserFeatures> = 
 export type AccountPrefs = {
   plan?: UserPlan;
   allowedFeatures?: Partial<UserFeatures>;
+  credits?: number;
 };
 
 /** The label that marks an administrator. */
@@ -122,6 +123,7 @@ export function toUser(account: AppwriteAccount): User {
     registeredAt: account.$createdAt || new Date().toISOString(),
     plan,
     allowedFeatures: readFeatures(prefs.allowedFeatures, plan),
+    credits: typeof prefs.credits === "number" ? prefs.credits : 5,
   };
 }
 
@@ -130,5 +132,5 @@ export function toUser(account: AppwriteAccount): User {
  * user by virtue of carrying no admin label, and there is nothing to write.
  */
 export function defaultPrefs(): Required<AccountPrefs> {
-  return { plan: "Basic", allowedFeatures: PLAN_FEATURES.Basic };
+  return { plan: "Basic", allowedFeatures: PLAN_FEATURES.Basic, credits: 5 };
 }

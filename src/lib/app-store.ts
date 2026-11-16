@@ -34,7 +34,9 @@ import type {
   Coupon,
   ReferralRecord,
   SubscriptionOrder,
+  GenerationEngine,
 } from "@/lib/store-types";
+import { CREDIT_PACKS, CREDIT_COSTS } from "@/lib/store-types";
 import type { KdpLaunchKit } from "@/lib/kdp-types";
 import * as subApi from "@/lib/subscription-client-api";
 import { getPlanQuotas, DEFAULT_COUPONS } from "@/lib/subscription-service";
@@ -276,7 +278,7 @@ type OutlineGeneratorState = {
 
 /** How a blog draft was started. "none" means the writer has not chosen yet,
  *  which is what puts the picker on screen instead of a half-filled editor. */
-export type BlogSource = "none" | "blank" | "project" | "topic";
+export type BlogSource = "none" | "blank" | "project" | "topic" | "template";
 
 type BlogComposer = {
   source: BlogSource;
@@ -284,6 +286,8 @@ type BlogComposer = {
   projectId: string;
   /** Set for "topic" drafts only. */
   topic: string;
+  /** ID of the template chosen if started from template. */
+  templateId?: string;
   title: string;
   draft: string;
   metaDescription: string;
@@ -390,6 +394,7 @@ type AppStore = {
   createProjectFromRewrite: () => Project;
   loadBlogFromProject: (projectId: string) => void;
   startBlankBlog: () => void;
+  startBlogFromTemplate: (template: import("./blog-templates").BlogTemplate) => void;
   startBlogFromTopic: (topic: string) => void;
   resetBlogSource: () => void;
   regenerateBlogSuggestions: () => void;
@@ -510,12 +515,24 @@ type AppStore = {
   adminCreateCoupon: (coupon: Partial<Coupon>) => Promise<{ success: boolean; error?: string }>;
   adminUpdateCoupon: (id: string, updates: Partial<Coupon>) => Promise<{ success: boolean; error?: string }>;
   adminDeleteCoupon: (id: string) => Promise<{ success: boolean; error?: string }>;
+  preferredEngine: GenerationEngine;
+  setPreferredEngine: (engine: GenerationEngine) => void;
+  userCredits: number;
+  addCredits: (amount: number) => void;
+  spendCredits: (amount: number) => boolean;
+  purchaseCreditPack: (packId: string) => Promise<{ success: boolean; creditsAdded: number; error?: string }>;
   recordMonthlyUsage: (type: "project" | "blog") => void;
-  checkQuota: (type: "project" | "blog") => {
+  checkQuota: (type: "project" | "blog", engine?: GenerationEngine) => {
     allowed: boolean;
     used: number;
     limit: number;
     plan: UserPlan;
+    isByok?: boolean;
+    source?: "plan_quota" | "credits" | "byok" | "none";
+    costCredits?: number;
+    userCredits?: number;
+    remaining?: number;
+    unlimited?: boolean;
   };
 };
 
@@ -1102,6 +1119,8 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     coupons: DEFAULT_COUPONS,
     referrals: [],
     userReferralCode: "",
+    preferredEngine: "bizai",
+    userCredits: 5,
     
     // Global abort mechanism (not persisted)
     cancelGeneration: () => {},
@@ -1618,6 +1637,23 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           keywords: [],
           suggestions: [],
           targetWords: 1000,
+          lastSavedLabel: "",
+        },
+      }),
+
+    startBlogFromTemplate: (template) =>
+      set({
+        blog: {
+          source: "template",
+          projectId: "",
+          topic: template.name,
+          templateId: template.id,
+          title: template.sampleTitle,
+          draft: template.scaffoldMarkdown,
+          metaDescription: template.metaDescription,
+          keywords: [...template.suggestedKeywords],
+          suggestions: [template.sampleTitle],
+          targetWords: template.targetWords,
           lastSavedLabel: "",
         },
       }),
@@ -2155,7 +2191,56 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       });
     },
 
-    checkQuota: (type) => {
+    setPreferredEngine: (engine) => set({ preferredEngine: engine }),
+    addCredits: (amount) =>
+      set((state) => {
+        const next = (state.userCredits || 0) + amount;
+        return {
+          userCredits: next,
+          currentUser: state.currentUser
+            ? { ...state.currentUser, credits: next }
+            : null,
+        };
+      }),
+    spendCredits: (amount) => {
+      const current = get().currentUser?.credits ?? get().userCredits ?? 0;
+      if (current < amount) return false;
+      const next = current - amount;
+      set((state) => ({
+        userCredits: next,
+        currentUser: state.currentUser
+          ? { ...state.currentUser, credits: next }
+          : null,
+      }));
+      return true;
+    },
+    purchaseCreditPack: async (packId) => {
+      const pack = CREDIT_PACKS.find((p) => p.id === packId);
+      if (!pack) return { success: false, creditsAdded: 0, error: "Invalid credit pack." };
+      get().addCredits(pack.credits);
+      return { success: true, creditsAdded: pack.credits };
+    },
+
+    checkQuota: (type, requestedEngine) => {
+      const engine = requestedEngine || get().preferredEngine || "bizai";
+      const api = get().api;
+      const hasByokConfigured = Boolean(api.apiKey || api.provider === "ollama");
+
+      // BYOK route: 100% free of platform quotas and credits
+      if (engine === "byok" && hasByokConfigured) {
+        return {
+          allowed: true,
+          used: 0,
+          limit: -1,
+          plan: get().currentUser?.plan || "Free",
+          isByok: true,
+          source: "byok" as const,
+          costCredits: 0,
+          unlimited: true,
+          remaining: 9999,
+        };
+      }
+
       const currentPlan = get().currentUser?.plan || "Free";
       const quotas = getPlanQuotas(currentPlan);
       const currentMonth = new Date().toISOString().slice(0, 7);
@@ -2169,13 +2254,52 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
       const limit =
         type === "project" ? quotas.maxProjectsPerMonth : quotas.maxBlogsPerMonth;
-      const allowed = limit === -1 || count < limit;
+      const hasPlanAllowance = limit === -1 || count < limit;
+      const requiredCredits = CREDIT_COSTS[type];
+      const availableCredits = get().currentUser?.credits ?? get().userCredits ?? 5;
+
+      if (hasPlanAllowance) {
+        return {
+          allowed: true,
+          used: count,
+          limit,
+          plan: currentPlan,
+          isByok: false,
+          source: "plan_quota" as const,
+          costCredits: 0,
+          userCredits: availableCredits,
+          remaining: limit === -1 ? 9999 : Math.max(0, limit - count),
+          unlimited: limit === -1,
+        };
+      }
+
+      // If monthly quota is exhausted, allow pay-as-you-go with credits
+      if (availableCredits >= requiredCredits) {
+        return {
+          allowed: true,
+          used: count,
+          limit,
+          plan: currentPlan,
+          isByok: false,
+          source: "credits" as const,
+          costCredits: requiredCredits,
+          userCredits: availableCredits,
+          remaining: availableCredits,
+          unlimited: false,
+        };
+      }
 
       return {
-        allowed,
+        allowed: false,
         used: count,
         limit,
         plan: currentPlan,
+        isByok: false,
+        source: "none" as const,
+        costCredits: requiredCredits,
+        userCredits: availableCredits,
+        remaining: 0,
+        unlimited: false,
       };
     },
 

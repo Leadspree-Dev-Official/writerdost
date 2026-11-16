@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { generateAiText } from "@/lib/ai-client";
 import { useAppStore } from "@/lib/app-store";
+import { GenerationEngine } from "@/lib/store-types";
 import Editor from "@/components/ui/Editor";
 import { mdToHtml } from "@/lib/markdown-utils";
+import { AiEngineSelectorModal } from "@/components/AiEngineSelectorModal";
 
 export default function BlogGeneratorPage() {
   const router = useRouter();
@@ -22,8 +24,10 @@ export default function BlogGeneratorPage() {
   const resetBlogSource = useAppStore((state) => state.resetBlogSource);
   const setCurrentProject = useAppStore((state) => state.setCurrentProject);
   const checkQuota = useAppStore((state) => state.checkQuota);
+  const spendCredits = useAppStore((state) => state.spendCredits);
   const recordMonthlyUsage = useAppStore((state) => state.recordMonthlyUsage);
   const [message, setMessage] = useState("");
+  const [engineModalOpen, setEngineModalOpen] = useState(false);
   const [generatingSuggestions, setGeneratingSuggestions] = useState(false);
   const [generatingDraft, setGeneratingDraft] = useState(false);
   const [blogDraftTime, setBlogDraftTime] = useState<number | null>(null);
@@ -41,6 +45,62 @@ export default function BlogGeneratorPage() {
   const keywords = blog?.keywords || [];
   const targetWords = blog?.targetWords || 1000;
 
+
+  const handleExecuteDraftGeneration = async (engine: GenerationEngine) => {
+    const quota = checkQuota("blog", engine);
+    if (!quota.allowed) {
+      if (engine === "byok") {
+        setMessage("Add your custom API key in Settings to use BYOK unlimited generation.");
+      } else {
+        setMessage(`Monthly blog limit reached (${quota.used}/${quota.limit}) and insufficient credits (${quota.userCredits ?? 0}/${quota.costCredits ?? 1}). Upgrade plan or buy credits.`);
+      }
+      return;
+    }
+
+    if (engine === "byok" && (!api.baseUrl || !api.model || (!api.apiKey && api.provider !== "ollama"))) {
+      setMessage("Add API settings first to generate using your own BYOK keys.");
+      return;
+    }
+
+    setGeneratingDraft(true);
+    const startTime = Date.now();
+    try {
+      const text = await generateAiText({
+        api,
+        systemPrompt:
+          "You write polished blog drafts that repurpose ebook concepts into clear, engaging articles. Return only the draft body. Use Markdown for formatting.",
+        userPrompt: selectedProject
+          ? `Write a blog post based on this source project.\n\nTitle: ${blog.title}\nProject: ${selectedProject.title}\nAudience: ${selectedProject.audience}\nTone: ${selectedProject.tone}\nDescription: ${selectedProject.description}\nKeywords: ${keywords.join(", ")}\nMeta description: ${blog.metaDescription}\n\nTarget length: about ${targetWords} words.`
+          : `Write a blog post on this topic.\n\nTopic: ${subject}\nTitle: ${blog.title || "(choose a fitting title)"}\nKeywords: ${keywords.join(", ")}\nMeta description: ${blog.metaDescription}\n\nTarget length: about ${targetWords} words.`,
+        temperature: 0.7,
+        topP: 1,
+      });
+      
+      const duration = Math.floor((Date.now() - startTime) / 1000);
+      const wordCount = text.split(/\s+/).length;
+      const estimatedTokens = Math.floor(wordCount * 1.35);
+
+      updateBlog({ draft: mdToHtml(text) });
+      setBlogDraftTime(duration);
+      setBlogTokens(estimatedTokens);
+      
+      if (engine === "bizai") {
+        if (quota.source === "credits") {
+          spendCredits(quota.costCredits ?? 1);
+          setMessage(`AI draft (~${targetWords} words) generated with BizAI Gateway (1 credit deducted).`);
+        } else {
+          recordMonthlyUsage("blog");
+          setMessage(`AI draft (~${targetWords} words) generated with BizAI Gateway (monthly quota used).`);
+        }
+      } else {
+        setMessage(`AI draft (~${targetWords} words) generated using your BYOK model.`);
+      }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "AI draft generation failed.");
+    } finally {
+      setGeneratingDraft(false);
+    }
+  };
 
   const handleChangeSource = () => {
     const hasWork = Boolean(blog.title?.trim() || blog.draft?.trim());
@@ -228,47 +288,7 @@ export default function BlogGeneratorPage() {
             <div className="flex items-center gap-1.5">
               <button
                 className="btn btn-primary btn-sm"
-                onClick={async () => {
-                  const quota = checkQuota("blog");
-                  if (!quota.allowed) {
-                    setMessage(`Monthly blog limit reached (${quota.used}/${quota.limit}) on your ${quota.plan} plan. Please upgrade to write more blogs.`);
-                    return;
-                  }
-
-                  if (!api.baseUrl || !api.model || (!api.apiKey && api.provider !== "ollama")) {
-                    setMessage("Add API settings first to generate a live AI draft.");
-                    return;
-                  }
-
-                  setGeneratingDraft(true);
-                  const startTime = Date.now();
-                  try {
-                    const text = await generateAiText({
-                      api,
-                      systemPrompt:
-                        "You write polished blog drafts that repurpose ebook concepts into clear, engaging articles. Return only the draft body. Use Markdown for formatting.",
-                      userPrompt: selectedProject
-                        ? `Write a blog post based on this source project.\n\nTitle: ${blog.title}\nProject: ${selectedProject.title}\nAudience: ${selectedProject.audience}\nTone: ${selectedProject.tone}\nDescription: ${selectedProject.description}\nKeywords: ${keywords.join(", ")}\nMeta description: ${blog.metaDescription}\n\nTarget length: about ${targetWords} words.`
-                        : `Write a blog post on this topic.\n\nTopic: ${subject}\nTitle: ${blog.title || "(choose a fitting title)"}\nKeywords: ${keywords.join(", ")}\nMeta description: ${blog.metaDescription}\n\nTarget length: about ${targetWords} words.`,
-                      temperature: 0.7,
-                      topP: 1,
-                    });
-                    
-                    const duration = Math.floor((Date.now() - startTime) / 1000);
-                    const wordCount = text.split(/\s+/).length;
-                    const estimatedTokens = Math.floor(wordCount * 1.35);
-
-                    updateBlog({ draft: mdToHtml(text) });
-                    setBlogDraftTime(duration);
-                    setBlogTokens(estimatedTokens);
-                    recordMonthlyUsage("blog");
-                    setMessage(`AI draft (~${targetWords} words) generated and inserted into the canvas.`);
-                  } catch (error) {
-                    setMessage(error instanceof Error ? error.message : "AI draft generation failed.");
-                  } finally {
-                    setGeneratingDraft(false);
-                  }
-                }}
+                onClick={() => setEngineModalOpen(true)}
                 disabled={generatingDraft}
                 type="button"
               >
@@ -483,6 +503,14 @@ export default function BlogGeneratorPage() {
           )}
         </div>
       </aside>
+
+      <AiEngineSelectorModal
+        isOpen={engineModalOpen}
+        onClose={() => setEngineModalOpen(false)}
+        onConfirm={handleExecuteDraftGeneration}
+        taskType="blog"
+        taskTitle={blog.title || subject || "Blog Post"}
+      />
     </div>
   );
 }

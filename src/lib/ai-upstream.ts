@@ -53,9 +53,20 @@ export async function resolveUpstream(api: ApiSettings): Promise<ApiSettings> {
   // Pinned providers: ignore whatever baseUrl the client sent.
   if (PINNED_PROVIDERS.has(provider)) {
     const defaults = providerDefaults[provider];
-    if (!api.apiKey) deny("An API key is required for the selected provider.");
+    const serverFallbackKey =
+      process.env.BIZAI_GATEWAY_KEY ||
+      process.env.OPENROUTER_API_KEY ||
+      process.env.OPENAI_API_KEY ||
+      process.env.ANTHROPIC_API_KEY ||
+      process.env.GEMINI_API_KEY;
+    const effectiveApiKey = api.apiKey || serverFallbackKey;
+
+    if (!effectiveApiKey) {
+      deny("An API key is required for the selected provider. Add your personal BYOK key in Settings or set up the BizAI Gateway server key.");
+    }
     return {
       ...api,
+      apiKey: effectiveApiKey,
       baseUrl: defaults.baseUrl,
       model: api.model || defaults.model,
     };

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useAppStore } from "@/lib/app-store";
 import {
+  CREDIT_PACKS,
+  CreditPack,
   DEFAULT_FOUNDER_CAMPAIGN,
   FounderCampaignConfig,
   PLAN_DEFINITIONS,
@@ -105,6 +107,8 @@ function PricingContent() {
   const currentUser = useAppStore((state) => state.currentUser);
   const checkQuota = useAppStore((state) => state.checkQuota);
   const purchaseSubscription = useAppStore((state) => state.purchaseSubscription);
+  const userCredits = useAppStore((state) => state.userCredits);
+  const purchaseCreditPack = useAppStore((state) => state.purchaseCreditPack);
   const referrals = useAppStore((state) => state.referrals);
   const userReferralCode = useAppStore((state) => state.userReferralCode);
   const loadReferrals = useAppStore((state) => state.loadReferrals);
@@ -113,6 +117,8 @@ function PricingContent() {
   const [selectedPlan, setSelectedPlan] = useState<UserPlan | null>(null);
   const [founderPassSelected, setFounderPassSelected] = useState<"basic" | "pro" | null>(null);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+  const [purchasingPackId, setPurchasingPackId] = useState<string | null>(null);
+  const [creditNotice, setCreditNotice] = useState<string | null>(null);
 
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<{
@@ -328,6 +334,21 @@ function PricingContent() {
     }
   };
 
+  const handleBuyCreditPack = async (pack: CreditPack) => {
+    setPurchasingPackId(pack.id);
+    try {
+      const res = await purchaseCreditPack(pack.id);
+      if (res.success) {
+        setCreditNotice(`Successfully added ${res.creditsAdded} credits to your balance! You can now generate with BizAI or BYOK.`);
+        setTimeout(() => setCreditNotice(null), 6000);
+      } else {
+        setCreditNotice(res.error || "Failed to purchase credit pack.");
+      }
+    } finally {
+      setPurchasingPackId(null);
+    }
+  };
+
   return (
     <div className="page pb-20">
       {/* Top Header */}
@@ -400,7 +421,7 @@ function PricingContent() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-slate-200/80 dark:border-slate-800">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-3 border-t border-slate-200/80 dark:border-slate-800">
             {/* Project Quota */}
             <div className="p-3 rounded-lg bg-card border border-slate-200/80 dark:border-slate-800/80">
               <div className="flex justify-between items-center text-xs mb-1.5">
@@ -462,6 +483,29 @@ function PricingContent() {
                       : `${Math.min(100, (blogQuota.used / Math.max(1, blogQuota.limit)) * 100)}%`,
                   }}
                 />
+              </div>
+            </div>
+
+            {/* AI Generation Credits */}
+            <div className="p-3 rounded-lg bg-card border border-slate-200/80 dark:border-slate-800/80">
+              <div className="flex justify-between items-center text-xs mb-1.5">
+                <span className="font-semibold text-foreground flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-amber-500 text-base">token</span>
+                  Pay-As-You-Go Credits
+                </span>
+                <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
+                  {userCredits} Available
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground mt-2">
+                <span>5 / ebook • 1 / blog</span>
+                <a
+                  href="#credit-packs"
+                  className="text-primary hover:underline font-semibold flex items-center gap-0.5"
+                >
+                  <span>Top Up</span>
+                  <span className="material-symbols-outlined text-xs">arrow_forward</span>
+                </a>
               </div>
             </div>
           </div>
@@ -712,6 +756,164 @@ function PricingContent() {
           </div>
         </div>
       )}
+
+      {/* 🪙 PAY-AS-YOU-GO CREDIT TOP-UP PACKS */}
+      <div id="credit-packs" className="mt-16 scroll-mt-6">
+        <div className="text-center max-w-2xl mx-auto mb-8">
+          <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-xs tracking-wider uppercase mb-2 border border-amber-500/20">
+            <span className="material-symbols-outlined text-sm">token</span>
+            Pay-As-You-Go • Instant Activation
+          </div>
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">
+            Top Up AI Generation Credits
+          </h2>
+          <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+            Need to generate beyond your monthly quota? Buy pay-as-you-go credits that never expire.
+            Or bring your own API key (BYOK) for 100% free unlimited generation.
+          </p>
+        </div>
+
+        {creditNotice && (
+          <div className="max-w-2xl mx-auto mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold flex items-center justify-between gap-3 animate-fade-in shadow-xs">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-base">check_circle</span>
+              <span>{creditNotice}</span>
+            </div>
+            <button
+              onClick={() => setCreditNotice(null)}
+              className="text-xs opacity-70 hover:opacity-100"
+              type="button"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {CREDIT_PACKS.map((pack) => {
+            const isCreator = pack.id === "creator";
+            const costPerCredit = (pack.priceUsd / pack.credits).toFixed(2);
+
+            return (
+              <div
+                key={pack.id}
+                className={clsx(
+                  "relative rounded-2xl p-6 transition-all duration-200 flex flex-col justify-between border",
+                  isCreator
+                    ? "bg-surface-container-low border-amber-500/40 shadow-lg shadow-amber-500/5 ring-1 ring-amber-500/30"
+                    : "bg-card border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm"
+                )}
+              >
+                {pack.badge && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-xs font-bold tracking-wide uppercase bg-amber-500 text-amber-950 shadow-sm">
+                    {pack.badge}
+                  </div>
+                )}
+
+                <div>
+                  <div className="flex justify-between items-start">
+                    <h3 className="text-lg font-bold text-foreground">{pack.name}</h3>
+                    <span className="px-2 py-0.5 rounded text-xs font-mono font-bold bg-muted text-muted-foreground">
+                      ${costPerCredit}/cr
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 min-h-[36px] leading-relaxed">
+                    {pack.description}
+                  </p>
+
+                  <div className="mt-4 mb-5 flex items-baseline gap-1.5">
+                    <span className="text-3xl font-extrabold text-foreground">
+                      ${pack.priceUsd}
+                    </span>
+                    <span className="text-xs text-muted-foreground font-semibold">
+                      / {pack.credits} credits (One-time)
+                    </span>
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-200/80 dark:border-slate-800/80 space-y-2">
+                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      Included with this pack
+                    </p>
+                    <div className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300">
+                      <span className="material-symbols-outlined text-amber-500 text-base shrink-0 mt-0.5">
+                        check_circle
+                      </span>
+                      <span>
+                        <strong>{pack.credits} Platform Credits</strong> added immediately
+                      </span>
+                    </div>
+                    <div className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300">
+                      <span className="material-symbols-outlined text-amber-500 text-base shrink-0 mt-0.5">
+                        check_circle
+                      </span>
+                      <span>5 credits per complete ebook project</span>
+                    </div>
+                    <div className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300">
+                      <span className="material-symbols-outlined text-amber-500 text-base shrink-0 mt-0.5">
+                        check_circle
+                      </span>
+                      <span>1 credit per blog post or passage rewrite</span>
+                    </div>
+                    <div className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300">
+                      <span className="material-symbols-outlined text-amber-500 text-base shrink-0 mt-0.5">
+                        check_circle
+                      </span>
+                      <span><strong>Never expires</strong> &amp; rolls over month-to-month</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => handleBuyCreditPack(pack)}
+                    disabled={purchasingPackId === pack.id}
+                    className={clsx(
+                      "w-full py-2.5 px-4 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none cursor-pointer",
+                      isCreator
+                        ? "bg-amber-500 hover:bg-amber-400 text-amber-950 font-bold shadow-sm"
+                        : "btn-secondary"
+                    )}
+                  >
+                    <span className="material-symbols-outlined text-base">
+                      {purchasingPackId === pack.id ? "progress_activity" : "add_shopping_cart"}
+                    </span>
+                    <span>
+                      {purchasingPackId === pack.id
+                        ? "Adding Credits…"
+                        : `Buy ${pack.name} ($${pack.priceUsd})`}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* 💡 BYOK vs BizAI Explainer Card */}
+        <div className="mt-6 p-5 rounded-2xl bg-surface-container-low border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-lg">vpn_key</span>
+              <h4 className="text-sm font-bold text-foreground">
+                Want 100% Free &amp; Unlimited Generations? Use BYOK (Bring Your Own Key)
+              </h4>
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed max-w-2xl">
+              Writerdost AI supports direct integration with OpenAI, Anthropic Claude, Google Gemini,
+              DeepSeek, OpenRouter, and local Ollama. When generating with your own BYOK keys, zero credits
+              or quotas are ever consumed.
+            </p>
+          </div>
+          <Link
+            href="/settings"
+            className="btn btn-secondary btn-sm shrink-0 flex items-center gap-1.5 self-start md:self-auto"
+          >
+            <span className="material-symbols-outlined text-base">settings</span>
+            <span>Configure BYOK Keys</span>
+          </Link>
+        </div>
+      </div>
 
       {/* 📊 FEATURE COMPARISON MATRIX */}
       <div className="mt-16">

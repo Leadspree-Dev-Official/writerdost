@@ -258,7 +258,53 @@ export interface User {
   password?: string;
   plan: UserPlan;
   allowedFeatures: UserFeatures;
+  credits?: number;
 }
+
+export type GenerationEngine = 'bizai' | 'byok';
+
+export interface CreditPack {
+  id: string;
+  name: string;
+  credits: number;
+  priceUsd: number;
+  description: string;
+  badge?: string;
+  isPopular?: boolean;
+}
+
+export const CREDIT_PACKS: CreditPack[] = [
+  {
+    id: 'starter',
+    name: 'Starter Pack',
+    credits: 25,
+    priceUsd: 5,
+    description: '~5 Full Ebooks or 25 Blog Posts. Perfect for testing a standalone project.',
+  },
+  {
+    id: 'creator',
+    name: 'Creator Pack',
+    credits: 100,
+    priceUsd: 15,
+    description: '~20 Full Ebooks or 100 Blog Posts. Ideal for active writers.',
+    badge: 'Most Popular',
+    isPopular: true,
+  },
+  {
+    id: 'studio',
+    name: 'Studio Pack',
+    credits: 300,
+    priceUsd: 35,
+    description: '~60 Full Ebooks or 300 Blog Posts. Maximum value for power authors.',
+    badge: 'Best Value',
+  },
+];
+
+export const CREDIT_COSTS = {
+  project: 5,
+  blog: 1,
+  rewrite: 1,
+} as const;
 
 export interface UpgradeRequest {
   id: string;
