@@ -278,7 +278,7 @@ type OutlineGeneratorState = {
 
 /** How a blog draft was started. "none" means the writer has not chosen yet,
  *  which is what puts the picker on screen instead of a half-filled editor. */
-export type BlogSource = "none" | "blank" | "project" | "topic" | "template";
+export type BlogSource = "none" | "blank" | "project" | "topic" | "template" | "research";
 
 type BlogComposer = {
   source: BlogSource;
@@ -286,6 +286,8 @@ type BlogComposer = {
   projectId: string;
   /** Set for "topic" drafts only. */
   topic: string;
+  /** ID of the research dossier if started from research. */
+  researchId?: string;
   /** ID of the template chosen if started from template. */
   templateId?: string;
   title: string;
@@ -396,6 +398,7 @@ type AppStore = {
   startBlankBlog: () => void;
   startBlogFromTemplate: (template: import("./blog-templates").BlogTemplate) => void;
   startBlogFromTopic: (topic: string) => void;
+  startBlogFromResearch: (dossier: import("./research-store").ResearchDossier, researchId?: string) => void;
   resetBlogSource: () => void;
   regenerateBlogSuggestions: () => void;
   updateBlog: (payload: Partial<BlogComposer>) => void;
@@ -1669,6 +1672,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         blog: {
           source: "topic",
           projectId: "",
+          researchId: "",
           topic: subject,
           title: "",
           draft: "",
@@ -1681,10 +1685,34 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       });
     },
 
+    startBlogFromResearch: (dossier, researchId) => {
+      const keywords = (dossier.glossary || []).slice(0, 5).map((g) => g.term);
+      const suggestions = [
+        ...(dossier.coreTheses || []).slice(0, 2).map((t) => t.title),
+        ...createBlogSuggestions(dossier.topic),
+      ].slice(0, 3);
+
+      set({
+        blog: {
+          source: "research",
+          projectId: "",
+          researchId: researchId || "",
+          topic: dossier.topic,
+          title: suggestions[0] || dossier.topic,
+          draft: "",
+          metaDescription: dossier.executiveSummary ? dossier.executiveSummary.slice(0, 160) : "",
+          keywords,
+          suggestions,
+          targetWords: 1200,
+          lastSavedLabel: "from research",
+        },
+      });
+    },
+
     /** Back to the picker. The draft is dropped, so the caller confirms first. */
     resetBlogSource: () =>
       set((state) => ({
-        blog: { ...state.blog, source: "none", projectId: "", topic: "" },
+        blog: { ...state.blog, source: "none", projectId: "", topic: "", researchId: "" },
       })),
 
     loadBlogFromProject: (projectId) => {
@@ -1695,6 +1723,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         blog: {
           source: "project",
           projectId,
+          researchId: "",
           topic: "",
           title: project.blogTitle,
           draft: project.blogDraft,
@@ -1708,19 +1737,29 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     },
     regenerateBlogSuggestions: () => {
       const { blog, projects } = get();
-      const project = projects.find((entry) => entry.id === blog.projectId);
-      if (!project) return;
+      if (blog.source === "project") {
+        const project = projects.find((entry) => entry.id === blog.projectId);
+        if (!project) return;
 
-      set({
-        blog: {
-          ...blog,
-          suggestions: [
-            `${project.title}: 3 Lessons Worth Turning Into a Blog Post`,
-            `From ${project.title} to Search-Ready Content`,
-            `How ${project.title} Can Power Your Weekly Publishing Calendar`,
-          ],
-        },
-      });
+        set({
+          blog: {
+            ...blog,
+            suggestions: [
+              `${project.title}: 3 Lessons Worth Turning Into a Blog Post`,
+              `From ${project.title} to Search-Ready Content`,
+              `How ${project.title} Can Power Your Weekly Publishing Calendar`,
+            ],
+          },
+        });
+      } else {
+        const subject = blog.topic || blog.title || "this topic";
+        set({
+          blog: {
+            ...blog,
+            suggestions: createBlogSuggestions(subject),
+          },
+        });
+      }
     },
     updateBlog: (payload) =>
       set((state) => ({

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { generateAiText } from "@/lib/ai-client";
@@ -9,6 +9,7 @@ import { GenerationEngine } from "@/lib/store-types";
 import Editor from "@/components/ui/Editor";
 import { mdToHtml } from "@/lib/markdown-utils";
 import { AiEngineSelectorModal } from "@/components/AiEngineSelectorModal";
+import { getSavedDossiers, SavedDossier } from "@/lib/research-store";
 
 export default function BlogGeneratorPage() {
   const router = useRouter();
@@ -21,6 +22,7 @@ export default function BlogGeneratorPage() {
   const loadBlogFromProject = useAppStore((state) => state.loadBlogFromProject);
   const startBlankBlog = useAppStore((state) => state.startBlankBlog);
   const startBlogFromTopic = useAppStore((state) => state.startBlogFromTopic);
+  const startBlogFromResearch = useAppStore((state) => state.startBlogFromResearch);
   const resetBlogSource = useAppStore((state) => state.resetBlogSource);
   const setCurrentProject = useAppStore((state) => state.setCurrentProject);
   const checkQuota = useAppStore((state) => state.checkQuota);
@@ -34,10 +36,37 @@ export default function BlogGeneratorPage() {
   const [blogTokens, setBlogTokens] = useState<number>(0);
   const [pickerProjectId, setPickerProjectId] = useState(projects[0]?.id ?? "");
   const [pickerTopic, setPickerTopic] = useState("");
+  const [dossiers, setDossiers] = useState<SavedDossier[]>(() =>
+    typeof window !== "undefined" ? getSavedDossiers() : []
+  );
+  const [pickerDossierId, setPickerDossierId] = useState(() =>
+    typeof window !== "undefined" ? getSavedDossiers()[0]?.id ?? "" : ""
+  );
+
+  useEffect(() => {
+    const updateDossiers = () => {
+      const loaded = getSavedDossiers();
+      setDossiers(loaded);
+      if (loaded.length > 0 && !pickerDossierId) {
+        setPickerDossierId(loaded[0].id);
+      }
+    };
+    updateDossiers();
+    window.addEventListener("writerdost_dossiers_updated", updateDossiers);
+    return () => window.removeEventListener("writerdost_dossiers_updated", updateDossiers);
+  }, [pickerDossierId]);
+
+  useEffect(() => {
+    if (!pickerProjectId && projects.length > 0) {
+      setPickerProjectId(projects[0].id);
+    }
+  }, [projects, pickerProjectId]);
 
   // No fallback to projects[0]: a draft only has a source project when the
   // writer chose one, otherwise the composer runs on its own subject.
   const selectedProject = projects.find((project) => project.id === blog.projectId) ?? null;
+  const selectedDossier =
+    dossiers.find((d) => d.id === blog.researchId || d.dossier.topic === blog.topic)?.dossier ?? null;
   const source = blog.source ?? "none";
   /** What this post is about, whichever way it was started. */
   const subject = selectedProject?.title || blog.topic || blog.title || "this post";
@@ -68,9 +97,11 @@ export default function BlogGeneratorPage() {
       const text = await generateAiText({
         api,
         systemPrompt:
-          "You write polished blog drafts that repurpose ebook concepts into clear, engaging articles. Return only the draft body. Use Markdown for formatting.",
+          "You write polished blog drafts that repurpose ebook concepts and research insights into clear, engaging articles. Return only the draft body. Use Markdown for formatting.",
         userPrompt: selectedProject
           ? `Write a blog post based on this source project.\n\nTitle: ${blog.title}\nProject: ${selectedProject.title}\nAudience: ${selectedProject.audience}\nTone: ${selectedProject.tone}\nDescription: ${selectedProject.description}\nKeywords: ${keywords.join(", ")}\nMeta description: ${blog.metaDescription}\n\nTarget length: about ${targetWords} words.`
+          : selectedDossier
+          ? `Write an authoritative, grounded blog post based on this research dossier.\n\nTitle: ${blog.title || selectedDossier.topic}\nTopic: ${selectedDossier.topic}\nAudience: ${selectedDossier.targetAudience}\nExecutive Summary: ${selectedDossier.executiveSummary}\nCore Theses: ${selectedDossier.coreTheses.map((t) => `${t.title}: ${t.explanation}`).join("\n")}\nEmpirical Evidence: ${selectedDossier.factsAndStats.map((f) => `${f.stat}: ${f.context}`).join("; ")}\nKeywords: ${keywords.join(", ")}\nMeta description: ${blog.metaDescription}\n\nTarget length: about ${targetWords} words.`
           : `Write a blog post on this topic.\n\nTopic: ${subject}\nTitle: ${blog.title || "(choose a fitting title)"}\nKeywords: ${keywords.join(", ")}\nMeta description: ${blog.metaDescription}\n\nTarget length: about ${targetWords} words.`,
         temperature: 0.7,
         topP: 1,
@@ -127,25 +158,36 @@ export default function BlogGeneratorPage() {
           <div>
             <h1 className="page-title">New blog post</h1>
             <p className="page-sub">
-              Start from scratch, build on one of your ebooks, or write about a topic.
+              Write about a topic, build on an ebook, ground in research, or start from scratch.
             </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-start">
-          {/* 1. Blank */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 items-stretch">
+          {/* 1. From a topic */}
           <div className="panel panel-pad flex flex-col gap-2.5 h-full">
-            <span className="material-symbols-outlined text-primary">edit_note</span>
+            <span className="material-symbols-outlined text-primary">lightbulb</span>
             <div>
-              <p className="tile-name">Blank post</p>
-              <p className="tile-desc">An empty editor. You bring the subject.</p>
+              <p className="tile-name">From a topic</p>
+              <p className="tile-desc">Name the subject and get title ideas to start from.</p>
             </div>
+            <input
+              className="input"
+              placeholder="e.g. Self-publishing on a deadline"
+              value={pickerTopic}
+              onChange={(event) => setPickerTopic(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && pickerTopic.trim()) startBlogFromTopic(pickerTopic);
+              }}
+              aria-label="Blog topic"
+            />
             <button
               className="btn btn-primary btn-sm w-full mt-auto"
-              onClick={() => startBlankBlog()}
+              onClick={() => startBlogFromTopic(pickerTopic)}
+              disabled={!pickerTopic.trim()}
               type="button"
             >
-              Start writing
+              Write about this
             </button>
           </div>
 
@@ -186,30 +228,57 @@ export default function BlogGeneratorPage() {
             </button>
           </div>
 
-          {/* 3. From a topic */}
+          {/* 3. From a research */}
           <div className="panel panel-pad flex flex-col gap-2.5 h-full">
-            <span className="material-symbols-outlined text-primary">lightbulb</span>
+            <span className="material-symbols-outlined text-primary">travel_explore</span>
             <div>
-              <p className="tile-name">From a topic</p>
-              <p className="tile-desc">Name the subject and get title ideas to start from.</p>
+              <p className="tile-name">From a research</p>
+              <p className="tile-desc">
+                Ground your post in a deep research dossier or findings.
+              </p>
             </div>
-            <input
-              className="input"
-              placeholder="e.g. Self-publishing on a deadline"
-              value={pickerTopic}
-              onChange={(event) => setPickerTopic(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" && pickerTopic.trim()) startBlogFromTopic(pickerTopic);
-              }}
-              aria-label="Blog topic"
-            />
+            {dossiers.length > 1 ? (
+              <select
+                className="select"
+                value={pickerDossierId}
+                onChange={(event) => setPickerDossierId(event.target.value)}
+                aria-label="Research dossier to write from"
+              >
+                {dossiers.map((entry) => (
+                  <option key={entry.id} value={entry.id}>{entry.dossier.topic}</option>
+                ))}
+              </select>
+            ) : (
+              <p className="readonly-value truncate" title={dossiers[0]?.dossier.topic}>
+                {dossiers[0]?.dossier.topic ?? "No research yet"}
+              </p>
+            )}
             <button
               className="btn btn-primary btn-sm w-full mt-auto"
-              onClick={() => startBlogFromTopic(pickerTopic)}
-              disabled={!pickerTopic.trim()}
+              onClick={() => {
+                const target = dossiers.find((d) => d.id === pickerDossierId) ?? dossiers[0];
+                if (target) startBlogFromResearch(target.dossier, target.id);
+              }}
+              disabled={!pickerDossierId || dossiers.length === 0}
               type="button"
             >
-              Write about this
+              {dossiers.length === 0 ? "No research yet" : "Use this research"}
+            </button>
+          </div>
+
+          {/* 4. Blank post */}
+          <div className="panel panel-pad flex flex-col gap-2.5 h-full">
+            <span className="material-symbols-outlined text-primary">edit_note</span>
+            <div>
+              <p className="tile-name">Blank post</p>
+              <p className="tile-desc">An empty editor. You bring the subject.</p>
+            </div>
+            <button
+              className="btn btn-primary btn-sm w-full mt-auto"
+              onClick={() => startBlankBlog()}
+              type="button"
+            >
+              Start writing
             </button>
           </div>
         </div>
@@ -218,42 +287,44 @@ export default function BlogGeneratorPage() {
   }
 
   const handleRefreshSuggestions = async () => {
-                if (!api.baseUrl || !api.model || (!api.apiKey && api.provider !== "ollama")) {
-                  regenerateBlogSuggestions();
-                  setMessage("Generated local title suggestions. Add API settings for live AI suggestions.");
-                  return;
-                }
+    if (!api.baseUrl || !api.model || (!api.apiKey && api.provider !== "ollama")) {
+      regenerateBlogSuggestions();
+      setMessage("Generated local title suggestions. Add API settings for live AI suggestions.");
+      return;
+    }
 
-                setGeneratingSuggestions(true);
-                try {
-                  const text = await generateAiText({
-                    api,
-                    systemPrompt:
-                      "You create blog headline options for authors turning ebook concepts into content marketing. Return exactly three distinct titles, one per line.",
-                    userPrompt: selectedProject
-                      ? `Project title: ${selectedProject.title}\nAudience: ${selectedProject.audience}\nTone: ${selectedProject.tone}\nDescription: ${selectedProject.description}`
-                      : `Blog topic: ${subject}`,
-                    temperature: settings.temperature,
-                    topP: settings.topP,
-                  });
-                  const suggestions = text
-                    .split("\n")
-                    .map((line) => line.replace(/^[\-\d\.\)\s]+/, "").trim())
-                    .filter(Boolean)
-                    .slice(0, 3);
-                  updateBlog({ suggestions: suggestions.length ? suggestions : (blog?.suggestions || []) });
-                  setMessage("Fresh AI title suggestions generated.");
-                } catch (error) {
-                  regenerateBlogSuggestions();
-                  setMessage(
-                    `AI suggestions failed, so local suggestions were used instead. ${
-                      error instanceof Error ? error.message : "Unknown error."
-                    }`,
-                  );
-                } finally {
-                  setGeneratingSuggestions(false);
-                }
-                };
+    setGeneratingSuggestions(true);
+    try {
+      const text = await generateAiText({
+        api,
+        systemPrompt:
+          "You create blog headline options for authors turning ebook concepts and research dossiers into content marketing. Return exactly three distinct titles, one per line.",
+        userPrompt: selectedProject
+          ? `Project title: ${selectedProject.title}\nAudience: ${selectedProject.audience}\nTone: ${selectedProject.tone}\nDescription: ${selectedProject.description}`
+          : selectedDossier
+          ? `Research topic: ${selectedDossier.topic}\nAudience: ${selectedDossier.targetAudience}\nSummary: ${selectedDossier.executiveSummary}`
+          : `Blog topic: ${subject}`,
+        temperature: settings.temperature,
+        topP: settings.topP,
+      });
+      const suggestions = text
+        .split("\n")
+        .map((line) => line.replace(/^[\-\d\.\)\s]+/, "").trim())
+        .filter(Boolean)
+        .slice(0, 3);
+      updateBlog({ suggestions: suggestions.length ? suggestions : (blog?.suggestions || []) });
+      setMessage("Fresh AI title suggestions generated.");
+    } catch (error) {
+      regenerateBlogSuggestions();
+      setMessage(
+        `AI suggestions failed, so local suggestions were used instead. ${
+          error instanceof Error ? error.message : "Unknown error."
+        }`,
+      );
+    } finally {
+      setGeneratingSuggestions(false);
+    }
+  };
 
   return (
     <div className="page grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_17rem] gap-4 items-start">
@@ -363,7 +434,13 @@ export default function BlogGeneratorPage() {
           <div className="rail-section">
             <div className="flex items-baseline justify-between mb-1.5">
               <span className="label !mb-0">
-                {source === "project" ? "Source project" : source === "topic" ? "Topic" : "Source"}
+                {source === "project"
+                  ? "Source project"
+                  : source === "topic"
+                  ? "Topic"
+                  : source === "research"
+                  ? "Research dossier"
+                  : "Source"}
               </span>
               <button
                 className="btn btn-ghost btn-sm -mr-2"
@@ -399,6 +476,20 @@ export default function BlogGeneratorPage() {
                     <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
                   </button>
                 )}
+              </>
+            ) : source === "research" ? (
+              <>
+                <p className="text-[12.5px] font-medium text-on-surface line-clamp-2">
+                  {blog.topic}
+                </p>
+                <button
+                  className="btn btn-ghost btn-sm mt-1.5 -ml-2 text-primary flex items-center gap-1"
+                  onClick={() => router.push("/research")}
+                  type="button"
+                >
+                  <span className="material-symbols-outlined text-[15px]">travel_explore</span>
+                  Open in Research Lab
+                </button>
               </>
             ) : (
               <p className="text-[12.5px] text-on-surface">

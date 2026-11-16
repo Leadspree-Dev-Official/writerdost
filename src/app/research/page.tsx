@@ -71,6 +71,7 @@ export default function ResearchPage() {
   const api = useAppStore((state) => state.api);
   const updateCreateDraft = useAppStore((state) => state.updateCreateDraft);
   const updateRewrite = useAppStore((state) => state.updateRewrite);
+  const startBlogFromResearch = useAppStore((state) => state.startBlogFromResearch);
   const recordUsage = useAppStore((state) => state.recordUsage);
 
   // Saved Dossiers State (Just like projects in ProjectsPage)
@@ -258,6 +259,12 @@ export default function ResearchPage() {
     router.push("/rewrite");
   };
 
+  // 1-Click Reusability: Write Blog Post in Blog Generator
+  const handleWriteBlog = (dossier: ResearchDossier, dossierId?: string) => {
+    startBlogFromResearch(dossier, dossierId);
+    router.push("/blog-generator");
+  };
+
   // Delete Dossier Action
   const handleDeleteConfirm = () => {
     if (!dossierToDelete) return;
@@ -330,6 +337,16 @@ export default function ResearchPage() {
               >
                 <span className="material-symbols-outlined text-[17px]">edit_note</span>
                 <span>Use in Rewrite</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleWriteBlog(selectedDossier.dossier, selectedDossier.id)}
+                className="btn btn-secondary btn-sm flex items-center gap-1.5 cursor-pointer"
+                title="Write a blog post grounded in this research in Blog Generator"
+              >
+                <span className="material-symbols-outlined text-[17px]">article</span>
+                <span>Write Blog</span>
               </button>
 
               <button
@@ -861,6 +878,16 @@ export default function ResearchPage() {
                         title="Use in Rewrite Studio: transfers chapter seeds to /rewrite"
                       >
                         <span className="material-symbols-outlined text-[17px]">edit_note</span>
+                      </button>
+
+                      {/* Write Blog Post Button */}
+                      <button
+                        type="button"
+                        onClick={() => handleWriteBlog(d, entry.id)}
+                        className="btn btn-secondary btn-icon btn-sm cursor-pointer shrink-0"
+                        title="Write Blog Post: starts a blog draft from this research"
+                      >
+                        <span className="material-symbols-outlined text-[17px]">article</span>
                       </button>
 
                       {/* View Dossier Button */}
