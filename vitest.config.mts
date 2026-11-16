@@ -5,6 +5,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      undici: path.resolve(__dirname, "./src/lib/undici-shim.ts"),
     },
   },
   test: {
