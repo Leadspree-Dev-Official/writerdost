@@ -4,19 +4,18 @@ import WebsiteNavbar from "@/components/website/Navbar";
 import Hero from "@/components/website/Hero";
 import LogosTicker from "@/components/website/LogosTicker";
 import ProblemSection from "@/components/website/ProblemSection";
+import MetricsBanner from "@/components/website/MetricsBanner";
 import HowItWorks from "@/components/website/HowItWorks";
+import TemplatesShowcase from "@/components/website/TemplatesShowcase";
 import FeatureBentoGrid from "@/components/website/FeatureBentoGrid";
+import PersonasSection from "@/components/website/PersonasSection";
 import ComparisonMatrix from "@/components/website/ComparisonMatrix";
 import TestimonialsSection from "@/components/website/TestimonialsSection";
+import RoiCalculator from "@/components/website/RoiCalculator";
 import PricingSection from "@/components/website/PricingSection";
 import FaqSection from "@/components/website/FaqSection";
 import CtaBanner from "@/components/website/CtaBanner";
 import WebsiteFooter from "@/components/website/WebsiteFooter";
-
-// Deferred sections available if needed:
-// import AgentSwarmDeepDive from "@/components/website/AgentSwarmDeepDive";
-// import PersonasSection from "@/components/website/PersonasSection";
-// import RoiCalculator from "@/components/website/RoiCalculator";
 
 export default function HomePage() {
   return (
@@ -35,25 +34,37 @@ export default function HomePage() {
         {/* 3. The Core Problem: Why Existing AI Writing Tools Break Down */}
         <ProblemSection />
 
-        {/* 4. 4-Step Interactive How-It-Works */}
+        {/* 4. Hard Efficiency & Scale Metrics */}
+        <MetricsBanner />
+
+        {/* 5. 4-Step Interactive How-It-Works */}
         <HowItWorks />
 
-        {/* 5. Complete Feature Bento Grid */}
+        {/* 6. Pre-Tuned Book & Content Blueprints */}
+        <TemplatesShowcase />
+
+        {/* 7. Complete Feature Bento Grid */}
         <FeatureBentoGrid />
 
-        {/* 6. Direct Comparison: Writerdost vs Generic AI vs Ghostwriters */}
+        {/* 8. Role-Based Persona Workflows */}
+        <PersonasSection />
+
+        {/* 9. Direct Comparison: Writerdost vs Generic AI vs Ghostwriters */}
         <ComparisonMatrix />
 
-        {/* 7. Early Adopter Showcase (Real Beta Projects) */}
+        {/* 10. Early Adopter Showcase (Real Beta Projects) */}
         <TestimonialsSection />
 
-        {/* 8. Free Beta Access */}
+        {/* 11. Interactive Time & Cost Savings ROI Calculator */}
+        <RoiCalculator />
+
+        {/* 12. Standard Pricing & Limited-Time Founder Passes */}
         <PricingSection />
 
-        {/* 9. Frequently Asked Questions Accordion */}
+        {/* 13. Frequently Asked Questions Accordion */}
         <FaqSection />
 
-        {/* 10. Final High-Conversion CTA */}
+        {/* 14. Final High-Conversion CTA */}
         <CtaBanner />
       </main>
 

@@ -318,7 +318,7 @@ export function GenerationOverlay({
             <div className="flex items-center justify-between border-b border-[var(--hairline)] px-4 py-2">
               <span className="panel-title">Activity</span>
               {Boolean(sessionTokens) && (
-                <span className="row-meta">{(sessionTokens || 0).toLocaleString()} tokens</span>
+                <span className="row-meta">~{Math.round((sessionTokens || 0) * 1.5).toLocaleString()} est. credits</span>
               )}
             </div>
 

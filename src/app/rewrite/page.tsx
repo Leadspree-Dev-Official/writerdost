@@ -1127,8 +1127,8 @@ export default function RewritePage() {
                       <dd>{formatTime(metrics.draftingTime)}</dd>
                     </div>
                     <div className="kv">
-                      <dt>Tokens</dt>
-                      <dd>{metrics.tokens.toLocaleString()}</dd>
+                      <dt>Est. Credits</dt>
+                      <dd>~{Math.round(metrics.tokens * 1.5).toLocaleString()} cr</dd>
                     </div>
                   </dl>
                 </div>

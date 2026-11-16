@@ -600,7 +600,7 @@ export default function EditorPage() {
               </button>
               <button
                 onClick={toggleEditorSidebar}
-                title={`Project Metrics (${project.tokensUsed?.toLocaleString() || 0} tokens)`}
+                title={`Project Metrics (~${Math.round((project.tokensUsed || 0) * 1.5).toLocaleString()} cr)`}
                 className="w-9 h-9 rounded-[var(--radius)] flex items-center justify-center text-slate-400 hover:text-primary hover:bg-surface-container-highest/40 transition-colors"
                 type="button"
               >

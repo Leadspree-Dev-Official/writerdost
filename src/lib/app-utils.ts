@@ -34,6 +34,7 @@ export function slugify(input: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function robustParseJson<T = any>(text: string): T | null {
   // 1. Control character sanitization (Standard JSON.parse allows \n between tokens but not within strings)
   const sanitized = text.replace(/[\u0000-\u0009\u000B-\u000C\u000E-\u001F]/g, "");

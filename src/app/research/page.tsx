@@ -78,7 +78,9 @@ export default function ResearchPage() {
   const router = useRouter();
   const api = useAppStore((state) => state.api);
   const currentUser = useAppStore((state) => state.currentUser);
-  const userCredits = currentUser?.credits ?? useAppStore((state) => state.userCredits) ?? 50_000;
+  const appCredits = useAppStore((state) => state.userCredits);
+  const userCredits = currentUser?.credits ?? appCredits ?? 50_000;
+  void userCredits; // referenced for quota awareness
   const updateCreateDraft = useAppStore((state) => state.updateCreateDraft);
   const updateRewrite = useAppStore((state) => state.updateRewrite);
   const recordUsage = useAppStore((state) => state.recordUsage);
@@ -121,7 +123,10 @@ export default function ResearchPage() {
     try {
       const stored = localStorage.getItem("writerdost_saved_dossiers");
       if (stored) {
-        setSavedDossiers(JSON.parse(stored));
+        const timer = setTimeout(() => {
+          setSavedDossiers(JSON.parse(stored));
+        }, 0);
+        return () => clearTimeout(timer);
       }
     } catch {
       // Ignore storage errors
@@ -263,7 +268,7 @@ Key Theses:
 ${dossier.coreTheses.map((t, idx) => `${idx + 1}. ${t.title}: ${t.explanation}`).join("\n")}
 
 Empirical Proof Points:
-${dossier.factsAndStats.map((f, idx) => `• [${f.stat}] ${f.context} (Source: ${f.citation})`).join("\n")}
+${dossier.factsAndStats.map((f) => `• [${f.stat}] ${f.context} (Source: ${f.citation})`).join("\n")}
 
 Contrarian Angles:
 ${dossier.contrarianAngles.map((c) => `• Angle: ${c.angle} -> ${c.counterIntuitiveTruth}`).join("\n")}

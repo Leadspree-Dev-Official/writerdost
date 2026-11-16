@@ -45,7 +45,7 @@ export default function CopywritingStudioPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("cold-email");
   const [selectedTone, setSelectedTone] = useState<string>("Professional");
-  const [formInputs, setFormInputs] = useState<Record<string, any>>({});
+  const [formInputs, setFormInputs] = useState<Record<string, string>>({});
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   // Engine modal & status
@@ -86,7 +86,7 @@ export default function CopywritingStudioPage() {
   // Reset form inputs when switching templates
   const handleSelectTemplate = (template: CopywritingTemplate) => {
     setSelectedTemplateId(template.id);
-    const defaults: Record<string, any> = {};
+    const defaults: Record<string, string> = {};
     template.inputFields.forEach((f) => {
       if (f.defaultValue !== undefined) {
         defaults[f.id] = f.defaultValue;
@@ -99,17 +99,20 @@ export default function CopywritingStudioPage() {
 
   // Initialize defaults on initial load
   useEffect(() => {
-    const defaults: Record<string, any> = {};
+    const defaults: Record<string, string> = {};
     currentTemplate.inputFields.forEach((f) => {
       if (f.defaultValue !== undefined) {
         defaults[f.id] = f.defaultValue;
       }
     });
-    setFormInputs(defaults);
+    const timer = setTimeout(() => {
+      setFormInputs(defaults);
+    }, 0);
+    return () => clearTimeout(timer);
   }, [currentTemplate]);
 
   // Handle input change
-  const handleInputChange = (fieldId: string, value: any) => {
+  const handleInputChange = (fieldId: string, value: string) => {
     setFormInputs((prev) => ({ ...prev, [fieldId]: value }));
     if (validationErrors[fieldId]) {
       setValidationErrors((prev) => {
@@ -259,10 +262,11 @@ export default function CopywritingStudioPage() {
           text: `Generated successfully in ${duration}s using BYOK.`,
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Generation encountered an unexpected failure. Please try again.";
       setStatusMessage({
         type: "error",
-        text: err?.message || "Generation encountered an unexpected failure. Please try again.",
+        text: message,
       });
     } finally {
       setIsGenerating(false);

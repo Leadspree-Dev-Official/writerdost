@@ -892,7 +892,7 @@ export default function AutomationsPage() {
                               {post.tokens && (
                                 <>
                                   <span>·</span>
-                                  <span>{post.tokens.toLocaleString()} tokens</span>
+                                  <span>~{Math.round(post.tokens * 1.5).toLocaleString()} cr</span>
                                 </>
                               )}
                             </div>
@@ -1058,7 +1058,7 @@ export default function AutomationsPage() {
                     />
 
                     <div className="flex items-center justify-between text-[11px] text-on-surface-variant">
-                      <span>{preview.tokens?.toLocaleString()} tokens used</span>
+                      <span>~{Math.round((preview.tokens || 0) * 1.5).toLocaleString()} est. credits</span>
                       <button
                         type="button"
                         className="btn btn-ghost btn-sm text-[11px] h-6 px-2"
@@ -1104,7 +1104,7 @@ export default function AutomationsPage() {
                   {viewingPost.tokens && (
                     <>
                       <span>·</span>
-                      <span>{viewingPost.tokens.toLocaleString()} tokens</span>
+                      <span>~{Math.round(viewingPost.tokens * 1.5).toLocaleString()} cr</span>
                     </>
                   )}
                 </div>

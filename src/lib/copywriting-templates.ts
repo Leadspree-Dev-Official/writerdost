@@ -22,7 +22,7 @@ export interface CopywritingTemplate {
   framework: string; // e.g. "PAS", "AIDA", "Hook-Story-Offer"
   inputFields: TemplateInputField[];
   systemPrompt: string;
-  promptBuilder: (inputs: Record<string, any>) => string;
+  promptBuilder: (inputs: Record<string, unknown>) => string;
 }
 
 export const COPYWRITING_TEMPLATES: CopywritingTemplate[] = [
