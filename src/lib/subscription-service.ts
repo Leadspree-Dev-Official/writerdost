@@ -117,6 +117,17 @@ export const DEFAULT_COUPONS: Coupon[] = [
     createdAt: new Date().toISOString(),
   },
   {
+    id: "coupon-welcome20",
+    code: "WELCOME20",
+    discountType: "percent",
+    discountValue: 20,
+    timesUsed: 0,
+    maxUses: 5000,
+    isActive: true,
+    validUntil: "2030-12-31T23:59:59Z",
+    createdAt: new Date().toISOString(),
+  },
+  {
     id: "coupon-writer20",
     code: "WRITER20",
     discountType: "percent",

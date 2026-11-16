@@ -10,6 +10,7 @@ const jsonEndpoints = [
   "/api/translate-project",
   "/api/marketplace",
   "/api/automations/preview",
+  "/api/kdp-launch-kit",
 ];
 
 for (const endpoint of jsonEndpoints) {

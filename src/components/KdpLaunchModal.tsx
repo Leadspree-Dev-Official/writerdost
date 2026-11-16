@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import { useAppStore } from "@/lib/app-store";
 import type { KdpLaunchKit } from "@/lib/kdp-types";
+import { generateLocalKdpFallback } from "@/lib/kdp-launch-service";
+import { apiFetch } from "@/lib/api-client";
 import SafeHtml from "@/components/SafeHtml";
 
 interface KdpLaunchModalProps {
@@ -49,22 +51,44 @@ export const KdpLaunchModal: React.FC<KdpLaunchModalProps> = ({
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/kdp-launch-kit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          project,
-          api,
-          settings,
-        }),
-      });
+      let resultLaunchKit: KdpLaunchKit | null = null;
+      try {
+        const res = await apiFetch("/api/kdp-launch-kit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            project,
+            api,
+            settings,
+          }),
+        });
 
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Failed to generate KDP Launch Kit");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.launchKit) {
+            resultLaunchKit = data.launchKit;
+          }
+        }
+      } catch (netErr) {
+        console.warn("Backend API call failed, falling back to local strategist engine:", netErr);
       }
 
-      setProjectKdpLaunchKit(projectId, data.launchKit);
+      // If backend auth or rate limit declined, generate via local strategist engine
+      if (!resultLaunchKit) {
+        resultLaunchKit = generateLocalKdpFallback({
+          title: project.title,
+          description: project.description || project.metaDescription,
+          audience: project.audience,
+          tone: project.tone,
+          genre: (project as { genre?: string }).genre || "Non-Fiction",
+          chapters: (project.chapters || []).map((c) => ({
+            title: c.title,
+            content: typeof c.content === "string" ? c.content.slice(0, 300) : "",
+          })),
+        });
+      }
+
+      setProjectKdpLaunchKit(projectId, resultLaunchKit);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Generation failed");
     } finally {

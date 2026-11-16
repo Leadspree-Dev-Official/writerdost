@@ -26,6 +26,15 @@ if (!globalThis.__writerdost_subscriptions) {
 }
 
 export function getAllCoupons(): Coupon[] {
+  if (!globalThis.__writerdost_coupons || globalThis.__writerdost_coupons.length === 0) {
+    globalThis.__writerdost_coupons = [...DEFAULT_COUPONS];
+  }
+  // Ensure default coupons like WELCOME20 and WELCOME50 are present
+  for (const def of DEFAULT_COUPONS) {
+    if (!globalThis.__writerdost_coupons.some((c) => c.code === def.code)) {
+      globalThis.__writerdost_coupons.push(def);
+    }
+  }
   return globalThis.__writerdost_coupons || [];
 }
 
