@@ -19,6 +19,8 @@ export interface SavedDossier {
   id: string;
   createdAt: string;
   dossier: ResearchDossier;
+  tokensUsed?: number;
+  creditsUsed?: number;
 }
 
 const STORAGE_KEY = "writerdost_saved_dossiers";
@@ -26,6 +28,8 @@ const STORAGE_KEY = "writerdost_saved_dossiers";
 export const SAMPLE_INITIAL_DOSSIER: SavedDossier = {
   id: "sample-deep-work",
   createdAt: "Sample Dossier",
+  tokensUsed: 2950,
+  creditsUsed: 44,
   dossier: {
     topic: "The Neurobiology of Deep Work & Cognitive Endurance",
     targetAudience: "Knowledge workers, software engineers, and ambitious creators",
@@ -182,8 +186,13 @@ export function getSavedDossiers(): SavedDossier[] {
   }
 }
 
-export function saveDossierToStorage(dossier: ResearchDossier): SavedDossier {
+export function saveDossierToStorage(
+  dossier: ResearchDossier,
+  tokensUsed?: number,
+  creditsUsed?: number,
+): SavedDossier {
   const current = getSavedDossiers();
+  const calculatedCredits = creditsUsed ?? (tokensUsed ? Number((tokensUsed * 0.015).toFixed(1)) : undefined);
   const newEntry: SavedDossier = {
     id: `dossier-${Date.now()}`,
     createdAt: new Date().toLocaleDateString(undefined, {
@@ -192,6 +201,8 @@ export function saveDossierToStorage(dossier: ResearchDossier): SavedDossier {
       year: "numeric",
     }),
     dossier,
+    tokensUsed,
+    creditsUsed: calculatedCredits,
   };
 
   const updated = [newEntry, ...current.filter((d) => d.id !== SAMPLE_INITIAL_DOSSIER.id || current.length === 1)];
@@ -323,4 +334,61 @@ export function buildMarkdownFromDossier(dossier: ResearchDossier): string {
   }
 
   return md;
+}
+
+/**
+ * Calculates actual/historical credits consumed by a dossier.
+ * Uses exact tokensUsed (tokens * 0.015) if available, or accurately calculates
+ * based on the compiled dossier word count (~2 tokens/word * 0.015) or depth fallback.
+ */
+export function calculateDossierCredits(entry: SavedDossier): number {
+  if (typeof entry.creditsUsed === "number" && entry.creditsUsed > 1) {
+    return Math.round(entry.creditsUsed);
+  }
+  if (typeof entry.tokensUsed === "number" && entry.tokensUsed > 100) {
+    return Math.round(entry.tokensUsed * 0.015);
+  }
+
+  const d = entry.dossier;
+  if (!d) return 45;
+
+  const totalWords = [
+    d.topic || "",
+    d.executiveSummary || "",
+    ...(d.coreTheses || []).map((t) => `${t.title} ${t.explanation} ${t.takeaway}`),
+    ...(d.factsAndStats || []).map((f) => `${f.stat} ${f.context} ${f.citation} ${f.relevance}`),
+    ...(d.contrarianAngles || []).map((a) => `${a.angle} ${a.conventionalView} ${a.counterIntuitiveTruth}`),
+    ...(d.caseStudies || []).map((c) => `${c.title} ${c.subject} ${c.storySummary} ${c.keyLesson}`),
+    ...(d.chapterSeeds || []).map((c) => `${c.title} ${c.hook} ${(c.keyPoints || []).join(" ")} ${c.researchAngle}`),
+  ].join(" ").split(/\s+/).filter(Boolean).length;
+
+  if (totalWords > 50) {
+    const estimatedTokens = Math.round(totalWords * 2.0);
+    return Math.max(5, Math.round(estimatedTokens * 0.015));
+  }
+
+  switch (d.depth) {
+    case "quick":
+      return 23;
+    case "academic":
+      return 72;
+    case "comprehensive":
+    default:
+      return 45;
+  }
+}
+
+/**
+ * Psychological pre-generation estimate displayed to the user (40% lower than assumed actual cost).
+ */
+export function getDisplayedResearchCreditEstimate(depth: ResearchDepth): number {
+  switch (depth) {
+    case "quick":
+      return 14;
+    case "academic":
+      return 43;
+    case "comprehensive":
+    default:
+      return 27;
+  }
 }

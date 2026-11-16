@@ -14,6 +14,8 @@ import {
   deleteDossierFromStorage,
   formatDossierSynthesis,
   buildMarkdownFromDossier,
+  calculateDossierCredits,
+  getDisplayedResearchCreditEstimate,
 } from "@/lib/research-store";
 import { CoinsIcon } from "@/components/ui/CoinsIcon";
 import clsx from "clsx";
@@ -200,13 +202,14 @@ export default function ResearchPage() {
         throw new Error(data.error || "Failed to generate research dossier.");
       }
 
-      // Record credit consumption
+      // Record credit consumption & save token metadata
+      const tokensConsumed = data.usage?.total_tokens || (depth === "academic" ? 4800 : depth === "quick" ? 1500 : 3200);
       if (data.usage?.total_tokens) {
         recordUsage(data.usage.total_tokens, api.provider, api.model);
       }
 
       // Automatically save to persistent dossiers list (just like Projects!)
-      const savedEntry = saveDossierToStorage(data.dossier);
+      const savedEntry = saveDossierToStorage(data.dossier, tokensConsumed);
       setSavedDossiers(getSavedDossiers());
       setSelectedDossier(savedEntry);
       setShowCreator(false);
@@ -363,7 +366,7 @@ export default function ResearchPage() {
               <span className="text-[12px] text-on-surface-variant">·</span>
               <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
                 <CoinsIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                <span>~1 approx. credit used • Free with BYOK</span>
+                <span>~{calculateDossierCredits(selectedDossier)} credits used • Free with BYOK</span>
               </span>
             </div>
             <h1 className="text-[20px] sm:text-[24px] font-bold text-on-surface leading-tight">
@@ -744,16 +747,16 @@ export default function ResearchPage() {
             <div className="overflow-x-auto">
               {/* Table Header Row */}
               <div className="hidden md:flex items-center gap-4 h-9 px-3.5 border-b border-[var(--hairline)] bg-on-surface/[0.02] text-[11px] font-semibold text-on-surface-variant md:min-w-[760px]">
-              <span className="flex-1 min-w-0">Topic & Synthesis</span>
-              <span className="w-24">Depth</span>
-              <span className="w-14 text-right">Theses</span>
-              <span className="w-14 text-right">Stats</span>
-              <span className="w-14 text-right">Chapters</span>
-              <span className="w-16 text-right flex items-center justify-end" title="Estimated credits">
-                <CoinsIcon className="w-3.5 h-3.5 text-amber-500" />
-              </span>
-              <span className="w-44 text-right">Actions</span>
-            </div>
+                <span className="flex-1 min-w-0">Topic & Synthesis</span>
+                <span className="w-24 shrink-0">Depth</span>
+                <span className="w-14 shrink-0 text-right">Theses</span>
+                <span className="w-14 shrink-0 text-right">Stats</span>
+                <span className="w-14 shrink-0 text-right">Chapters</span>
+                <span className="w-16 shrink-0 text-right flex items-center justify-end" title="Estimated credits">
+                  <CoinsIcon className="w-3.5 h-3.5 text-amber-500" />
+                </span>
+                <span className="w-48 shrink-0 text-right pr-2">Actions</span>
+              </div>
 
             {visible.length === 0 ? (
               <div className="p-8 text-center space-y-3">
@@ -828,14 +831,17 @@ export default function ResearchPage() {
 
                     {/* Credits */}
                     <span className="w-16 shrink-0 row-meta text-right hidden md:block">
-                      <span className="text-amber-600 dark:text-amber-400 font-medium flex items-center justify-end gap-1" title="Estimated: ~1 credit">
+                      <span
+                        className="text-amber-600 dark:text-amber-400 font-medium flex items-center justify-end gap-1"
+                        title={`Dossier generation: ~${calculateDossierCredits(entry)} credits`}
+                      >
                         <CoinsIcon className="w-3 h-3 text-amber-500 shrink-0" />
-                        <span>~1</span>
+                        <span>~{calculateDossierCredits(entry)}</span>
                       </span>
                     </span>
 
                     {/* 1-Click Action Buttons */}
-                    <span className="w-44 shrink-0 flex items-center justify-end gap-1">
+                    <span className="w-48 shrink-0 flex items-center justify-end gap-1.5">
                       {/* Draft Book Button */}
                       <button
                         type="button"
@@ -844,7 +850,7 @@ export default function ResearchPage() {
                         title="Draft Book from this Research: populates New Ebook with this dossier and navigates to /create"
                       >
                         <span className="material-symbols-outlined text-[15px]">menu_book</span>
-                        <span className="hidden lg:inline">Draft</span>
+                        <span className="hidden xl:inline">Draft</span>
                       </button>
 
                       {/* Use in Rewrite Button */}
@@ -1169,7 +1175,7 @@ export default function ResearchPage() {
                 <div className="flex items-center justify-between pt-3 border-t border-[var(--hairline)]">
                   <span className="text-[11.5px] text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
                     <CoinsIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                    ~1 approx. credit • Free with BYOK
+                    ~{getDisplayedResearchCreditEstimate(depth)} approx. credits • Free with BYOK
                   </span>
 
                   <div className="flex items-center gap-2">
