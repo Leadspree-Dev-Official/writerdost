@@ -1124,7 +1124,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     referrals: [],
     userReferralCode: "",
     preferredEngine: "bizai",
-    userCredits: 50_000,
+    userCredits: 500,
     
     // Global abort mechanism (not persisted)
     cancelGeneration: () => {},
@@ -2209,7 +2209,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     spendCredits: (amount) => {
       const current = get().currentUser?.credits ?? get().userCredits ?? 0;
       if (current < amount) return false;
-      const next = current - amount;
+      const next = Number((current - amount).toFixed(2));
       set((state) => ({
         userCredits: next,
         currentUser: state.currentUser
@@ -2260,7 +2260,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         type === "project" ? quotas.maxProjectsPerMonth : quotas.maxBlogsPerMonth;
       const hasPlanAllowance = limit === -1 || count < limit;
       const requiredCredits = CREDIT_COSTS[type];
-      const availableCredits = get().currentUser?.credits ?? get().userCredits ?? 50_000;
+      const availableCredits = get().currentUser?.credits ?? get().userCredits ?? 500;
 
       if (hasPlanAllowance) {
         return {
@@ -2278,8 +2278,8 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       }
 
       // If monthly quota is exhausted, allow pay-as-you-go with credits
-      // Users can start as long as they have a positive credit balance (min 500 cr)
-      if (availableCredits >= 500) {
+      // Users can start as long as they have a positive credit balance (min 5 cr)
+      if (availableCredits >= 5) {
         return {
           allowed: true,
           used: count,
@@ -2517,7 +2517,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       })),
     recordUsage: (tokens, provider, model) => {
       let allowed = true;
-      let remainingCredits = get().currentUser?.credits ?? get().userCredits ?? 50_000;
+      let remainingCredits = get().currentUser?.credits ?? get().userCredits ?? 500;
       let creditsDeducted = 0;
 
       set((state) => {
@@ -2547,12 +2547,12 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         const ratePerMillion = rates[modelKey] || (provider === "ollama" || provider === "ollama_cloud" ? 0 : 0.75);
         const cost = (tokens / 1_000_000) * ratePerMillion;
 
-        // Auto-deduct credits at 1.5x token usage if using BizAI gateway (1 token = 1.5 credits)
+        // Auto-deduct credits at 0.015 credits per token if using BizAI gateway (100 tokens = 1.5 credits)
         let updatedCredits = state.userCredits;
         let updatedCurrentUser = state.currentUser;
         if (state.preferredEngine === "bizai" && tokens > 0) {
-          creditsDeducted = Math.round(tokens * TOKEN_CREDIT_MULTIPLIER);
-          updatedCredits = Math.max(0, (state.userCredits || 0) - creditsDeducted);
+          creditsDeducted = Number((tokens * TOKEN_CREDIT_MULTIPLIER).toFixed(2));
+          updatedCredits = Math.max(0, Number(((state.userCredits || 0) - creditsDeducted).toFixed(2)));
           if (updatedCurrentUser) {
             updatedCurrentUser = { ...updatedCurrentUser, credits: updatedCredits };
           }

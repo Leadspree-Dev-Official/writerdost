@@ -87,7 +87,7 @@ export default function BlogGeneratorPage() {
       if (engine === "bizai") {
         if (quota.source === "credits") {
           const totalTokens = estimatedTokens + 500;
-          const creditsToDeduct = Math.round(totalTokens * 1.5);
+          const creditsToDeduct = Number((totalTokens * 0.015).toFixed(1));
           spendCredits(creditsToDeduct);
           setMessage(`AI draft (~${targetWords} words) generated with BizAI Gateway (${creditsToDeduct.toLocaleString()} credits deducted).`);
         } else {

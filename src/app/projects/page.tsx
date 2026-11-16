@@ -186,9 +186,9 @@ export default function ProjectsPage() {
               </span>
               <span className="w-16 shrink-0 row-meta text-right hidden md:block">
                 {project.tokensUsed ? (
-                  <span title={`Estimated credits: ~${Math.round(project.tokensUsed * 1.5).toLocaleString()} cr`}>
+                  <span title={`Estimated credits: ~${(project.tokensUsed * 0.015).toFixed(1)} cr`}>
                     <span className="text-amber-600 dark:text-amber-400 font-medium">
-                      ~{Math.round((project.tokensUsed * 1.5) / 1000) > 0 ? `${Math.round((project.tokensUsed * 1.5) / 1000)}k` : Math.round(project.tokensUsed * 1.5)} cr
+                      ~{Math.round(project.tokensUsed * 0.015)} cr
                     </span>
                   </span>
                 ) : (

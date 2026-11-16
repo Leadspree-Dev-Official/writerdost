@@ -273,15 +273,15 @@ export interface CreditPack {
   isPopular?: boolean;
 }
 
-/** Rate at which token usage is converted to credits: 1 token = 1.5 credits */
-export const TOKEN_CREDIT_MULTIPLIER = 1.5;
+/** Rate at which token usage is converted to credits: 1 token = 0.015 credits (100 tokens = 1.5 credits) */
+export const TOKEN_CREDIT_MULTIPLIER = 0.015;
 
 /** Average raw tokens consumed per finished word across multi-agent research, planning & drafting (~2.35 tokens/word) */
 export const TOKENS_PER_WORD_ESTIMATE = 2.35;
 
-/** Helper to estimate actual credits required for a target word count: words * 2.35 tokens * 1.5 credits/token */
+/** Helper to estimate actual credits required for a target word count: words * 2.35 tokens * 0.015 credits/token */
 export function estimateCreditsForWords(words: number): number {
-  return Math.round(words * TOKENS_PER_WORD_ESTIMATE * TOKEN_CREDIT_MULTIPLIER);
+  return Number((words * TOKENS_PER_WORD_ESTIMATE * TOKEN_CREDIT_MULTIPLIER).toFixed(2));
 }
 
 /** Displayed token expectation shown to users in UI (40% lower than assumed for conversion psychology) */
@@ -291,40 +291,40 @@ export function getDisplayedTokenEstimate(words: number): number {
 
 /** Displayed credit expectation shown to users in UI (40% lower than assumed for conversion psychology) */
 export function getDisplayedCreditEstimate(words: number): number {
-  return Math.round(estimateCreditsForWords(words) * 0.60);
+  return Number((estimateCreditsForWords(words) * 0.60).toFixed(2));
 }
 
 export const CREDIT_PACKS: CreditPack[] = [
   {
     id: 'starter',
     name: 'Starter Pack',
-    credits: 50_000,
+    credits: 500,
     priceUsd: 5,
-    description: '50,000 Credits. Great for ~33,000 raw tokens of generation, outlines & blog drafts.',
+    description: '500 Credits. Great for ~33,000 raw tokens of generation, outlines & blog drafts.',
   },
   {
     id: 'creator',
     name: 'Creator Pack',
-    credits: 200_000,
+    credits: 2_000,
     priceUsd: 15,
-    description: '200,000 Credits. Perfect for complete 1 Lakh word ebooks & deep multi-agent pipelines.',
+    description: '2,000 Credits. Perfect for complete 1 Lakh word ebooks & deep multi-agent pipelines.',
     badge: 'Most Popular',
     isPopular: true,
   },
   {
     id: 'studio',
     name: 'Studio Pack',
-    credits: 600_000,
+    credits: 6_000,
     priceUsd: 35,
-    description: '600,000 Credits. Maximum volume for high-output authors, multi-novel series & automated blogs.',
+    description: '6,000 Credits. Maximum volume for high-output authors, multi-novel series & automated blogs.',
     badge: 'Best Value',
   },
 ];
 
 export const CREDIT_COSTS = {
-  project: 150_000, // standard project allowance in credits (100k raw tokens * 1.5x)
-  blog: 3_000,      // standard blog post (~2,000 raw tokens * 1.5x)
-  rewrite: 1_500,   // standard passage rewrite (~1,000 raw tokens * 1.5x)
+  project: 1_500, // standard project allowance in credits (100k raw tokens * 0.015)
+  blog: 30,       // standard blog post (~2,000 raw tokens * 0.015)
+  rewrite: 15,    // standard passage rewrite (~1,000 raw tokens * 0.015)
 } as const;
 
 export interface UpgradeRequest {

@@ -41,7 +41,7 @@ export function AiEngineSelectorModal({
     : taskType === "blog" ? 15 : 8;
   const quotaCheckBizai = checkQuota(taskType === "rewrite" ? "project" : taskType, "bizai");
 
-  const canUseBizai = quotaCheckBizai.source === "plan_quota" ? true : userCredits >= 500;
+  const canUseBizai = quotaCheckBizai.source === "plan_quota" ? true : userCredits >= 5;
   const canUseByok = hasByokConfigured;
 
   const handleSelect = (engine: GenerationEngine) => {
@@ -151,7 +151,7 @@ export function AiEngineSelectorModal({
                 ) : (
                   <span className="text-rose-400 font-medium flex items-center gap-1">
                     <span className="material-symbols-outlined text-sm">error</span>
-                    Plan quota exhausted &amp; insufficient credits ({userCredits.toLocaleString()} available, min 500 cr required)
+                    Plan quota exhausted &amp; insufficient credits ({userCredits.toLocaleString()} available, min 5 cr required)
                   </span>
                 )}
 

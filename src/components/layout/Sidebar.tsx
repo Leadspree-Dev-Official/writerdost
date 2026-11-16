@@ -67,7 +67,7 @@ export default function Sidebar() {
   const toggleSidebar = useAppStore((state) => state.toggleGlobalSidebar);
   const currentUser = useAppStore((state) => state.currentUser);
   const storeCredits = useAppStore((state) => state.userCredits);
-  const userCredits = currentUser?.credits ?? storeCredits ?? 50_000;
+  const userCredits = currentUser?.credits ?? storeCredits ?? 500;
   const logout = useAppStore((state) => state.logout);
   const hasAutoClosed = useRef(false);
 

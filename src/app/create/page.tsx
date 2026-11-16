@@ -108,8 +108,8 @@ export default function IdeaAndInput() {
         setMessage(`Cannot start generation: Your wallet has 0 credits. Please top up credits or use BYOK.`);
         return;
       }
-      if (currentCredits < 500) {
-        setMessage(`Wallet balance too low (${currentCredits.toLocaleString()} cr available). A minimum of 500 credits is required to initiate generation. Please top up your wallet.`);
+      if (currentCredits < 5) {
+        setMessage(`Wallet balance too low (${currentCredits.toLocaleString()} cr available). A minimum of 5 credits is required to initiate generation. Please top up your wallet.`);
         return;
       }
     }
@@ -473,9 +473,9 @@ export default function IdeaAndInput() {
                     onChange={(event) => updateCreateDraft({ length: Number(event.target.value) })}
                   />
                   <div className="flex justify-between items-center text-[10.5px] text-on-surface-variant">
-                    <span>1k (~4 pp)</span>
+                    <span>1k (~21 cr)</span>
                     <span className="text-[10px] text-slate-500">Pay-as-you-go • 0 with BYOK</span>
-                    <span>{isExtendedOmnibus ? "200k (~800 pp)" : "100k (~400 pp)"}</span>
+                    <span>{isExtendedOmnibus ? "200k (~4.2k cr)" : "100k (~2.1k cr)"}</span>
                   </div>
                 </div>
 

@@ -40,7 +40,7 @@ export default function Header() {
   const setManuscriptFullView = useAppStore((state) => state.setManuscriptFullView);
   const currentUser = useAppStore((state) => state.currentUser);
   const storeCredits = useAppStore((state) => state.userCredits);
-  const userCredits = currentUser?.credits ?? storeCredits ?? 50_000;
+  const userCredits = currentUser?.credits ?? storeCredits ?? 500;
 
   const mounted = useMounted();
   const [notification, setNotification] = useState<{ message: string; type: "success" | "info" } | null>(null);

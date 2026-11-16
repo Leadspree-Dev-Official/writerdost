@@ -13,9 +13,9 @@ interface ProjectMetricsProps {
 export const ProjectMetrics: React.FC<ProjectMetricsProps> = ({ project }) => {
   const [isOpen, setIsOpen] = useState(false);
   const totalTokens = project.tokensUsed || 0;
-  const creditsConsumed = Math.round(totalTokens * 1.5);
+  const creditsConsumed = Number((totalTokens * 0.015).toFixed(1));
   const creditLabel = creditsConsumed >= 1000
-    ? `${(creditsConsumed / 1000).toFixed(0)}k cr`
+    ? `${(creditsConsumed / 1000).toFixed(1)}k cr`
     : `${creditsConsumed} cr`;
 
   return (

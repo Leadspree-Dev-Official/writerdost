@@ -23,6 +23,17 @@ class Agent {
   constructor(_opts?: unknown) {}
 }
 
+class DecoratorHandler {
+  constructor(_handler?: unknown) {}
+}
+
+class Dispatcher {
+  constructor(_opts?: unknown) {}
+}
+
+const getGlobalDispatcher = () => new Dispatcher();
+const setGlobalDispatcher = (_d?: unknown) => {};
+
 const _File = globalThis.File;
 const _FormData = globalThis.FormData;
 const _Headers = globalThis.Headers;
@@ -32,6 +43,10 @@ const _Response = globalThis.Response;
 export {
   _fetch as fetch,
   Agent,
+  DecoratorHandler,
+  Dispatcher,
+  getGlobalDispatcher,
+  setGlobalDispatcher,
   _File as File,
   _FormData as FormData,
   _Headers as Headers,
@@ -42,6 +57,10 @@ export {
 export default {
   fetch: _fetch,
   Agent,
+  DecoratorHandler,
+  Dispatcher,
+  getGlobalDispatcher,
+  setGlobalDispatcher,
   File: _File,
   FormData: _FormData,
   Headers: _Headers,
