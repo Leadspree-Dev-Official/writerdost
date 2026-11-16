@@ -11,7 +11,7 @@ import { LANGUAGE_GROUPS, DEFAULT_LANGUAGE } from "@/lib/languages";
 import { AiEngineSelectorModal } from "@/components/AiEngineSelectorModal";
 import type { GenerationEngine } from "@/lib/store-types";
 import { AD_EBOOK_TEMPLATES } from "@/lib/ad-ebook-templates";
-import { getDisplayedTokenEstimate } from "@/lib/store-types";
+import { getDisplayedCreditEstimate } from "@/lib/store-types";
 
 
 export default function IdeaAndInput() {
@@ -381,8 +381,9 @@ export default function IdeaAndInput() {
                     <span className="text-[13px] font-bold text-on-surface num">
                       {createDraft.length.toLocaleString()} words
                     </span>
-                    <span className="text-[10.5px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-medium">
-                      ~{getDisplayedTokenEstimate(createDraft.length).toLocaleString()} tokens
+                    <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[13px]">toll</span>
+                      ~{getDisplayedCreditEstimate(createDraft.length).toLocaleString()} credits
                     </span>
                   </div>
                 </div>
