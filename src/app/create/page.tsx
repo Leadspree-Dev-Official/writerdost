@@ -1,7 +1,8 @@
 "use client";
 
-import { ChangeEvent, useRef, useState } from "react";
+import { ChangeEvent, useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAppStore } from "@/lib/app-store";
 import { apiFetch } from "@/lib/api-client";
 import { robustParseJson, STREAM_DELIMITER } from "@/lib/app-utils";
@@ -12,6 +13,11 @@ import { AiEngineSelectorModal } from "@/components/AiEngineSelectorModal";
 import type { GenerationEngine } from "@/lib/store-types";
 import { AD_EBOOK_TEMPLATES } from "@/lib/ad-ebook-templates";
 import { getDisplayedCreditEstimate } from "@/lib/store-types";
+import {
+  getSavedDossiers,
+  formatDossierSynthesis,
+  type SavedDossier,
+} from "@/lib/research-store";
 
 
 export default function IdeaAndInput() {
@@ -32,8 +38,14 @@ export default function IdeaAndInput() {
   const [activeTab, setActiveTab] = useState<"file" | "link" | "youtube">("file");
   const [engineModalOpen, setEngineModalOpen] = useState(false);
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
+  const [researchModalOpen, setResearchModalOpen] = useState(false);
+  const [savedDossiers, setSavedDossiers] = useState<SavedDossier[]>([]);
   const [selectedNicheFilter, setSelectedNicheFilter] = useState<string>("All");
   const [isExtendedOmnibus, setIsExtendedOmnibus] = useState<boolean>(createDraft.length > 100000);
+
+  useEffect(() => {
+    setSavedDossiers(getSavedDossiers());
+  }, []);
   
   // Generation State Actions
   const startGeneration = useAppStore((state) => state.startGeneration);
@@ -288,6 +300,18 @@ export default function IdeaAndInput() {
           </div>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
             <button
+              className="btn btn-secondary btn-lg w-full sm:w-auto justify-center min-h-[44px] border-primary/40 hover:border-primary text-primary hover:bg-primary/5 flex items-center gap-1.5 cursor-pointer"
+              onClick={() => {
+                setSavedDossiers(getSavedDossiers());
+                setResearchModalOpen(true);
+              }}
+              disabled={isGenerating}
+              type="button"
+            >
+              <span className="material-symbols-outlined text-[20px]">travel_explore</span>
+              Import Research ({savedDossiers.length})
+            </button>
+            <button
               className="btn btn-secondary btn-lg w-full sm:w-auto justify-center min-h-[44px] border-primary/40 hover:border-primary text-primary hover:bg-primary/5"
               onClick={() => setTemplateModalOpen(true)}
               disabled={isGenerating}
@@ -336,9 +360,24 @@ export default function IdeaAndInput() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2 min-w-0 space-y-4">
             <div className="panel panel-pad">
-              <label htmlFor="vision" className="label">
-                What is the book about?
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label htmlFor="vision" className="label !mb-0">
+                  What is the book about?
+                </label>
+                {savedDossiers.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSavedDossiers(getSavedDossiers());
+                      setResearchModalOpen(true);
+                    }}
+                    className="text-[12px] text-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[15px]">travel_explore</span>
+                    Use saved research ({savedDossiers.length})
+                  </button>
+                )}
+              </div>
               <textarea
                 id="vision"
                 className="textarea min-h-[12rem] text-[14px] leading-relaxed p-3.5"
@@ -766,6 +805,122 @@ export default function IdeaAndInput() {
               >
                 Close
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Research Import Modal */}
+      {researchModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+          <div className="panel max-w-3xl w-full my-8 p-5 sm:p-6 space-y-4 bg-surface border border-[var(--hairline)] shadow-2xl rounded-[var(--radius-lg)]">
+            <div className="flex items-start justify-between gap-3 border-b border-[var(--hairline)] pb-3">
+              <div>
+                <h2 className="text-[18px] font-bold text-on-surface flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-[22px]">travel_explore</span>
+                  Import Research Dossier
+                </h2>
+                <p className="text-[12px] text-on-surface-variant mt-0.5">
+                  Select an inquiry from your Research Lab to ground this ebook in empirical theses, facts, and citations.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setResearchModalOpen(false)}
+                className="btn btn-ghost btn-icon btn-sm text-slate-400 hover:text-on-surface cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {savedDossiers.length === 0 ? (
+              <div className="p-8 text-center space-y-3">
+                <p className="text-[13px] text-on-surface-variant">
+                  No research dossiers saved yet. Run Deep Research in the lab to investigate your topic.
+                </p>
+                <Link
+                  href="/research"
+                  className="btn btn-primary btn-sm inline-flex items-center gap-1.5"
+                  onClick={() => setResearchModalOpen(false)}
+                >
+                  <span className="material-symbols-outlined text-[16px]">travel_explore</span>
+                  Go to Research Lab
+                </Link>
+              </div>
+            ) : (
+              <div className="max-h-[60vh] overflow-y-auto space-y-3 pr-1">
+                {savedDossiers.map((entry) => {
+                  const d = entry.dossier;
+                  return (
+                    <div
+                      key={entry.id}
+                      className="p-4 rounded-[var(--radius)] bg-surface-variant/20 hover:bg-surface-variant/35 border border-[var(--hairline)] transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <span className="chip chip-neutral text-[9px] uppercase font-bold">
+                            {d.depth}
+                          </span>
+                          <span className="text-[11px] text-on-surface-variant font-mono">
+                            {entry.createdAt}
+                          </span>
+                        </div>
+                        <h4 className="text-[14px] font-bold text-on-surface leading-tight">
+                          {d.topic}
+                        </h4>
+                        <p className="text-[12px] text-on-surface-variant line-clamp-2 mt-1">
+                          {d.executiveSummary}
+                        </p>
+                        <div className="flex items-center gap-2 text-[11px] text-primary mt-1.5 flex-wrap">
+                          <span>{d.coreTheses?.length || 0} theses</span>
+                          <span>·</span>
+                          <span>{d.factsAndStats?.length || 0} facts & stats</span>
+                          <span>·</span>
+                          <span>{d.chapterSeeds?.length || 0} chapters planned</span>
+                          <span>·</span>
+                          <span className="text-on-surface-variant">Audience: {d.targetAudience}</span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const formattedSynthesis = formatDossierSynthesis(d);
+                          const readingsSources = (d.recommendedReadings || []).map((r, i) => ({
+                            id: `rec-${i}`,
+                            type: "link" as const,
+                            label: r.title,
+                            value: `${r.title} (${r.type}): ${r.whyItMatters}`,
+                          }));
+                          updateCreateDraft({
+                            vision: `${d.topic}\n\n${formattedSynthesis}`,
+                            audience: d.targetAudience,
+                            researchSources: readingsSources,
+                          });
+                          setResearchModalOpen(false);
+                          setMessage(`Loaded research dossier: "${d.topic}". Agents will ground your book in these insights!`);
+                        }}
+                        className="btn btn-primary btn-sm shrink-0 flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">menu_book</span>
+                        <span>Use this Research</span>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="p-3 bg-surface-variant/30 border-t border-[var(--hairline)] rounded-[var(--radius)] text-[12px] text-on-surface-variant flex items-center justify-between">
+              <span>Want to investigate a new topic or hypothesis?</span>
+              <Link
+                href="/research"
+                className="text-primary font-bold hover:underline flex items-center gap-1"
+                onClick={() => setResearchModalOpen(false)}
+              >
+                <span>Open Research Lab</span>
+                <span>→</span>
+              </Link>
             </div>
           </div>
         </div>

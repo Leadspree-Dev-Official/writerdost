@@ -32,7 +32,7 @@ export default function WebsiteFooter() {
             </Link>
 
             <p className="text-[13px] text-on-surface-variant leading-relaxed max-w-sm">
-              Empowering authors, digital publishers, and marketing teams to produce cohesive 30,000+ word manuscripts and automated scheduled WordPress campaigns using collaborative multi-agent AI.
+              Empowering authors, digital publishers, and marketing teams to produce cohesive 200,000+ word manuscripts and automated scheduled WordPress campaigns using collaborative multi-agent AI.
             </p>
 
           </div>

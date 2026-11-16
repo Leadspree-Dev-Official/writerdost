@@ -34,10 +34,10 @@ export default function FeatureBentoGrid() {
               </div>
 
               <h3 className="text-2xl font-black text-on-surface tracking-tight">
-                Autonomous 30,000+ Word Ebook Generation
+                Autonomous 200,000+ Word Manuscript &amp; Book Generation
               </h3>
               <p className="text-[14.5px] text-on-surface-variant leading-relaxed max-w-xl">
-                Break free from the 3,000-word context ceiling. Writerdost splits long manuscripts into coherent thematic chapters, generating comprehensive, book-length non-fiction and fiction with unbroken continuity and rich exposition.
+                Break free from typical context ceilings. Writerdost scales up to 200,000 words (~800 print pages), orchestrating multi-chapter omnibus depth with unbroken continuity, character lore, and rich exposition.
               </p>
 
               {/* Visual Mini Mockup */}

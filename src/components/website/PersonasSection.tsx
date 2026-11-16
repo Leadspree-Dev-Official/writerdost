@@ -14,7 +14,7 @@ export default function PersonasSection() {
       benefits: [
         "Overcome the dreaded mid-manuscript slump with narrative arc planning",
         "Generate 10+ chapter blueprints tailored to your specific audience",
-        "Maintain distinctive narrative voice across 30,000+ words",
+        "Maintain distinctive narrative voice across up to 200,000 words",
         "Export directly to Kindle-ready EPUB & print-ready DOCX",
       ],
       quote: "“Writerdost helped me publish my third leadership book in 2 weeks. The structural pacing is indistinguishable from my earlier traditionally published works.”",

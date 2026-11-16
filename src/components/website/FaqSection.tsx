@@ -11,8 +11,8 @@ export default function FaqSection() {
       a: "You retain 100% ownership of everything created in Writerdost AI: all outlines, chapters, rewritten manuscripts, and exported files. You are free to publish on Amazon KDP, Apple Books, sell them, or syndicate them to your WordPress site with zero royalty obligations to Writerdost or LeadSpree.",
     },
     {
-      q: "How does the multi-agent swarm maintain narrative continuity over 30,000+ words?",
-      a: "Standard chatbots fail because they treat every chapter as an isolated prompt. Writerdost deploys a 4-agent swarm: the Research Agent builds a global domain graph, the Architect Agent creates a master structural beat sheet, parallel Chapter Writers draft concurrently against shared continuity memory, and the Critic Agent harmonizes voice and rhythm across all seams.",
+      q: "How does the multi-agent swarm maintain narrative continuity across 200,000+ words?",
+      a: "Standard chatbots fail because they treat every chapter as an isolated prompt. Writerdost deploys a 4-agent swarm: the Research Agent builds a global domain graph, the Architect Agent creates a master structural beat sheet, parallel Chapter Writers draft concurrently against shared continuity memory, and the Critic Agent harmonizes voice and rhythm across all seams—scaling cleanly from 10,000 to 200,000 words.",
     },
     {
       q: "How does the official writerdost-connect WordPress plugin work?",

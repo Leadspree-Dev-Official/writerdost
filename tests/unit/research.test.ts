@@ -73,4 +73,19 @@ describe("Research Dossier Schema & Structure", () => {
     expect(sampleDossier.chapterSeeds[0].chapterNumber).toBe(1);
     expect(sampleDossier.glossary[0].term).toBe("Attentional Residue");
   });
+
+  it("formats research dossier into actionable book drafting synthesis", async () => {
+    const { formatDossierSynthesis, buildMarkdownFromDossier, SAMPLE_INITIAL_DOSSIER } = await import("@/lib/research-store");
+    const synthesis = formatDossierSynthesis(SAMPLE_INITIAL_DOSSIER.dossier);
+    expect(synthesis).toContain("EXECUTIVE RESEARCH SYNTHESIS:");
+    expect(synthesis).toContain("Topic: The Neurobiology of Deep Work & Cognitive Endurance");
+    expect(synthesis).toContain("Myelination Governs Skill Velocity");
+    expect(synthesis).toContain("23 min 15 sec");
+
+    const md = buildMarkdownFromDossier(SAMPLE_INITIAL_DOSSIER.dossier);
+    expect(md).toContain("# Research Dossier: The Neurobiology of Deep Work");
+    expect(md).toContain("## 1. Executive Summary");
+    expect(md).toContain("## 2. Core Theses & Hypotheses");
+    expect(md).toContain("## 6. Proposed Chapter Blueprint");
+  });
 });

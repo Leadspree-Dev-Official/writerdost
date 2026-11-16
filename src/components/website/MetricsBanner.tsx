@@ -26,9 +26,9 @@ const METRICS: MetricItem[] = [
     gradient: "from-emerald-500/20 to-teal-500/20 text-emerald-600 dark:text-emerald-400",
   },
   {
-    value: "25,000+",
-    label: "Words per Session",
-    subtext: "Continuous multi-chapter narrative depth",
+    value: "200,000+",
+    label: "Words per Manuscript",
+    subtext: "Continuous multi-chapter omnibus depth",
     icon: "menu_book",
     gradient: "from-purple-500/20 to-violet-500/20 text-purple-600 dark:text-purple-400",
   },

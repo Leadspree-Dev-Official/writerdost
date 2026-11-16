@@ -32,7 +32,7 @@ export default function Hero() {
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-on-surface leading-[1.12]">
             Standard AI Breaks Down After 3,000 Words.{" "}
             <span className="text-primary">
-              Writerdost Writes 30,000.
+              Writerdost Writes 200,000.
             </span>
           </h1>
 
@@ -97,7 +97,7 @@ export default function Hero() {
         {/* Key Metrics Strip */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto my-12 pt-6 border-y border-outline-variant/30">
           <div className="text-center p-3">
-            <p className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">30,000+</p>
+            <p className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">200,000+</p>
             <p className="text-[12px] font-semibold text-on-surface-variant uppercase tracking-wider mt-1">
               Words per Manuscript
             </p>

@@ -9,7 +9,7 @@ describe("MetricsBanner Component", () => {
     render(React.createElement(MetricsBanner));
     expect(screen.getByText(/4\.5x/i)).toBeDefined();
     expect(screen.getByText(/90%/i)).toBeDefined();
-    expect(screen.getByText(/25,000\+/i)).toBeDefined();
+    expect(screen.getByText(/200,000\+/i)).toBeDefined();
     expect(screen.getByText(/100%/i)).toBeDefined();
   });
 });

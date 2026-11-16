@@ -96,7 +96,7 @@ export default function AgentSwarmDeepDive() {
             </span>
           </h2>
           <p className="text-base sm:text-lg text-on-surface-variant leading-relaxed">
-            Standard AI models forget context after 3,000 words. Writerdost deploys a coordinated pipeline of 4 specialized autonomous agents working in synchrony to deliver cohesive 30,000+ word manuscripts.
+            Standard AI models forget context after 3,000 words. Writerdost deploys a coordinated pipeline of 4 specialized autonomous agents working in synchrony to deliver cohesive manuscripts up to 200,000 words.
           </p>
         </div>
 

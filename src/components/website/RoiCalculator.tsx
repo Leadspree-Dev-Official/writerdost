@@ -10,7 +10,7 @@ export default function RoiCalculator() {
   // Math models:
   // Average human author / ghostwriter: ~250 words/hour of finished copy.
   // Average ghostwriting fee: $0.12 - $0.20 per word.
-  // Writerdost generation time: ~3.5 minutes per 25,000 words.
+  // Writerdost generation time: ~3.5 minutes per 25,000 words (scales smoothly up to 200,000 words).
   const hoursSavedPerBook = Math.round(targetWords / 250);
   const totalHoursSaved = hoursSavedPerBook * booksPerYear;
   const ghostwritingCostSaved = Math.round(targetWords * 0.15 * booksPerYear);
@@ -28,7 +28,7 @@ export default function RoiCalculator() {
               Calculate Your Time &amp; Cost Savings
             </h2>
             <p className="text-[14px] text-on-surface-variant max-w-xl mx-auto">
-              Adjust your target manuscript size and publishing frequency to see how much Writerdost AI saves your business.
+              Adjust your target manuscript size (up to 200,000 words) and publishing frequency to see how much Writerdost AI saves your business.
             </p>
           </div>
 
@@ -46,16 +46,16 @@ export default function RoiCalculator() {
                 <input
                   type="range"
                   min={5000}
-                  max={60000}
-                  step={2500}
+                  max={200000}
+                  step={5000}
                   value={targetWords}
                   onChange={(e) => setTargetWords(Number(e.target.value))}
                   className="w-full h-2 bg-surface-container rounded-lg appearance-none cursor-pointer accent-primary"
                 />
                 <div className="flex justify-between text-[11px] text-on-surface-variant font-medium">
-                  <span>5k (Short Guide)</span>
-                  <span>25k (Standard Book)</span>
-                  <span>60k (Comprehensive)</span>
+                  <span>5k (Guide)</span>
+                  <span>50k (Novel)</span>
+                  <span>200k (Omnibus)</span>
                 </div>
               </div>
 

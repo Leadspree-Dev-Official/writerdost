@@ -98,7 +98,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
   title: "Writerdost AI - Autonomous Ebook Generation & WordPress Publishing Studio",
   description:
-    "Generate cohesive 30,000+ word ebooks, rewrite full manuscripts with human nuance, and auto-publish SEO blog campaigns directly to WordPress using collaborative multi-agent AI swarms.",
+    "Generate cohesive 200,000+ word ebooks, rewrite full manuscripts with human nuance, and auto-publish SEO blog campaigns directly to WordPress using collaborative multi-agent AI swarms.",
   keywords: [
     "AI ebook generator",
     "multi-agent writing",

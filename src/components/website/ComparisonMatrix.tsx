@@ -6,9 +6,9 @@ export default function ComparisonMatrix() {
   const features = [
     {
       name: "Coherent Long-Form Length",
-      writerdost: "30,000+ words (unbroken arc)",
+      writerdost: "Up to 200,000 words (unbroken arc)",
       chatgpt: "Degrades after 2,500 words",
-      agency: "Full length (30k-60k words)",
+      agency: "Full length (30k-80k words)",
     },
     {
       name: "Parallel Agent Swarm",
