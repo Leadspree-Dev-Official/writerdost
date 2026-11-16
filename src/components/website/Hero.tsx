@@ -17,17 +17,20 @@ export default function Hero() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Top Eyebrow Badge */}
         <div className="flex justify-center mb-6">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-primary/30 bg-primary/5 text-primary text-[12px] font-semibold tracking-wide backdrop-blur-xs shadow-xs hover:border-primary/50 transition-colors">
+          <Link
+            href="#templates"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-primary/30 bg-primary/5 text-primary text-[12px] font-semibold tracking-wide backdrop-blur-xs shadow-xs hover:border-primary/50 transition-colors"
+          >
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span>AI-Powered Book Writing Studio</span>
+            <span>✨ Explore 6 Pre-Tuned Book &amp; Content Blueprints</span>
             <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-          </div>
+          </Link>
         </div>
 
         {/* Main Headline */}
         <div className="text-center max-w-4xl mx-auto space-y-6">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-on-surface leading-[1.12]">
-            AI Writing Tools Break Down After 3,000 Words.{" "}
+            Standard AI Breaks Down After 3,000 Words.{" "}
             <span className="text-primary">
               Writerdost Writes 30,000.
             </span>
@@ -35,7 +38,9 @@ export default function Hero() {
 
           {/* Subtitle */}
           <p className="text-base sm:text-lg lg:text-xl text-on-surface-variant max-w-2xl mx-auto leading-relaxed font-normal">
-            Four AI agents research, outline, write chapters in parallel, and polish your manuscript. You review the final draft, then publish to Kindle or WordPress with one click.
+            Turn raw outlines into ready-to-publish manuscripts in{" "}
+            <span className="line-through decoration-primary/50 decoration-2 opacity-75">months</span>{" "}
+            <span className="font-bold text-on-surface">an afternoon</span>. Four AI agents research, outline, write chapters in parallel, and format print-ready exports.
           </p>
 
           {/* Call to Action Buttons */}
@@ -71,15 +76,15 @@ export default function Hero() {
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[12px] text-on-surface-variant font-medium pt-1">
             <span className="flex items-center gap-1.5">
               <span className="material-symbols-outlined text-[15px] text-emerald-500">check_circle</span>
+              100% Free to get started
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[15px] text-emerald-500">check_circle</span>
               No credit card required
             </span>
             <span className="flex items-center gap-1.5">
               <span className="material-symbols-outlined text-[15px] text-emerald-500">check_circle</span>
-              100% copyright ownership
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[15px] text-emerald-500">check_circle</span>
-              BYO API Key or local Ollama (Zero lock-in)
+              100% copyright &amp; commercial IP ownership
             </span>
           </div>
         </div>

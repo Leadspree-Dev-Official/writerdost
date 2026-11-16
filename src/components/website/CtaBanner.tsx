@@ -64,9 +64,18 @@ export default function CtaBanner() {
 
           {/* Reassurance */}
           <div className="relative z-10 flex flex-wrap items-center justify-center gap-6 mt-8 text-[12px] text-slate-300 font-medium">
-            <span>✓ No credit card required</span>
-            <span>✓ 100% intellectual property ownership</span>
-            <span>✓ BYO API key — zero lock-in</span>
+            <span className="flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[15px] text-emerald-400">verified</span>
+              1-Click Instant Demo Access
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[15px] text-emerald-400">verified</span>
+              Print-Ready PDF, EPUB, DOCX &amp; Markdown
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[15px] text-emerald-400">verified</span>
+              100% Commercial IP Ownership
+            </span>
           </div>
         </div>
       </div>
