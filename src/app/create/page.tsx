@@ -33,6 +33,7 @@ export default function IdeaAndInput() {
   const [engineModalOpen, setEngineModalOpen] = useState(false);
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
   const [selectedNicheFilter, setSelectedNicheFilter] = useState<string>("All");
+  const [isExtendedOmnibus, setIsExtendedOmnibus] = useState<boolean>(createDraft.length > 100000);
   
   // Generation State Actions
   const startGeneration = useAppStore((state) => state.startGeneration);
@@ -363,10 +364,10 @@ export default function IdeaAndInput() {
                 />
               </div>
 
-              <div className="panel panel-pad">
+              <div className="panel panel-pad space-y-3">
                 <div className="flex items-baseline justify-between">
-                  <label htmlFor="length" className="label">
-                    Length
+                  <label htmlFor="length" className="label !mb-0">
+                    Book Size & Target Length
                   </label>
                   <div className="flex items-center gap-2">
                     <span className="text-[12.5px] font-semibold text-on-surface num">
@@ -377,20 +378,77 @@ export default function IdeaAndInput() {
                     </span>
                   </div>
                 </div>
+
+                {/* Optional Page Counter with Auto-Word Calculation */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 p-2.5 rounded-[var(--radius)] bg-surface-variant/30 border border-[var(--hairline)]">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <span className="material-symbols-outlined text-[18px] text-primary shrink-0">menu_book</span>
+                    <label htmlFor="page-count-input" className="text-[12px] text-on-surface font-medium whitespace-nowrap">
+                      Approx. Pages:
+                    </label>
+                    <input
+                      id="page-count-input"
+                      type="number"
+                      min="4"
+                      max={isExtendedOmnibus ? 800 : 400}
+                      value={Math.round(createDraft.length / 250)}
+                      onChange={(e) => {
+                        const pages = Math.max(1, parseInt(e.target.value) || 1);
+                        const maxAllowed = isExtendedOmnibus ? 200000 : 100000;
+                        const calculatedWords = Math.min(maxAllowed, Math.max(1000, pages * 250));
+                        updateCreateDraft({ length: calculatedWords });
+                      }}
+                      className="input py-1 px-2 text-xs w-20 text-center font-semibold"
+                      placeholder="Pages"
+                    />
+                    <span className="text-[11px] text-on-surface-variant truncate">
+                      pages (~{Math.round(createDraft.length / 250)} pp @ 250 w/p)
+                    </span>
+                  </div>
+                </div>
+
+                {/* Range Slider */}
                 <input
                   id="length"
                   className="w-full h-1 mt-2 bg-on-surface/12 rounded-full appearance-none cursor-pointer accent-primary"
-                  max="100000"
+                  max={isExtendedOmnibus ? "200000" : "100000"}
                   min="1000"
                   step="1000"
                   type="range"
                   value={createDraft.length}
                   onChange={(event) => updateCreateDraft({ length: Number(event.target.value) })}
                 />
-                <div className="flex justify-between items-center text-[11px] text-on-surface-variant mt-1.5">
-                  <span>1,000 words</span>
+                <div className="flex justify-between items-center text-[11px] text-on-surface-variant">
+                  <span>1,000 words (~4 pp)</span>
                   <span className="text-[10px] text-slate-500">Pay-as-you-go • 0 with BYOK</span>
-                  <span>100,000 words</span>
+                  <span>{isExtendedOmnibus ? "200,000 words (~800 pp)" : "100,000 words (~400 pp)"}</span>
+                </div>
+
+                {/* Extended Omnibus Checkbox (Up to 200k Words) */}
+                <div className="pt-2 border-t border-[var(--hairline)]">
+                  <label className="flex items-start gap-2.5 cursor-pointer group select-none">
+                    <input
+                      type="checkbox"
+                      checked={isExtendedOmnibus}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setIsExtendedOmnibus(checked);
+                        if (!checked && createDraft.length > 100000) {
+                          updateCreateDraft({ length: 100000 });
+                        }
+                      }}
+                      className="checkbox mt-0.5 accent-primary"
+                    />
+                    <div className="text-[12px] leading-tight">
+                      <span className="font-semibold text-on-surface group-hover:text-primary transition-colors flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-[15px] text-amber-500">auto_stories</span>
+                        Full-Length Omnibus Edition (Unlock up to 2 Lakh / 200,000 Words)
+                      </span>
+                      <p className="text-[11px] text-on-surface-variant mt-0.5">
+                        Enables comprehensive multi-chapter publishing volumes up to 800 pages.
+                      </p>
+                    </div>
+                  </label>
                 </div>
               </div>
             </div>

@@ -1,10 +1,10 @@
 export const LIMITS = {
   promptChars: 400_000,
   systemPromptChars: 100_000,
-  manuscriptChars: 2_000_000,
-  chapters: 60,
+  manuscriptChars: 4_000_000,
+  chapters: 80,
   sectionsPerChapter: 30,
-  targetWords: 100_000,
+  targetWords: 200_000,
   researchSources: 20,
   uploadBytes: 10 * 1024 * 1024,
 } as const;
