@@ -11,6 +11,7 @@ import { LANGUAGE_GROUPS, DEFAULT_LANGUAGE } from "@/lib/languages";
 import { AiEngineSelectorModal } from "@/components/AiEngineSelectorModal";
 import type { GenerationEngine } from "@/lib/store-types";
 import { AD_EBOOK_TEMPLATES } from "@/lib/ad-ebook-templates";
+import { estimateCreditsForWords } from "@/lib/store-types";
 
 
 export default function IdeaAndInput() {
@@ -25,7 +26,6 @@ export default function IdeaAndInput() {
   const addResearchSource = useAppStore((state) => state.addResearchSource);
   const removeResearchSource = useAppStore((state) => state.removeResearchSource);
   const checkQuota = useAppStore((state) => state.checkQuota);
-  const spendCredits = useAppStore((state) => state.spendCredits);
   const recordMonthlyUsage = useAppStore((state) => state.recordMonthlyUsage);
   
   const [linkInput, setLinkInput] = useState("");
@@ -84,29 +84,35 @@ export default function IdeaAndInput() {
 
   const executeGenerateWithAI = async (engine: GenerationEngine) => {
     setEngineModalOpen(false);
-    const directWordCost = Math.round(createDraft.length * 1.5);
+    const estimatedCredits = estimateCreditsForWords(createDraft.length);
     const quota = checkQuota("project", engine);
 
-    if (engine === "bizai" && quota.source === "credits" && (quota.userCredits ?? 0) < directWordCost) {
-      setMessage(`Insufficient credits (${(quota.userCredits ?? 0).toLocaleString()} available, ${directWordCost.toLocaleString()} required for ${createDraft.length.toLocaleString()} words). Please top-up credits or use BYOK.`);
-      return;
+    if (engine === "bizai" && quota.source === "credits") {
+      const currentCredits = quota.userCredits ?? 0;
+      if (currentCredits <= 0) {
+        setMessage(`Cannot start generation: Your wallet has 0 credits. Estimated credits required: ~${estimatedCredits.toLocaleString()} cr (deducted at 1.5x per raw token). Please top up credits or use BYOK.`);
+        return;
+      }
+      if (currentCredits < 500) {
+        setMessage(`Wallet balance too low (${currentCredits.toLocaleString()} cr available). A minimum of 500 credits is required to initiate generation. Please top up your wallet.`);
+        return;
+      }
     }
 
     if (!quota.allowed) {
       setMessage(
         quota.source === "none"
-          ? `Monthly project limit reached (${quota.used}/${quota.limit}) and insufficient credits. Please top-up credits or use BYOK.`
-          : `Monthly project limit reached on your ${quota.plan} plan. Please upgrade or top-up credits.`
+          ? `Monthly project limit reached (${quota.used}/${quota.limit}) and insufficient credits (${(quota.userCredits ?? 0).toLocaleString()} cr available). Please top up credits or use BYOK.`
+          : `Monthly project limit reached on your ${quota.plan} plan. Please upgrade or top up credits.`
       );
       return;
     }
 
     if (engine === "bizai") {
-      if (quota.source === "credits") {
-        spendCredits(directWordCost);
-      } else {
+      if (quota.source === "plan_quota") {
         recordMonthlyUsage("project");
       }
+      // Note: If using credits, credits are deducted continuously per token at 1.5x during stream
     }
 
     startGeneration({ 
@@ -199,7 +205,18 @@ export default function IdeaAndInput() {
               }
               if (event.agent === "Manuscript Agent") setGenerationProgress(98);
             } else if (event.type === "usage" && typeof event.tokens === "number") {
-              useAppStore.getState().recordUsage(event.tokens, api.provider, api.model);
+              const usageRes = useAppStore.getState().recordUsage(event.tokens, api.provider, api.model);
+              if (engine === "bizai" && !usageRes.allowed) {
+                controller.abort();
+                setActiveAgent("Wallet Guard");
+                addGenerationLog({
+                  agent: "Wallet Guard",
+                  message: `⚠️ Generation halted: Credit balance exhausted (0 credits remaining). Live deduction: ${usageRes.creditsDeducted.toLocaleString()} cr. Please top up credits to resume.`,
+                  status: "error",
+                });
+                setMessage("Generation halted: Your credit balance ran out during drafting. Please top up your wallet to continue.");
+                break;
+              }
             } else if (event.type === "final" && event.project) {
               setActiveAgent("System");
               setGenerationProgress(100);
@@ -356,8 +373,8 @@ export default function IdeaAndInput() {
                     <span className="text-[12.5px] font-semibold text-on-surface num">
                       {createDraft.length.toLocaleString()} words
                     </span>
-                    <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-bold">
-                      ~{Math.round(createDraft.length * 1.5).toLocaleString()} cr
+                    <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-bold" title="1.5x credits per raw token (~2.35 tokens per word estimate)">
+                      ~{estimateCreditsForWords(createDraft.length).toLocaleString()} est. cr
                     </span>
                   </div>
                 </div>

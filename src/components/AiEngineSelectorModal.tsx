@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useAppStore } from "@/lib/app-store";
-import { CREDIT_COSTS, GenerationEngine } from "@/lib/store-types";
+import { CREDIT_COSTS, GenerationEngine, estimateCreditsForWords } from "@/lib/store-types";
 import clsx from "clsx";
 
 interface AiEngineSelectorModalProps {
@@ -37,11 +37,11 @@ export function AiEngineSelectorModal({
 
   const hasByokConfigured = Boolean(api.apiKey || api.provider === "ollama");
   const costInCredits = targetWords
-    ? Math.round(targetWords * 1.5)
+    ? estimateCreditsForWords(targetWords)
     : CREDIT_COSTS[taskType === "rewrite" ? "rewrite" : taskType];
   const quotaCheckBizai = checkQuota(taskType === "rewrite" ? "project" : taskType, "bizai");
 
-  const canUseBizai = quotaCheckBizai.source === "plan_quota" ? true : userCredits >= costInCredits;
+  const canUseBizai = quotaCheckBizai.source === "plan_quota" ? true : userCredits >= 500;
   const canUseByok = hasByokConfigured;
 
   const handleSelect = (engine: GenerationEngine) => {
@@ -146,12 +146,12 @@ export function AiEngineSelectorModal({
                 ) : quotaCheckBizai.source === "credits" ? (
                   <span className="text-indigo-400 font-medium flex items-center gap-1">
                     <span className="material-symbols-outlined text-sm">stars</span>
-                    Deducts 1.5x credits/word ({costInCredits.toLocaleString()} cr for {targetWords ? targetWords.toLocaleString() : "this"} words) • Balance: {userCredits.toLocaleString()} cr
+                    Deducts 1.5x credits per raw token (~{costInCredits.toLocaleString()} cr est. for {targetWords ? targetWords.toLocaleString() : "this"} words) • Wallet: {userCredits.toLocaleString()} cr
                   </span>
                 ) : (
                   <span className="text-rose-400 font-medium flex items-center gap-1">
                     <span className="material-symbols-outlined text-sm">error</span>
-                    Plan quota exhausted &amp; insufficient credits ({userCredits.toLocaleString()} available, {costInCredits.toLocaleString()} required)
+                    Plan quota exhausted &amp; insufficient credits ({userCredits.toLocaleString()} available, min 500 cr required)
                   </span>
                 )}
 

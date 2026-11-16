@@ -430,7 +430,11 @@ type AppStore = {
   finishGeneration: () => void;
   setActiveAgent: (agent: string) => void;
   setCurrentTask: (task: string) => void;
-  recordUsage: (tokens: number, provider: string, model: string) => void;
+  recordUsage: (
+    tokens: number,
+    provider: string,
+    model: string,
+  ) => { allowed: boolean; remainingCredits: number; creditsDeducted: number };
   updateUsageRates: (inputRate: number, outputRate: number) => void;
   resetUsage: () => void;
 
@@ -2256,7 +2260,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         type === "project" ? quotas.maxProjectsPerMonth : quotas.maxBlogsPerMonth;
       const hasPlanAllowance = limit === -1 || count < limit;
       const requiredCredits = CREDIT_COSTS[type];
-      const availableCredits = get().currentUser?.credits ?? get().userCredits ?? 5;
+      const availableCredits = get().currentUser?.credits ?? get().userCredits ?? 50_000;
 
       if (hasPlanAllowance) {
         return {
@@ -2274,7 +2278,8 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       }
 
       // If monthly quota is exhausted, allow pay-as-you-go with credits
-      if (availableCredits >= requiredCredits) {
+      // Users can start as long as they have a positive credit balance (min 500 cr)
+      if (availableCredits >= 500) {
         return {
           allowed: true,
           used: count,
@@ -2510,7 +2515,11 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           currentTask: task,
         },
       })),
-    recordUsage: (tokens, provider, model) =>
+    recordUsage: (tokens, provider, model) => {
+      let allowed = true;
+      let remainingCredits = get().currentUser?.credits ?? get().userCredits ?? 50_000;
+      let creditsDeducted = 0;
+
       set((state) => {
         // Estimated cost per 1M tokens
         const rates: Record<string, number> = {
@@ -2542,12 +2551,16 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         let updatedCredits = state.userCredits;
         let updatedCurrentUser = state.currentUser;
         if (state.preferredEngine === "bizai" && tokens > 0) {
-          const creditsToDeduct = Math.round(tokens * TOKEN_CREDIT_MULTIPLIER);
-          updatedCredits = Math.max(0, (state.userCredits || 0) - creditsToDeduct);
+          creditsDeducted = Math.round(tokens * TOKEN_CREDIT_MULTIPLIER);
+          updatedCredits = Math.max(0, (state.userCredits || 0) - creditsDeducted);
           if (updatedCurrentUser) {
             updatedCurrentUser = { ...updatedCurrentUser, credits: updatedCredits };
           }
+          if (updatedCredits <= 0) {
+            allowed = false;
+          }
         }
+        remainingCredits = updatedCredits;
 
         return {
           userCredits: updatedCredits,
@@ -2563,7 +2576,10 @@ export const useAppStore = create<AppStore>()((set, get) => ({
             sessionTokens: (state.generationStatus.sessionTokens || 0) + tokens,
           }
         };
-      }),
+      });
+
+      return { allowed, remainingCredits, creditsDeducted };
+    },
     recordTiming: (outlineSecs, draftSecs, wordCount) =>
       set((state) => ({
         usage: {

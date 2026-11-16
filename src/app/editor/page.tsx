@@ -167,7 +167,16 @@ export default function EditorPage() {
             } else if (event.type === "ping") {
                // Heartbeat received, helps UI know server is still alive
             } else if (event.type === "usage" && typeof event.tokens === "number") {
-              useAppStore.getState().recordUsage(event.tokens, api.provider, api.model);
+              const usageRes = useAppStore.getState().recordUsage(event.tokens, api.provider, api.model);
+              if (useAppStore.getState().preferredEngine === "bizai" && !usageRes.allowed) {
+                controller.abort();
+                addGenerationLog({
+                  agent: "Wallet Guard",
+                  message: `⚠️ Drafting halted: Credit balance exhausted (0 credits remaining). Live deduction: ${usageRes.creditsDeducted.toLocaleString()} cr. Please top up your wallet to continue.`,
+                  status: "error",
+                });
+                break;
+              }
             } else if (event.type === "final" && event.project) {
               setGenerationProgress(100);
               const draftedWordCount = calculateProjectWords(event.project);

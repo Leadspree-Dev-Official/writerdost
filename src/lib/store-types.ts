@@ -276,6 +276,14 @@ export interface CreditPack {
 /** Rate at which token usage is converted to credits: 1 token = 1.5 credits */
 export const TOKEN_CREDIT_MULTIPLIER = 1.5;
 
+/** Average raw tokens consumed per finished word across multi-agent research, planning & drafting (~2.35 tokens/word) */
+export const TOKENS_PER_WORD_ESTIMATE = 2.35;
+
+/** Helper to estimate credits required for a target word count: words * 2.35 tokens * 1.5 credits/token */
+export function estimateCreditsForWords(words: number): number {
+  return Math.round(words * TOKENS_PER_WORD_ESTIMATE * TOKEN_CREDIT_MULTIPLIER);
+}
+
 export const CREDIT_PACKS: CreditPack[] = [
   {
     id: 'starter',
