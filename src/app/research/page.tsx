@@ -763,13 +763,13 @@ export default function ResearchPage() {
           <div className="panel overflow-hidden">
             <div className="overflow-x-auto">
               {/* Table Header Row */}
-              <div className="hidden md:flex items-center gap-4 h-9 px-3.5 border-b border-[var(--hairline)] bg-on-surface/[0.02] text-[11px] font-semibold text-on-surface-variant min-w-[880px]">
-                <span className="flex-1 min-w-[200px]">Topic & Synthesis</span>
+              <div className="hidden md:flex items-center gap-4 h-9 px-3.5 border-b border-[var(--hairline)] bg-on-surface/[0.02] text-[11px] font-semibold text-on-surface-variant min-w-[920px]">
+                <span className="w-64 lg:w-72 shrink-0">Topic & Synthesis</span>
                 <span className="w-24 shrink-0">Depth</span>
                 <span className="w-12 shrink-0 text-center">Theses</span>
                 <span className="w-12 shrink-0 text-center">Stats</span>
                 <span className="w-14 shrink-0 text-center">Chapters</span>
-                <span className="w-24 shrink-0 text-right flex items-center justify-end gap-1.5" title="Estimated credits deducted">
+                <span className="w-36 shrink-0 text-center flex items-center justify-center gap-1.5" title="Estimated credits deducted">
                   <CoinsIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">Credits</span>
                 </span>
@@ -800,7 +800,7 @@ export default function ResearchPage() {
                 return (
                   <div
                     key={id}
-                    className="row px-3.5 py-3 gap-4 border-b border-[var(--hairline)] last:border-0 hover:bg-surface-variant/20 transition-colors min-w-[880px]"
+                    className="row px-3.5 py-3 gap-4 border-b border-[var(--hairline)] last:border-0 hover:bg-surface-variant/20 transition-colors min-w-[920px]"
                   >
                     {/* Title & Preview (Clickable to open viewer) */}
                     <button
@@ -809,7 +809,7 @@ export default function ResearchPage() {
                         setSelectedDossier(entry);
                         setActiveViewerTab("overview");
                       }}
-                      className="flex-1 min-w-[200px] text-left cursor-pointer group py-1"
+                      className="w-64 lg:w-72 shrink-0 text-left cursor-pointer group py-1"
                     >
                       <div className="flex items-center gap-2">
                         <span className="row-title font-bold group-hover:text-primary transition-colors truncate">
@@ -848,13 +848,13 @@ export default function ResearchPage() {
                     </span>
 
                     {/* Credits */}
-                    <span className="w-24 shrink-0 row-meta text-right hidden md:block">
+                    <span className="w-36 shrink-0 row-meta text-center hidden md:flex items-center justify-center">
                       <span
-                        className="text-amber-600 dark:text-amber-400 font-medium inline-flex items-center justify-end gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20 font-mono text-[11px]"
+                        className="text-amber-600 dark:text-amber-400 font-semibold inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 font-mono text-[11.5px] shadow-xs"
                         title={`Dossier generation: ~${calculateDossierCredits(entry)} credits`}
                       >
                         <CoinsIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                        <span>~{calculateDossierCredits(entry)}</span>
+                        <span>~{calculateDossierCredits(entry)} credits</span>
                       </span>
                     </span>
 
