@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "node:path";
 
 /**
  * Applied to every response. `unsafe-inline`/`unsafe-eval` are required by
@@ -28,12 +29,29 @@ const nextConfig: NextConfig = {
     root: __dirname,
   },
 
+  // Client router cache staleTimes: prevents redundant RSC refetches on navigation
+  experimental: {
+    staleTimes: {
+      dynamic: 30,
+      static: 180,
+    },
+  },
+
   // Hide the on-screen dev route indicator. Build and runtime errors are still
   // surfaced; this only removes the floating badge from the corner.
   devIndicators: false,
 
   // Do not advertise the framework version to attackers.
   poweredByHeader: false,
+
+  webpack: (config) => {
+    config.resolve = config.resolve || {};
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      undici: path.resolve(__dirname, "src/lib/undici-shim.ts"),
+    };
+    return config;
+  },
 
   async headers() {
     // `next dev` serves some internal manifests with a JSON content type but

@@ -114,8 +114,6 @@ export const metadata: Metadata = {
 import ThemeWrapper from "@/components/ThemeWrapper";
 import LayoutWrapper from "@/components/layout/LayoutWrapper";
 
-export const dynamic = "force-dynamic";
-
 export default async function RootLayout({
   children,
 }: Readonly<{
