@@ -86,8 +86,8 @@ export default function BlogGeneratorPage() {
       
       if (engine === "bizai") {
         if (quota.source === "credits") {
-          spendCredits(quota.costCredits ?? 1);
-          setMessage(`AI draft (~${targetWords} words) generated with BizAI Gateway (1 credit deducted).`);
+          spendCredits(quota.costCredits ?? 3_000);
+          setMessage(`AI draft (~${targetWords} words) generated with BizAI Gateway (${(quota.costCredits ?? 3_000).toLocaleString()} credits deducted).`);
         } else {
           recordMonthlyUsage("blog");
           setMessage(`AI draft (~${targetWords} words) generated with BizAI Gateway (monthly quota used).`);

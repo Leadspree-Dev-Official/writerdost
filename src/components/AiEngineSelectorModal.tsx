@@ -142,12 +142,12 @@ export function AiEngineSelectorModal({
                 ) : quotaCheckBizai.source === "credits" ? (
                   <span className="text-indigo-400 font-medium flex items-center gap-1">
                     <span className="material-symbols-outlined text-sm">stars</span>
-                    Deducts {costInCredits} credits • Balance: {userCredits} credits
+                    Deducts 1.5x credits/token (~{costInCredits.toLocaleString()} cr) • Balance: {userCredits.toLocaleString()} cr
                   </span>
                 ) : (
                   <span className="text-rose-400 font-medium flex items-center gap-1">
                     <span className="material-symbols-outlined text-sm">error</span>
-                    Plan quota exhausted &amp; insufficient credits ({userCredits} available, {costInCredits} required)
+                    Plan quota exhausted &amp; insufficient credits ({userCredits.toLocaleString()} available, {costInCredits.toLocaleString()} required)
                   </span>
                 )}
 

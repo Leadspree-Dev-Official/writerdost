@@ -7,7 +7,13 @@ import { providerDefaults } from "@/lib/ai-providers";
 
 const modelOptions = {
   openai: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "o1-preview", "o1-mini", "gpt-4o-2024-08-06"],
-  claude: ["claude-3-5-sonnet-20240620", "claude-3-5-sonnet-latest", "claude-3-opus-20240229", "claude-3-haiku-20240307"],
+  claude: [
+    "claude-haiku-5.5",
+    "claude-3-5-sonnet-20240620",
+    "claude-3-5-sonnet-latest",
+    "claude-3-opus-20240229",
+    "claude-3-haiku-20240307",
+  ],
   gemini: ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-1.0-pro"],
   deepseek: ["deepseek-chat", "deepseek-reasoner"],
   openrouter: [

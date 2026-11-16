@@ -273,37 +273,40 @@ export interface CreditPack {
   isPopular?: boolean;
 }
 
+/** Rate at which token usage is converted to credits: 1 token = 1.5 credits */
+export const TOKEN_CREDIT_MULTIPLIER = 1.5;
+
 export const CREDIT_PACKS: CreditPack[] = [
   {
     id: 'starter',
     name: 'Starter Pack',
-    credits: 25,
+    credits: 50_000,
     priceUsd: 5,
-    description: '~5 Full Ebooks or 25 Blog Posts. Perfect for testing a standalone project.',
+    description: '50,000 Credits. Great for ~33,000 raw tokens of generation, outlines & blog drafts.',
   },
   {
     id: 'creator',
     name: 'Creator Pack',
-    credits: 100,
+    credits: 200_000,
     priceUsd: 15,
-    description: '~20 Full Ebooks or 100 Blog Posts. Ideal for active writers.',
+    description: '200,000 Credits. Perfect for complete 1 Lakh word ebooks & deep multi-agent pipelines.',
     badge: 'Most Popular',
     isPopular: true,
   },
   {
     id: 'studio',
     name: 'Studio Pack',
-    credits: 300,
+    credits: 600_000,
     priceUsd: 35,
-    description: '~60 Full Ebooks or 300 Blog Posts. Maximum value for power authors.',
+    description: '600,000 Credits. Maximum volume for high-output authors, multi-novel series & automated blogs.',
     badge: 'Best Value',
   },
 ];
 
 export const CREDIT_COSTS = {
-  project: 5,
-  blog: 1,
-  rewrite: 1,
+  project: 150_000, // standard project allowance in credits (100k raw tokens * 1.5x)
+  blog: 3_000,      // standard blog post (~2,000 raw tokens * 1.5x)
+  rewrite: 1_500,   // standard passage rewrite (~1,000 raw tokens * 1.5x)
 } as const;
 
 export interface UpgradeRequest {

@@ -494,11 +494,11 @@ function PricingContent() {
                   Pay-As-You-Go Credits
                 </span>
                 <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
-                  {userCredits} Available
+                  {userCredits.toLocaleString()} Available
                 </span>
               </div>
               <div className="flex items-center justify-between text-[11px] text-muted-foreground mt-2">
-                <span>5 / ebook • 1 / blog</span>
+                <span>1.5x credits / token spent</span>
                 <a
                   href="#credit-packs"
                   className="text-primary hover:underline font-semibold flex items-center gap-0.5"
@@ -792,7 +792,7 @@ function PricingContent() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {CREDIT_PACKS.map((pack) => {
             const isCreator = pack.id === "creator";
-            const costPerCredit = (pack.priceUsd / pack.credits).toFixed(2);
+            const costPer1k = ((pack.priceUsd / pack.credits) * 1000).toFixed(3);
 
             return (
               <div
@@ -814,7 +814,7 @@ function PricingContent() {
                   <div className="flex justify-between items-start">
                     <h3 className="text-lg font-bold text-foreground">{pack.name}</h3>
                     <span className="px-2 py-0.5 rounded text-xs font-mono font-bold bg-muted text-muted-foreground">
-                      ${costPerCredit}/cr
+                      ${costPer1k}/1k cr
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1 min-h-[36px] leading-relaxed">
@@ -826,7 +826,7 @@ function PricingContent() {
                       ${pack.priceUsd}
                     </span>
                     <span className="text-xs text-muted-foreground font-semibold">
-                      / {pack.credits} credits (One-time)
+                      / {pack.credits.toLocaleString()} credits (One-time)
                     </span>
                   </div>
 
@@ -839,20 +839,20 @@ function PricingContent() {
                         check_circle
                       </span>
                       <span>
-                        <strong>{pack.credits} Platform Credits</strong> added immediately
+                        <strong>{pack.credits.toLocaleString()} Platform Credits</strong> added immediately
                       </span>
                     </div>
                     <div className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300">
                       <span className="material-symbols-outlined text-amber-500 text-base shrink-0 mt-0.5">
                         check_circle
                       </span>
-                      <span>5 credits per complete ebook project</span>
+                      <span>Fair 1.5x deduction rate per token spent</span>
                     </div>
                     <div className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300">
                       <span className="material-symbols-outlined text-amber-500 text-base shrink-0 mt-0.5">
                         check_circle
                       </span>
-                      <span>1 credit per blog post or passage rewrite</span>
+                      <span>Full access to Claude, GPT-4o, Gemini &amp; DeepSeek</span>
                     </div>
                     <div className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300">
                       <span className="material-symbols-outlined text-amber-500 text-base shrink-0 mt-0.5">

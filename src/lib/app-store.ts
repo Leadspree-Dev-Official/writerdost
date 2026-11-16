@@ -36,7 +36,7 @@ import type {
   SubscriptionOrder,
   GenerationEngine,
 } from "@/lib/store-types";
-import { CREDIT_PACKS, CREDIT_COSTS } from "@/lib/store-types";
+import { CREDIT_PACKS, CREDIT_COSTS, TOKEN_CREDIT_MULTIPLIER } from "@/lib/store-types";
 import type { KdpLaunchKit } from "@/lib/kdp-types";
 import * as subApi from "@/lib/subscription-client-api";
 import { getPlanQuotas, DEFAULT_COUPONS } from "@/lib/subscription-service";
@@ -1120,7 +1120,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     referrals: [],
     userReferralCode: "",
     preferredEngine: "bizai",
-    userCredits: 5,
+    userCredits: 50_000,
     
     // Global abort mechanism (not persisted)
     cancelGeneration: () => {},
@@ -2517,6 +2517,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           "gpt-4o": 5.0,
           "gpt-4o-mini": 0.15,
           "gpt-4-turbo": 10.0,
+          "claude-haiku-5.5": 0.30,
           "claude-3-5-sonnet": 3.0,
           "claude-3-opus": 15.0,
           "claude-3-haiku": 0.25,
@@ -2537,7 +2538,20 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         const ratePerMillion = rates[modelKey] || (provider === "ollama" || provider === "ollama_cloud" ? 0 : 0.75);
         const cost = (tokens / 1_000_000) * ratePerMillion;
 
+        // Auto-deduct credits at 1.5x token usage if using BizAI gateway (1 token = 1.5 credits)
+        let updatedCredits = state.userCredits;
+        let updatedCurrentUser = state.currentUser;
+        if (state.preferredEngine === "bizai" && tokens > 0) {
+          const creditsToDeduct = Math.round(tokens * TOKEN_CREDIT_MULTIPLIER);
+          updatedCredits = Math.max(0, (state.userCredits || 0) - creditsToDeduct);
+          if (updatedCurrentUser) {
+            updatedCurrentUser = { ...updatedCurrentUser, credits: updatedCredits };
+          }
+        }
+
         return {
+          userCredits: updatedCredits,
+          currentUser: updatedCurrentUser,
           usage: {
             ...state.usage,
             totalTokens: state.usage.totalTokens + tokens,

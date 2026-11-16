@@ -88,7 +88,7 @@ export default function IdeaAndInput() {
     if (!quota.allowed) {
       setMessage(
         quota.source === "none"
-          ? `Monthly project limit reached (${quota.used}/${quota.limit}) and insufficient credits (${quota.userCredits} available, 5 required). Please top-up credits or use BYOK.`
+          ? `Monthly project limit reached (${quota.used}/${quota.limit}) and insufficient credits (${(quota.userCredits ?? 0).toLocaleString()} available, ${(quota.costCredits ?? 0).toLocaleString()} required). Please top-up credits or use BYOK.`
           : `Monthly project limit reached on your ${quota.plan} plan. Please upgrade or top-up credits.`
       );
       return;
@@ -96,7 +96,7 @@ export default function IdeaAndInput() {
 
     if (engine === "bizai") {
       if (quota.source === "credits") {
-        spendCredits(5);
+        spendCredits(quota.costCredits ?? 150_000);
       } else {
         recordMonthlyUsage("project");
       }
