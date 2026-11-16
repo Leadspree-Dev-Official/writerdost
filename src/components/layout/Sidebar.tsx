@@ -239,7 +239,10 @@ export default function Sidebar() {
                 {currentUser.fullName}
               </span>
               <span className="flex items-center gap-1 text-[10.5px] text-on-surface-variant truncate">
-                <span className="font-mono text-amber-600 dark:text-amber-400 font-semibold">{userCredits.toLocaleString()} cr</span>
+                <span className="font-mono text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-0.5">
+                  <span className="material-symbols-outlined text-[13px] text-amber-500">monetization_on</span>
+                  {userCredits.toLocaleString()} cr
+                </span>
                 <span>•</span>
                 <span>{currentUser.role === "admin" ? "Admin" : currentUser.plan}</span>
               </span>

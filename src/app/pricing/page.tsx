@@ -761,7 +761,7 @@ function PricingContent() {
       <div id="credit-packs" className="mt-16 scroll-mt-6">
         <div className="text-center max-w-2xl mx-auto mb-8">
           <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-xs tracking-wider uppercase mb-2 border border-amber-500/20">
-            <span className="material-symbols-outlined text-sm">token</span>
+            <span className="material-symbols-outlined text-sm">monetization_on</span>
             Pay-As-You-Go • Instant Activation
           </div>
           <h2 className="text-2xl font-bold tracking-tight text-foreground">
@@ -812,7 +812,10 @@ function PricingContent() {
 
                 <div>
                   <div className="flex justify-between items-start">
-                    <h3 className="text-lg font-bold text-foreground">{pack.name}</h3>
+                    <h3 className="text-lg font-bold text-foreground flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-amber-500 text-xl">monetization_on</span>
+                      <span>{pack.name}</span>
+                    </h3>
                     <span className="px-2 py-0.5 rounded text-xs font-mono font-bold bg-muted text-muted-foreground">
                       ${costPer1k}/1k cr
                     </span>

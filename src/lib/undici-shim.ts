@@ -20,19 +20,23 @@ const _fetch = (input: RequestInfo | URL, init?: RequestInit) => {
 
 // A no-op Agent that drops the `dispatcher` option harmlessly.
 class Agent {
-  constructor(_opts?: unknown) {}
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  constructor(..._args: unknown[]) {}
 }
 
 class DecoratorHandler {
-  constructor(_handler?: unknown) {}
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  constructor(..._args: unknown[]) {}
 }
 
 class Dispatcher {
-  constructor(_opts?: unknown) {}
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  constructor(..._args: unknown[]) {}
 }
 
 const getGlobalDispatcher = () => new Dispatcher();
-const setGlobalDispatcher = (_d?: unknown) => {};
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const setGlobalDispatcher = (..._args: unknown[]) => {};
 
 const _File = globalThis.File;
 const _FormData = globalThis.FormData;
@@ -54,7 +58,7 @@ export {
   _Response as Response,
 };
 
-export default {
+const undiciShim = {
   fetch: _fetch,
   Agent,
   DecoratorHandler,
@@ -67,3 +71,5 @@ export default {
   Request: _Request,
   Response: _Response,
 };
+
+export default undiciShim;

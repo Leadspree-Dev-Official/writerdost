@@ -124,7 +124,10 @@ export default function ProjectsPage() {
           <span className="w-20">Status</span>
           <span className="w-20">Listing</span>
           <span className="w-20 text-right">Words</span>
-          <span className="w-16 text-right" title="Tokens used and credits deducted">Tokens/Cr</span>
+          <span className="w-16 text-right flex items-center justify-end gap-0.5" title="Credits deducted via BizAI">
+            <span className="material-symbols-outlined text-[13px] text-amber-500">monetization_on</span>
+            <span>Cr</span>
+          </span>
           <span className="w-16 text-right">Outline</span>
           <span className="w-16 text-right">Draft</span>
           <span className="w-28">Progress</span>
@@ -187,8 +190,9 @@ export default function ProjectsPage() {
               <span className="w-16 shrink-0 row-meta text-right hidden md:block">
                 {project.tokensUsed ? (
                   <span title={`Estimated credits: ~${(project.tokensUsed * 0.015).toFixed(1)} cr`}>
-                    <span className="text-amber-600 dark:text-amber-400 font-medium">
-                      ~{Math.round(project.tokensUsed * 0.015)} cr
+                    <span className="text-amber-600 dark:text-amber-400 font-medium flex items-center justify-end gap-0.5">
+                      <span className="material-symbols-outlined text-[12px] text-amber-500">monetization_on</span>
+                      <span>~{Math.round(project.tokensUsed * 0.015)}</span>
                     </span>
                   </span>
                 ) : (

@@ -424,7 +424,7 @@ export default function IdeaAndInput() {
                       {createDraft.length.toLocaleString()} words
                     </span>
                     <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[13px]">toll</span>
+                      <span className="material-symbols-outlined text-[13px]">monetization_on</span>
                       ~{getDisplayedCreditEstimate(createDraft.length).toLocaleString()} credits
                     </span>
                   </div>

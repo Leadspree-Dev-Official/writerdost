@@ -30,8 +30,9 @@ export const ProjectMetrics: React.FC<ProjectMetricsProps> = ({ project }) => {
           <span className="text-[10px] font-semibold text-on-surface-variant">Project Metrics</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="chip chip-neutral text-[9px] px-1.5 py-0.5">
-            ~{creditLabel}
+          <span className="chip chip-neutral text-[9px] px-1.5 py-0.5 flex items-center gap-0.5">
+            <span className="material-symbols-outlined text-[11px] text-amber-500">monetization_on</span>
+            <span>~{creditLabel}</span>
           </span>
           <span className={`material-symbols-outlined text-slate-400 text-sm transition-transform ${isOpen ? "rotate-180" : ""}`}>
             expand_more
@@ -55,7 +56,10 @@ export const ProjectMetrics: React.FC<ProjectMetricsProps> = ({ project }) => {
               </dd>
             </div>
             <div className="kv text-[11px]">
-              <dt className="text-slate-400">Est. Credits used</dt>
+              <dt className="text-slate-400 flex items-center gap-1">
+                <span className="material-symbols-outlined text-[13px] text-amber-500">monetization_on</span>
+                <span>Est. Credits used</span>
+              </dt>
               <dd className="num font-semibold text-amber-600 dark:text-amber-400">
                 ~{creditsConsumed.toLocaleString()} cr
               </dd>

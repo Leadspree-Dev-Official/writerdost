@@ -369,7 +369,7 @@ export default function CopywritingStudioPage() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-sm font-bold tracking-tight text-on-surface">Copywriting Studio</h1>
-                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-primary/10 text-primary uppercase tracking-wide">
+                <span className="text-[9.5px] font-black px-2 py-0.5 rounded-full bg-[#a5b4fc] text-white shadow-xs uppercase tracking-wider">
                   Autonomous Suites
                 </span>
               </div>
@@ -525,20 +525,20 @@ export default function CopywritingStudioPage() {
                         >
                           <div>
                             <div className="flex items-center justify-between gap-1.5 mb-1.5">
-                              <div className="w-7 h-7 rounded-lg bg-primary/15 border border-primary/25 flex items-center justify-center text-primary group-hover:scale-105 group-hover:bg-primary group-hover:text-white transition-all shrink-0">
+                              <div className="w-7 h-7 rounded-lg bg-[#a5b4fc]/20 border border-[#a5b4fc]/40 flex items-center justify-center text-[#a5b4fc] group-hover:scale-105 group-hover:bg-[#a5b4fc] group-hover:text-white transition-all shrink-0">
                                 <span className="material-symbols-outlined text-[16px]">{template.icon}</span>
                               </div>
                               {template.badge && (
-                                <span className="text-[8.5px] font-bold px-1.5 py-0.2 rounded-full bg-primary/15 text-primary border border-primary/20 uppercase tracking-wider">
+                                <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-[#a5b4fc] text-white shadow-xs uppercase tracking-wider">
                                   {template.badge}
                                 </span>
                               )}
                             </div>
 
-                            <h3 className="text-xs font-bold text-on-surface group-hover:text-primary transition-colors line-clamp-1">
+                            <h3 className="text-xs font-bold text-on-surface group-hover:text-[#a5b4fc] transition-colors line-clamp-1">
                               {template.name}
                             </h3>
-                            <p className="text-[9.5px] font-semibold text-primary/90 uppercase tracking-wide truncate">
+                            <p className="text-[10px] font-bold text-[#a5b4fc] uppercase tracking-wide truncate">
                               {template.framework}
                             </p>
 
@@ -552,7 +552,7 @@ export default function CopywritingStudioPage() {
                               <span className="material-symbols-outlined text-[12px]">tune</span>
                               {template.inputFields.length} Inputs
                             </span>
-                            <span className="inline-flex items-center gap-0.5 text-primary font-semibold text-[11px] group-hover:translate-x-0.5 transition-transform">
+                            <span className="inline-flex items-center gap-0.5 text-[#a5b4fc] font-bold text-[11px] group-hover:translate-x-0.5 transition-transform">
                               Configure <span className="material-symbols-outlined text-[13px]">arrow_forward</span>
                             </span>
                           </div>
@@ -583,7 +583,7 @@ export default function CopywritingStudioPage() {
                       <span className="material-symbols-outlined text-[16px] group-hover:-translate-x-0.5 transition-transform">arrow_back</span>
                       <span>Change Template</span>
                     </button>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-surface-container border border-outline-variant/30 text-on-surface-variant uppercase">
+                    <span className="text-[9px] font-black px-2.5 py-0.5 rounded-full bg-[#a5b4fc] text-white shadow-xs uppercase tracking-wider">
                       {currentTemplate.category}
                     </span>
                   </div>
@@ -593,19 +593,19 @@ export default function CopywritingStudioPage() {
                     {/* Header */}
                     <div className="border-b border-outline-variant/20 pb-2 flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-primary/15 border border-primary/25 flex items-center justify-center text-primary shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-[#a5b4fc]/20 border border-[#a5b4fc]/40 flex items-center justify-center text-[#a5b4fc] shrink-0">
                           <span className="material-symbols-outlined text-[18px]">{currentTemplate.icon}</span>
                         </div>
                         <div>
                           <div className="flex items-center gap-1.5">
                             <h2 className="text-xs font-bold text-on-surface leading-tight">{currentTemplate.name}</h2>
                             {currentTemplate.badge && (
-                              <span className="text-[8.5px] font-bold px-1.5 py-0.2 rounded-full bg-primary/15 text-primary uppercase">
+                              <span className="text-[9px] font-black px-2.5 py-0.5 rounded-full bg-[#a5b4fc] text-white shadow-xs uppercase tracking-wider">
                                 {currentTemplate.badge}
                               </span>
                             )}
                           </div>
-                          <p className="text-[10px] text-primary font-medium">{currentTemplate.framework}</p>
+                          <p className="text-[10px] text-[#a5b4fc] font-bold">{currentTemplate.framework}</p>
                         </div>
                       </div>
 

@@ -144,8 +144,8 @@ export function AiEngineSelectorModal({
                     Covered by monthly plan quota ({quotaCheckBizai.limit === -1 ? "Unlimited" : `${quotaCheckBizai.used}/${quotaCheckBizai.limit} used`})
                   </span>
                 ) : quotaCheckBizai.source === "credits" ? (
-                  <span className="text-indigo-400 font-medium flex items-center gap-1">
-                    <span className="material-symbols-outlined text-sm">stars</span>
+                  <span className="text-amber-400 font-medium flex items-center gap-1">
+                    <span className="material-symbols-outlined text-sm text-amber-500">monetization_on</span>
                     ~{displayedCredits.toLocaleString()} approx. credits • Balance: {userCredits.toLocaleString()} cr
                   </span>
                 ) : (
