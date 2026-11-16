@@ -191,6 +191,7 @@ function PricingContent() {
   const couponDiscount = appliedCoupon?.discountAmount ?? 0;
   const totalDiscount = Math.min(basePrice, couponDiscount + referralDiscount);
   const finalPrice = Math.max(0, Math.round((basePrice - totalDiscount) * 100) / 100);
+  const formatMoney = (val: number) => `$${Number(val || 0).toFixed(2)}`;
 
   return (
     <div className="page pb-20">
@@ -619,134 +620,235 @@ function PricingContent() {
 
       {/* Checkout Modal */}
       {selectedPlan && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="relative w-full max-w-lg rounded-2xl bg-card border border-slate-200 dark:border-slate-800 p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in font-body overflow-y-auto">
+          <div className="relative w-full max-w-lg bg-surface-container border border-outline-variant/30 rounded-2xl shadow-2xl overflow-hidden text-on-surface my-auto">
+            {/* Top gradient highlight strip */}
+            <div className="h-1.5 w-full bg-gradient-to-r from-indigo-500 via-primary to-amber-500" />
+
             <button
               onClick={() => setSelectedPlan(null)}
-              className="absolute top-4 right-4 p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="absolute top-4 right-4 p-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest transition-colors z-10"
               type="button"
+              aria-label="Close upgrade modal"
             >
               <span className="material-symbols-outlined text-lg">close</span>
             </button>
 
             {checkoutSuccess ? (
-              <div className="text-center py-6">
-                <span className="material-symbols-outlined text-emerald-500 text-5xl mb-2 animate-bounce">
-                  check_circle
-                </span>
-                <h3 className="text-xl font-bold text-foreground">Welcome to {selectedPlan}!</h3>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Your subscription has been activated successfully and your monthly quotas have been updated.
-                </p>
+              <div className="text-center py-10 px-6 space-y-4">
+                <div className="w-16 h-16 mx-auto rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                  <span className="material-symbols-outlined text-4xl animate-bounce">
+                    verified
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-xl font-extrabold text-on-surface">Welcome to {selectedPlan}!</h3>
+                  <p className="text-xs text-on-surface-variant mt-1.5 max-w-sm mx-auto">
+                    Your subscription has been successfully activated and your monthly quotas have been refreshed.
+                  </p>
+                </div>
+                <div className="pt-2">
+                  <a
+                    href="/editor"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-on-primary text-xs font-bold hover:brightness-110 transition-all shadow-md"
+                  >
+                    <span className="material-symbols-outlined text-base">edit_document</span>
+                    Start Writing Now
+                  </a>
+                </div>
               </div>
             ) : (
-              <div>
-                <h3 className="text-lg font-bold text-foreground">Complete Your Upgrade</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Confirm your plan details below.
-                </p>
+              <div className="p-6">
+                {/* Header */}
+                <div className="flex items-center gap-3 mb-5 pr-8">
+                  <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 via-primary to-amber-500 text-white flex items-center justify-center shadow-md shrink-0">
+                    <span className="material-symbols-outlined text-xl">workspace_premium</span>
+                  </span>
+                  <div>
+                    <h3 className="text-lg font-bold text-on-surface tracking-tight">Complete Your Upgrade</h3>
+                    <p className="text-xs text-on-surface-variant">
+                      Review your plan details and secure instant access.
+                    </p>
+                  </div>
+                </div>
 
-                {/* Plan Summary */}
-                <div className="mt-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="font-semibold text-sm text-foreground">{planDetails?.name}</span>
-                    <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
-                      {billingInterval}
+                {/* Plan Summary Card */}
+                <div className="p-4 rounded-xl bg-surface-container-low/90 border border-outline-variant/30 space-y-2.5 shadow-sm">
+                  <div className="flex justify-between items-center pb-2 border-b border-outline-variant/20">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm text-on-surface">{planDetails?.name}</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/25">
+                        {billingInterval}
+                      </span>
+                    </div>
+                    <span className="text-xs font-semibold text-on-surface-variant">
+                      {billingInterval === "yearly" ? "Billed annually" : "Billed monthly"}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center text-xs text-muted-foreground">
+
+                  <div className="flex justify-between items-center text-xs text-on-surface-variant">
                     <span>Base Subscription</span>
-                    <span>${basePrice}</span>
+                    <span className="font-medium text-on-surface">{formatMoney(basePrice)}</span>
                   </div>
+
                   {couponDiscount > 0 && (
-                    <div className="flex justify-between items-center text-xs text-emerald-600 dark:text-emerald-400 mt-1">
-                      <span>Coupon Discount ({appliedCoupon?.code})</span>
-                      <span>-${couponDiscount}</span>
+                    <div className="flex justify-between items-center text-xs text-emerald-400">
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[13px]">local_offer</span>
+                        Coupon Discount ({appliedCoupon?.code})
+                      </span>
+                      <span className="font-semibold">-{formatMoney(couponDiscount)}</span>
                     </div>
                   )}
+
                   {referralDiscount > 0 && (
-                    <div className="flex justify-between items-center text-xs text-indigo-600 dark:text-indigo-400 mt-1">
-                      <span>Referral Bonus (10%)</span>
-                      <span>-${referralDiscount}</span>
+                    <div className="flex justify-between items-center text-xs text-indigo-400">
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[13px]">redeem</span>
+                        Referral Bonus (10%)
+                      </span>
+                      <span className="font-semibold">-{formatMoney(referralDiscount)}</span>
                     </div>
                   )}
-                  <div className="pt-2 mt-2 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center font-bold text-sm text-foreground">
-                    <span>Total Due Today</span>
-                    <span className="text-base text-primary">${finalPrice}</span>
+
+                  <div className="pt-2.5 mt-2 border-t border-outline-variant/30 flex justify-between items-baseline">
+                    <div>
+                      <span className="font-bold text-sm text-on-surface">Total Due Today</span>
+                      <p className="text-[10px] text-on-surface-variant">All taxes &amp; fees included</p>
+                    </div>
+                    <div className="text-right">
+                      {totalDiscount > 0 && (
+                        <span className="text-xs line-through text-on-surface-variant/60 mr-2">
+                          {formatMoney(basePrice)}
+                        </span>
+                      )}
+                      <span className="text-xl font-extrabold text-primary">
+                        {formatMoney(finalPrice)}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
                 {/* Coupon Input */}
                 <div className="mt-4">
-                  <label className="text-xs font-semibold text-foreground block mb-1">
-                    Have a coupon code?
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-semibold text-on-surface">
+                      Have a coupon code?
+                    </label>
+                    {appliedCoupon && (
+                      <button
+                        type="button"
+                        onClick={() => setAppliedCoupon(null)}
+                        className="text-[11px] text-rose-400 hover:text-rose-300 font-medium transition-colors"
+                      >
+                        Remove code
+                      </button>
+                    )}
+                  </div>
                   <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      placeholder="e.g. WELCOME50"
-                      value={couponCode}
-                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                      className="input flex-1 uppercase text-xs"
-                    />
+                    <div className="relative flex-1">
+                      <span className="material-symbols-outlined text-sm absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/60">
+                        confirmation_number
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="e.g. WELCOME20"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                        className="w-full bg-surface-container-lowest border border-outline-variant/40 rounded-xl text-on-surface placeholder:text-on-surface-variant/40 focus:border-primary focus:ring-1 focus:ring-primary pl-9 pr-3 py-2 text-xs uppercase font-medium outline-none transition-all"
+                      />
+                    </div>
                     <button
                       type="button"
                       onClick={handleApplyCoupon}
                       disabled={validatingCoupon || !couponCode.trim()}
-                      className="btn btn-secondary btn-sm shrink-0"
+                      className="px-4 py-2 rounded-xl text-xs font-semibold bg-surface-container-high hover:bg-surface-container-highest text-on-surface border border-outline-variant/30 transition-all shrink-0 disabled:opacity-50"
                     >
                       {validatingCoupon ? "Checking…" : "Apply"}
                     </button>
                   </div>
                   {appliedCoupon && (
-                    <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1 font-medium">
-                      <span className="material-symbols-outlined text-[14px]">check</span>
-                      Coupon &quot;{appliedCoupon.code}&quot; applied (-${appliedCoupon.discountAmount})
-                    </p>
+                    <div className="mt-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 font-medium">
+                        <span className="material-symbols-outlined text-sm">check_circle</span>
+                        <span>Coupon &quot;{appliedCoupon.code}&quot; applied</span>
+                      </div>
+                      <span className="font-bold">-{formatMoney(appliedCoupon.discountAmount)}</span>
+                    </div>
                   )}
                   {couponError && (
-                    <p className="text-[11px] text-rose-500 mt-1">{couponError}</p>
+                    <div className="mt-2 px-3 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-sm">error</span>
+                      <span>{couponError}</span>
+                    </div>
                   )}
                 </div>
 
                 {/* Referral Code */}
-                <div className="mt-3">
-                  <label className="text-xs font-semibold text-foreground block mb-1">
+                <div className="mt-3.5">
+                  <label className="text-xs font-semibold text-on-surface block mb-1.5">
                     Referral Code (Optional)
                   </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. WD-ABC123"
-                    value={referralCodeInput}
-                    onChange={(e) => setReferralCodeInput(e.target.value.toUpperCase())}
-                    className="input w-full uppercase text-xs"
-                  />
+                  <div className="relative">
+                    <span className="material-symbols-outlined text-sm absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/60">
+                      card_giftcard
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="e.g. WD-ABC123"
+                      value={referralCodeInput}
+                      onChange={(e) => setReferralCodeInput(e.target.value.toUpperCase())}
+                      className="w-full bg-surface-container-lowest border border-outline-variant/40 rounded-xl text-on-surface placeholder:text-on-surface-variant/40 focus:border-primary focus:ring-1 focus:ring-primary pl-9 pr-3 py-2 text-xs uppercase font-medium outline-none transition-all"
+                    />
+                  </div>
                   {referralCodeInput.trim() && (
-                    <p className="text-[11px] text-indigo-600 dark:text-indigo-400 mt-1 font-medium">
-                      Referral discount active (10% off)
-                    </p>
+                    <div className="mt-2 px-3 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-sm">celebration</span>
+                      <span>10% referral discount activated!</span>
+                    </div>
                   )}
                 </div>
 
                 {checkoutError && (
-                  <p className="mt-3 text-xs text-rose-500 bg-rose-500/10 p-2 rounded-lg border border-rose-500/20">
-                    {checkoutError}
-                  </p>
+                  <div className="mt-3.5 p-2.5 rounded-xl text-xs text-rose-400 bg-rose-500/10 border border-rose-500/30 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-sm">warning</span>
+                    <span>{checkoutError}</span>
+                  </div>
                 )}
 
-                {/* Checkout Trigger */}
-                <div className="mt-6 flex flex-col gap-2">
+                {/* Trust Badges */}
+                <div className="mt-4 pt-3 border-t border-outline-variant/20 flex flex-wrap items-center justify-between gap-2 text-[10px] text-on-surface-variant">
+                  <div className="flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[13px] text-emerald-400">verified</span>
+                    <span>256-bit SSL Encrypted</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[13px] text-primary">bolt</span>
+                    <span>Instant Quota Activation</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[13px] text-amber-400">shield</span>
+                    <span>Cancel Anytime</span>
+                  </div>
+                </div>
+
+                {/* Checkout Button */}
+                <div className="mt-4">
                   <button
                     type="button"
                     onClick={handleCompletePurchase}
                     disabled={isCheckingOut}
-                    className="btn btn-primary w-full py-2.5 rounded-xl text-xs font-semibold justify-center flex items-center gap-2 shadow-sm"
+                    className="w-full py-3.5 px-4 rounded-xl font-bold text-xs uppercase tracking-wider bg-gradient-to-r from-indigo-600 via-primary to-amber-500 hover:brightness-110 active:scale-[0.99] text-white shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2 transition-all disabled:opacity-50"
                   >
-                    <span className="material-symbols-outlined text-[18px]">verified_user</span>
-                    {isCheckingOut ? "Activating Subscription…" : `Activate ${selectedPlan} ($${finalPrice})`}
+                    <span className="material-symbols-outlined text-base">
+                      {isCheckingOut ? "hourglass_empty" : "lock"}
+                    </span>
+                    {isCheckingOut
+                      ? "Activating Subscription…"
+                      : `Upgrade to ${selectedPlan} • ${formatMoney(finalPrice)}`}
                   </button>
-                  <p className="text-[10px] text-center text-muted-foreground mt-1">
-                    Secure checkout. PayPal and credit card integration ready.
+                  <p className="text-[10px] text-center text-on-surface-variant/70 mt-2">
+                    Supported: Visa, Mastercard, American Express, PayPal &amp; Apple Pay.
                   </p>
                 </div>
               </div>
