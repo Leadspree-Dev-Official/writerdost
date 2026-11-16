@@ -84,11 +84,18 @@ export default function IdeaAndInput() {
 
   const executeGenerateWithAI = async (engine: GenerationEngine) => {
     setEngineModalOpen(false);
+    const directWordCost = Math.round(createDraft.length * 1.5);
     const quota = checkQuota("project", engine);
+
+    if (engine === "bizai" && quota.source === "credits" && (quota.userCredits ?? 0) < directWordCost) {
+      setMessage(`Insufficient credits (${(quota.userCredits ?? 0).toLocaleString()} available, ${directWordCost.toLocaleString()} required for ${createDraft.length.toLocaleString()} words). Please top-up credits or use BYOK.`);
+      return;
+    }
+
     if (!quota.allowed) {
       setMessage(
         quota.source === "none"
-          ? `Monthly project limit reached (${quota.used}/${quota.limit}) and insufficient credits (${(quota.userCredits ?? 0).toLocaleString()} available, ${(quota.costCredits ?? 0).toLocaleString()} required). Please top-up credits or use BYOK.`
+          ? `Monthly project limit reached (${quota.used}/${quota.limit}) and insufficient credits. Please top-up credits or use BYOK.`
           : `Monthly project limit reached on your ${quota.plan} plan. Please upgrade or top-up credits.`
       );
       return;
@@ -96,7 +103,7 @@ export default function IdeaAndInput() {
 
     if (engine === "bizai") {
       if (quota.source === "credits") {
-        spendCredits(quota.costCredits ?? 150_000);
+        spendCredits(directWordCost);
       } else {
         recordMonthlyUsage("project");
       }
@@ -345,9 +352,14 @@ export default function IdeaAndInput() {
                   <label htmlFor="length" className="label">
                     Length
                   </label>
-                  <span className="text-[12.5px] font-semibold text-on-surface num">
-                    {createDraft.length.toLocaleString()} words
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[12.5px] font-semibold text-on-surface num">
+                      {createDraft.length.toLocaleString()} words
+                    </span>
+                    <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-bold">
+                      ~{Math.round(createDraft.length * 1.5).toLocaleString()} cr
+                    </span>
+                  </div>
                 </div>
                 <input
                   id="length"
@@ -359,9 +371,10 @@ export default function IdeaAndInput() {
                   value={createDraft.length}
                   onChange={(event) => updateCreateDraft({ length: Number(event.target.value) })}
                 />
-                <div className="flex justify-between text-[11px] text-on-surface-variant mt-1.5">
-                  <span>1k</span>
-                  <span>100k</span>
+                <div className="flex justify-between items-center text-[11px] text-on-surface-variant mt-1.5">
+                  <span>1k words (1,500 cr)</span>
+                  <span className="text-[10px] text-slate-500">1.5x direct rate • 0 with BYOK</span>
+                  <span>100k words (150,000 cr)</span>
                 </div>
               </div>
             </div>
@@ -529,6 +542,7 @@ export default function IdeaAndInput() {
         onConfirm={executeGenerateWithAI}
         taskType="project"
         taskTitle={createDraft.vision.slice(0, 45) || "New Ebook"}
+        targetWords={createDraft.length}
       />
 
       {/* FB Ad Low-Ticket Ebook Templates Modal */}

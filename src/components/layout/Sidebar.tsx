@@ -64,6 +64,8 @@ export default function Sidebar() {
   const collapsed = useAppStore((state) => state.isGlobalSidebarCollapsed);
   const toggleSidebar = useAppStore((state) => state.toggleGlobalSidebar);
   const currentUser = useAppStore((state) => state.currentUser);
+  const storeCredits = useAppStore((state) => state.userCredits);
+  const userCredits = currentUser?.credits ?? storeCredits ?? 50_000;
   const logout = useAppStore((state) => state.logout);
   const hasAutoClosed = useRef(false);
 
@@ -234,8 +236,10 @@ export default function Sidebar() {
               <span className="block text-[12px] font-semibold text-on-surface truncate">
                 {currentUser.fullName}
               </span>
-              <span className="block text-[10.5px] text-on-surface-variant truncate">
-                {currentUser.role === "admin" ? "Admin" : currentUser.plan}
+              <span className="flex items-center gap-1 text-[10.5px] text-on-surface-variant truncate">
+                <span className="font-mono text-amber-600 dark:text-amber-400 font-semibold">{userCredits.toLocaleString()} cr</span>
+                <span>•</span>
+                <span>{currentUser.role === "admin" ? "Admin" : currentUser.plan}</span>
               </span>
             </span>
           </div>

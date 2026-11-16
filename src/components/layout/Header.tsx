@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAppStore } from "@/lib/app-store";
 import WorkspaceStatus from "@/components/WorkspaceStatus";
@@ -36,6 +37,9 @@ export default function Header() {
   const collapsed = useAppStore((state) => state.isGlobalSidebarCollapsed);
   const toggleSidebar = useAppStore((state) => state.toggleGlobalSidebar);
   const setManuscriptFullView = useAppStore((state) => state.setManuscriptFullView);
+  const currentUser = useAppStore((state) => state.currentUser);
+  const storeCredits = useAppStore((state) => state.userCredits);
+  const userCredits = currentUser?.credits ?? storeCredits ?? 50_000;
 
   const mounted = useMounted();
   const [notification, setNotification] = useState<{ message: string; type: "success" | "info" } | null>(null);
@@ -229,6 +233,16 @@ export default function Header() {
             <span className="w-px h-4 bg-[var(--hairline-strong)] mx-1" />
           </>
         )}
+
+        <Link
+          href="/pricing#credit-packs"
+          title="AI Generation Credits (Click to view packs)"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 transition-all mr-1"
+        >
+          <span className="material-symbols-outlined text-[15px] text-amber-500">token</span>
+          <span className="font-mono tabular-nums">{userCredits.toLocaleString()}</span>
+          <span className="hidden sm:inline text-[10px] uppercase font-bold opacity-75">cr</span>
+        </Link>
 
         <button
           type="button"

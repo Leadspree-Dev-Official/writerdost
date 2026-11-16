@@ -124,7 +124,7 @@ export default function ProjectsPage() {
           <span className="w-20">Status</span>
           <span className="w-20">Listing</span>
           <span className="w-20 text-right">Words</span>
-          <span className="w-16 text-right">Tokens</span>
+          <span className="w-16 text-right" title="Tokens used and estimated 1.5x credits">Tokens/Cr</span>
           <span className="w-16 text-right">Outline</span>
           <span className="w-16 text-right">Draft</span>
           <span className="w-28">Progress</span>
@@ -162,6 +162,7 @@ export default function ProjectsPage() {
                 <span className="block row-meta truncate mt-1">
                   <span className="md:hidden text-on-surface-variant font-medium">
                     {calculateProjectWords(project).toLocaleString()} words ·{" "}
+                    {project.tokensUsed ? `~${Math.round(project.tokensUsed * 1.5).toLocaleString()} cr · ` : ""}
                   </span>
                   {project.tone} · {project.audience} · {project.updatedLabel}
                 </span>
@@ -184,7 +185,16 @@ export default function ProjectsPage() {
                 {calculateProjectWords(project).toLocaleString()}
               </span>
               <span className="w-16 shrink-0 row-meta text-right hidden md:block">
-                {project.tokensUsed?.toLocaleString() ?? "—"}
+                {project.tokensUsed ? (
+                  <span title={`Tokens: ${project.tokensUsed.toLocaleString()} • Estimated credits (1.5x): ${Math.round(project.tokensUsed * 1.5).toLocaleString()} cr`}>
+                    <span>{project.tokensUsed >= 1000 ? `${(project.tokensUsed / 1000).toFixed(0)}k` : project.tokensUsed}</span>
+                    <span className="block text-[10px] text-amber-600 dark:text-amber-400 font-mono">
+                      ~{Math.round((project.tokensUsed * 1.5) / 1000)}k cr
+                    </span>
+                  </span>
+                ) : (
+                  "—"
+                )}
               </span>
               <span className="w-16 shrink-0 row-meta text-right hidden md:block">
                 {formatSecs(project.outlineDuration ?? 0)}

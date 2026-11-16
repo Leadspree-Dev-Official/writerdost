@@ -1,4 +1,12 @@
-import { Coupon, DEFAULT_FOUNDER_CAMPAIGN, FounderCampaignConfig, ReferralRecord, SubscriptionOrder } from "./store-types";
+import {
+  Coupon,
+  DEFAULT_FOUNDER_CAMPAIGN,
+  DEFAULT_CONTEXT_ROUTING,
+  FounderCampaignConfig,
+  ContextRoutingConfig,
+  ReferralRecord,
+  SubscriptionOrder,
+} from "./store-types";
 import { DEFAULT_COUPONS } from "./subscription-service";
 
 // In-memory persistent server state
@@ -7,6 +15,11 @@ declare global {
   var __writerdost_referrals: ReferralRecord[] | undefined;
   var __writerdost_subscriptions: SubscriptionOrder[] | undefined;
   var __writerdost_founder_campaign: FounderCampaignConfig | undefined;
+  var __writerdost_context_routing: ContextRoutingConfig | undefined;
+}
+
+if (!globalThis.__writerdost_context_routing) {
+  globalThis.__writerdost_context_routing = { ...DEFAULT_CONTEXT_ROUTING };
 }
 
 if (!globalThis.__writerdost_founder_campaign) {
@@ -120,5 +133,19 @@ export function updateFounderCampaign(updates: Partial<FounderCampaignConfig>): 
     ...updates,
   };
   globalThis.__writerdost_founder_campaign = next;
+  return next;
+}
+
+export function getContextRouting(): ContextRoutingConfig {
+  return globalThis.__writerdost_context_routing || { ...DEFAULT_CONTEXT_ROUTING };
+}
+
+export function updateContextRouting(updates: Partial<ContextRoutingConfig>): ContextRoutingConfig {
+  const current = getContextRouting();
+  const next: ContextRoutingConfig = {
+    ...current,
+    ...updates,
+  };
+  globalThis.__writerdost_context_routing = next;
   return next;
 }

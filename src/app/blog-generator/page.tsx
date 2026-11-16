@@ -510,6 +510,7 @@ export default function BlogGeneratorPage() {
         onConfirm={handleExecuteDraftGeneration}
         taskType="blog"
         taskTitle={blog.title || subject || "Blog Post"}
+        targetWords={targetWords}
       />
     </div>
   );

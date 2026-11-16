@@ -10,6 +10,9 @@ import {
   Coupon,
   FounderCampaignConfig,
   DEFAULT_FOUNDER_CAMPAIGN,
+  ContextRoutingConfig,
+  DEFAULT_CONTEXT_ROUTING,
+  ApiProvider,
 } from "@/lib/store-types";
 
 export default function AdminDashboard() {
@@ -45,7 +48,44 @@ export default function AdminDashboard() {
   }, [loadUsers, loadUpgradeRequests, loadCoupons, loadSubscriptions, loadReferrals]);
 
   // Tab State
-  const [activeTab, setActiveTab] = useState<"users" | "requests" | "coupons" | "referrals" | "campaign">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "requests" | "coupons" | "referrals" | "campaign" | "routing">("users");
+
+  // Context Routing Admin State (95K Threshold Fallback)
+  const [routingConfig, setRoutingConfig] = useState<ContextRoutingConfig>(DEFAULT_CONTEXT_ROUTING);
+  const [routingSaving, setRoutingSaving] = useState(false);
+  const [routingMsg, setRoutingMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/admin/context-routing")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.config) setRoutingConfig(d.config);
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleSaveRouting = async () => {
+    setRoutingSaving(true);
+    setRoutingMsg(null);
+    try {
+      const res = await fetch("/api/admin/context-routing", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(routingConfig),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update routing settings");
+      setRoutingConfig(data.config);
+      setRoutingMsg({
+        type: "success",
+        text: "Context routing fallback settings saved successfully!",
+      });
+    } catch (err) {
+      setRoutingMsg({ type: "error", text: err instanceof Error ? err.message : "Save failed" });
+    } finally {
+      setRoutingSaving(false);
+    }
+  };
 
   // Founder Campaign Admin State
   const [campaignConfig, setCampaignConfig] = useState<FounderCampaignConfig>(DEFAULT_FOUNDER_CAMPAIGN);
@@ -433,6 +473,15 @@ export default function AdminDashboard() {
           type="button"
         >
           Founder Campaign {campaignConfig.isEnabled ? "🟢" : "⚪"}
+        </button>
+        <button
+          onClick={() => { setActiveTab("routing"); setShowAddForm(false); }}
+          className="tab"
+          data-active={activeTab === "routing"}
+          role="tab"
+          type="button"
+        >
+          AI Context Routing {routingConfig.enabled ? "⚡ ON" : "⚪ OFF"}
         </button>
       </div>
 
@@ -1027,6 +1076,135 @@ export default function AdminDashboard() {
                 </p>
               </div>
             </div>
+          </div>
+        </section>
+      ) : activeTab === "routing" ? (
+        /* AI Context Routing & Fallback Section */
+        <section className="panel panel-pad max-w-4xl space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-outline-variant/10">
+            <div>
+              <h3 className="text-xl font-bold text-on-surface flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">alt_route</span>
+                AI Context-Aware Model Switching
+              </h3>
+              <p className="text-xs text-on-surface-variant mt-1">
+                Configure whether to switch Claude sessions to DeepSeek Flash when context passes 95K tokens to avoid 5x context bill spikes.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleSaveRouting}
+              disabled={routingSaving}
+              className="btn btn-primary btn-sm flex items-center gap-1.5"
+            >
+              <span className="material-symbols-outlined text-[16px]">save</span>
+              {routingSaving ? "Saving..." : "Save Routing Settings"}
+            </button>
+          </div>
+
+          {routingMsg && (
+            <div
+              className={`p-3 rounded-lg text-xs font-semibold ${
+                routingMsg.type === "success"
+                  ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+                  : "bg-rose-500/10 border border-rose-500/30 text-rose-500"
+              }`}
+            >
+              {routingMsg.text}
+            </div>
+          )}
+
+          {/* Master Toggle */}
+          <div className="p-5 rounded-xl border border-outline-variant/20 bg-surface-container-low/30 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-bold text-on-surface">Enable Automatic Context Switching</h4>
+                <p className="text-xs text-on-surface-variant mt-0.5">
+                  When turned OFF (default), no switching occurs and Claude continues throughout the session. When turned ON, sessions that cross the threshold automatically route to the fallback model.
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={routingConfig.enabled}
+                  onChange={(e) => setRoutingConfig({ ...routingConfig, enabled: e.target.checked })}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+              </label>
+            </div>
+          </div>
+
+          {/* Configuration Parameters */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4 rounded-xl border border-outline-variant/20 bg-surface-container-low/30 space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-on-surface mb-1">
+                  Context Window Threshold (Tokens)
+                </label>
+                <input
+                  type="number"
+                  min="10000"
+                  max="200000"
+                  step="5000"
+                  value={routingConfig.thresholdTokens}
+                  onChange={(e) =>
+                    setRoutingConfig({
+                      ...routingConfig,
+                      thresholdTokens: Math.max(1000, parseInt(e.target.value) || 95000),
+                    })
+                  }
+                  className="input py-2 text-xs"
+                />
+                <p className="text-[11px] text-on-surface-variant mt-1.5">
+                  Default: <strong>95,000 tokens</strong>. Claude Haiku 5.5 transitions to standard $0.50/$2.50 tier past 100K tokens. Setting it to 95K provides a safety margin.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl border border-outline-variant/20 bg-surface-container-low/30 space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-on-surface mb-1">
+                  Fallback Provider & Model
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <select
+                    className="select py-1.5 text-xs"
+                    value={routingConfig.fallbackProvider}
+                    onChange={(e) =>
+                      setRoutingConfig({
+                        ...routingConfig,
+                        fallbackProvider: e.target.value as ApiProvider,
+                      })
+                    }
+                  >
+                    <option value="deepseek">DeepSeek</option>
+                    <option value="gemini">Google Gemini</option>
+                    <option value="openai">OpenAI</option>
+                    <option value="openrouter">OpenRouter</option>
+                  </select>
+                  <input
+                    type="text"
+                    value={routingConfig.fallbackModel}
+                    onChange={(e) =>
+                      setRoutingConfig({
+                        ...routingConfig,
+                        fallbackModel: e.target.value,
+                      })
+                    }
+                    placeholder="deepseek-chat"
+                    className="input py-1.5 text-xs"
+                  />
+                </div>
+                <p className="text-[11px] text-on-surface-variant mt-1.5">
+                  Default: <strong>deepseek-chat (DeepSeek V3 / Flash)</strong>. Flat rate without large-context penalties.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-400">
+            <strong>Admin Note:</strong> By default, this option is set to <strong>OFF (No Switch)</strong>. If you enable it, the backend proxy will automatically intercept Claude requests exceeding {routingConfig.thresholdTokens.toLocaleString()} tokens and route them to {routingConfig.fallbackModel || "DeepSeek Flash"} to eliminate surprise billing spikes.
           </div>
         </section>
       ) : (

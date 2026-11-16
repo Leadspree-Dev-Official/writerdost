@@ -12,6 +12,7 @@ interface AiEngineSelectorModalProps {
   onConfirm: (engine: GenerationEngine) => void;
   taskType: "project" | "blog" | "rewrite";
   taskTitle?: string;
+  targetWords?: number;
 }
 
 export function AiEngineSelectorModal({
@@ -20,6 +21,7 @@ export function AiEngineSelectorModal({
   onConfirm,
   taskType,
   taskTitle,
+  targetWords,
 }: AiEngineSelectorModalProps) {
   const api = useAppStore((state) => state.api);
   const preferredEngine = useAppStore((state) => state.preferredEngine);
@@ -27,17 +29,19 @@ export function AiEngineSelectorModal({
   const checkQuota = useAppStore((state) => state.checkQuota);
   const currentUser = useAppStore((state) => state.currentUser);
   const storeCredits = useAppStore((state) => state.userCredits);
-  const userCredits = currentUser?.credits ?? storeCredits ?? 5;
+  const userCredits = currentUser?.credits ?? storeCredits ?? 50_000;
 
   const [selectedEngine, setSelectedEngine] = useState<GenerationEngine>(preferredEngine || "bizai");
 
   if (!isOpen) return null;
 
   const hasByokConfigured = Boolean(api.apiKey || api.provider === "ollama");
-  const costInCredits = CREDIT_COSTS[taskType === "rewrite" ? "rewrite" : taskType];
+  const costInCredits = targetWords
+    ? Math.round(targetWords * 1.5)
+    : CREDIT_COSTS[taskType === "rewrite" ? "rewrite" : taskType];
   const quotaCheckBizai = checkQuota(taskType === "rewrite" ? "project" : taskType, "bizai");
 
-  const canUseBizai = quotaCheckBizai.allowed;
+  const canUseBizai = quotaCheckBizai.source === "plan_quota" ? true : userCredits >= costInCredits;
   const canUseByok = hasByokConfigured;
 
   const handleSelect = (engine: GenerationEngine) => {
@@ -142,7 +146,7 @@ export function AiEngineSelectorModal({
                 ) : quotaCheckBizai.source === "credits" ? (
                   <span className="text-indigo-400 font-medium flex items-center gap-1">
                     <span className="material-symbols-outlined text-sm">stars</span>
-                    Deducts 1.5x credits/token (~{costInCredits.toLocaleString()} cr) • Balance: {userCredits.toLocaleString()} cr
+                    Deducts 1.5x credits/word ({costInCredits.toLocaleString()} cr for {targetWords ? targetWords.toLocaleString() : "this"} words) • Balance: {userCredits.toLocaleString()} cr
                   </span>
                 ) : (
                   <span className="text-rose-400 font-medium flex items-center gap-1">

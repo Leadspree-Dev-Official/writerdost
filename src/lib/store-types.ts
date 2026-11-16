@@ -572,3 +572,18 @@ export type CampaignPost = {
   tokens?: number;
   createdAt: string;
 };
+
+export interface ContextRoutingConfig {
+  enabled: boolean;
+  thresholdTokens: number;
+  fallbackProvider: ApiProvider;
+  fallbackModel: string;
+}
+
+export const DEFAULT_CONTEXT_ROUTING: ContextRoutingConfig = {
+  enabled: false,
+  thresholdTokens: 95000,
+  fallbackProvider: "deepseek",
+  fallbackModel: "deepseek-chat",
+};
+

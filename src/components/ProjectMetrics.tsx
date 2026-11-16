@@ -13,9 +13,13 @@ interface ProjectMetricsProps {
 export const ProjectMetrics: React.FC<ProjectMetricsProps> = ({ project }) => {
   const [isOpen, setIsOpen] = useState(false);
   const totalTokens = project.tokensUsed || 0;
+  const creditsConsumed = Math.round(totalTokens * 1.5);
   const tokenLabel = totalTokens >= 1000 
     ? `${(totalTokens / 1000).toFixed(0)}k tokens` 
     : `${totalTokens} tokens`;
+  const creditLabel = creditsConsumed >= 1000
+    ? `${(creditsConsumed / 1000).toFixed(0)}k cr`
+    : `${creditsConsumed} cr`;
 
   return (
     <div className="rounded-[var(--radius-lg)] border border-outline-variant/10 overflow-hidden">
@@ -29,7 +33,9 @@ export const ProjectMetrics: React.FC<ProjectMetricsProps> = ({ project }) => {
           <span className="text-[10px] font-semibold text-on-surface-variant">Project Metrics</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="chip chip-neutral text-[9px] px-1.5 py-0.5">{tokenLabel}</span>
+          <span className="chip chip-neutral text-[9px] px-1.5 py-0.5" title={tokenLabel}>
+            {creditLabel} ({tokenLabel})
+          </span>
           <span className={`material-symbols-outlined text-slate-400 text-sm transition-transform ${isOpen ? "rotate-180" : ""}`}>
             expand_more
           </span>
@@ -57,7 +63,16 @@ export const ProjectMetrics: React.FC<ProjectMetricsProps> = ({ project }) => {
                 {project.tokensUsed?.toLocaleString() || "0"}
               </dd>
             </div>
+            <div className="kv text-[11px]">
+              <dt className="text-slate-400">Credits used (1.5x)</dt>
+              <dd className="num font-semibold text-amber-600 dark:text-amber-400">
+                ~{creditsConsumed.toLocaleString()} cr
+              </dd>
+            </div>
           </dl>
+          <p className="text-[10px] text-slate-500 italic px-1">
+            * 1.5x tokens spent via BizAI Gateway. 0 credits if generated with your own BYOK keys.
+          </p>
         </div>
       )}
     </div>
