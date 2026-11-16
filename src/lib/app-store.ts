@@ -2278,7 +2278,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       }
 
       // If monthly quota is exhausted, allow pay-as-you-go with credits
-      // Users can start as long as they have a positive credit balance (min 5 cr)
+      // Users can start as long as they have a positive credit balance (min 5 credits)
       if (availableCredits >= 5) {
         return {
           allowed: true,

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useAppStore } from "@/lib/app-store";
 import { GenerationEngine, getDisplayedCreditEstimate } from "@/lib/store-types";
+import { CoinsIcon } from "@/components/ui/CoinsIcon";
 import clsx from "clsx";
 
 interface AiEngineSelectorModalProps {
@@ -144,14 +145,14 @@ export function AiEngineSelectorModal({
                     Covered by monthly plan quota ({quotaCheckBizai.limit === -1 ? "Unlimited" : `${quotaCheckBizai.used}/${quotaCheckBizai.limit} used`})
                   </span>
                 ) : quotaCheckBizai.source === "credits" ? (
-                  <span className="text-amber-400 font-medium flex items-center gap-1">
-                    <span className="material-symbols-outlined text-sm text-amber-500">monetization_on</span>
-                    ~{displayedCredits.toLocaleString()} approx. credits • Balance: {userCredits.toLocaleString()} cr
+                  <span className="text-amber-400 font-medium flex items-center gap-1.5">
+                    <CoinsIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    <span>~{displayedCredits.toLocaleString()} approx. credits • Balance: {userCredits.toLocaleString()} credits</span>
                   </span>
                 ) : (
                   <span className="text-rose-400 font-medium flex items-center gap-1">
                     <span className="material-symbols-outlined text-sm">error</span>
-                    Plan quota exhausted &amp; insufficient credits ({userCredits.toLocaleString()} available, min 5 cr required)
+                    Plan quota exhausted &amp; insufficient credits ({userCredits.toLocaleString()} available, min 5 credits required)
                   </span>
                 )}
 

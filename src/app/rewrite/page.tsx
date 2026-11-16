@@ -8,6 +8,7 @@ import { useAppStore, type RewriteFlow } from "@/lib/app-store";
 import { LANGUAGE_GROUPS, DEFAULT_LANGUAGE, getLanguageDirective } from "@/lib/languages";
 import { STREAM_DELIMITER, robustParseJson, calculateProjectWords } from "@/lib/app-utils";
 import { TONES } from "@/lib/tone-standards";
+import { CoinsIcon } from "@/components/ui/CoinsIcon";
 import type { GeneratedChapter } from "@/lib/store-types";
 
 const FLOW_DETAILS: Record<RewriteFlow, { title: string; subtitle: string }> = {
@@ -1127,8 +1128,11 @@ export default function RewritePage() {
                       <dd>{formatTime(metrics.draftingTime)}</dd>
                     </div>
                     <div className="kv">
-                      <dt>Est. Credits</dt>
-                      <dd>~{Math.round(metrics.tokens * 1.5).toLocaleString()} cr</dd>
+                      <dt className="flex items-center gap-1">
+                        <CoinsIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                        <span>Est. Credits</span>
+                      </dt>
+                      <dd>~{Math.round(metrics.tokens * 0.015).toLocaleString()} credits</dd>
                     </div>
                   </dl>
                 </div>

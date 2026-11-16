@@ -172,7 +172,7 @@ export default function EditorPage() {
                 controller.abort();
                 addGenerationLog({
                   agent: "Wallet Guard",
-                  message: `⚠️ Drafting halted: Credit balance exhausted (0 credits remaining). Live deduction: ${usageRes.creditsDeducted.toLocaleString()} cr. Please top up your wallet to continue.`,
+                  message: `⚠️ Drafting halted: Credit balance exhausted (0 credits remaining). Live deduction: ${usageRes.creditsDeducted.toLocaleString()} credits. Please top up your wallet to continue.`,
                   status: "error",
                 });
                 break;
@@ -600,7 +600,7 @@ export default function EditorPage() {
               </button>
               <button
                 onClick={toggleEditorSidebar}
-                title={`Project Metrics (~${Math.round((project.tokensUsed || 0) * 1.5).toLocaleString()} cr)`}
+                title={`Project Metrics (~${Math.round((project.tokensUsed || 0) * 0.015).toLocaleString()} credits)`}
                 className="w-9 h-9 rounded-[var(--radius)] flex items-center justify-center text-slate-400 hover:text-primary hover:bg-surface-container-highest/40 transition-colors"
                 type="button"
               >

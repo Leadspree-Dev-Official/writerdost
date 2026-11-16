@@ -15,6 +15,7 @@ import {
   formatDossierSynthesis,
   buildMarkdownFromDossier,
 } from "@/lib/research-store";
+import { CoinsIcon } from "@/components/ui/CoinsIcon";
 import clsx from "clsx";
 
 const SAMPLE_TOPICS = [
@@ -823,7 +824,10 @@ export default function ResearchPage() {
 
                     {/* Credits */}
                     <span className="w-20 shrink-0 row-meta text-right hidden md:block">
-                      <span className="text-amber-600 dark:text-amber-400 font-medium">~1 cr</span>
+                      <span className="text-amber-600 dark:text-amber-400 font-medium flex items-center justify-end gap-1">
+                        <CoinsIcon className="w-3 h-3 text-amber-500 shrink-0" />
+                        <span>~1 credit</span>
+                      </span>
                     </span>
 
                     {/* 1-Click Action Buttons */}

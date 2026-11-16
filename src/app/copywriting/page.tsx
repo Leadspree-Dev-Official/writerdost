@@ -369,7 +369,7 @@ export default function CopywritingStudioPage() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-sm font-bold tracking-tight text-on-surface">Copywriting Studio</h1>
-                <span className="text-[9.5px] font-black px-2 py-0.5 rounded-full bg-[#a5b4fc] text-white shadow-xs uppercase tracking-wider">
+                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-primary/10 text-primary uppercase tracking-wide">
                   Autonomous Suites
                 </span>
               </div>
@@ -397,9 +397,9 @@ export default function CopywritingStudioPage() {
               <button
                 type="button"
                 onClick={() => setStudioStep("catalog")}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-primary/40 bg-primary/10 hover:bg-primary/20 text-primary text-[11px] font-semibold transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#4648d4] hover:bg-[#3b3ec2] text-white text-xs font-bold shadow-sm shadow-[#4648d4]/30 transition-all"
               >
-                <span className="material-symbols-outlined text-[14px]">grid_view</span>
+                <span className="material-symbols-outlined text-[16px]">dashboard_customize</span>
                 <span>All Templates</span>
               </button>
             )}
@@ -407,8 +407,8 @@ export default function CopywritingStudioPage() {
         </div>
 
         {/* Category Tabs & Filter Search */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between border-t border-outline-variant/20 py-1.5">
-          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between border-t border-outline-variant/20 py-2">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
             {CATEGORY_TABS.map((tab) => {
               const isActive = selectedCategory === tab.id;
               return (
@@ -419,13 +419,13 @@ export default function CopywritingStudioPage() {
                     setSelectedCategory(tab.id);
                     setStudioStep("catalog");
                   }}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold whitespace-nowrap transition-all duration-150 ${
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all duration-150 ${
                     isActive
-                      ? "bg-primary text-white shadow-xs shadow-primary/30"
+                      ? "bg-[#4648d4] text-white shadow-sm shadow-[#4648d4]/35 ring-1 ring-[#4648d4]"
                       : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-[14px]">{tab.icon}</span>
+                  <span className="material-symbols-outlined text-[16px]">{tab.icon}</span>
                   <span>{tab.label}</span>
                 </button>
               );
@@ -519,26 +519,26 @@ export default function CopywritingStudioPage() {
                           onClick={() => handleSelectTemplate(template)}
                           className={`group cursor-pointer rounded-xl p-3 border transition-all duration-200 flex flex-col justify-between relative overflow-hidden min-h-[135px] ${
                             isSelected
-                              ? "bg-primary/10 border-primary shadow-xs"
-                              : "bg-surface-container-low dark:bg-[#121220] border-outline-variant/30 hover:border-primary/60 hover:shadow-md hover:shadow-primary/5 text-on-surface"
+                              ? "bg-[#4648d4]/10 border-[#4648d4] shadow-xs"
+                              : "bg-surface-container-low dark:bg-[#121220] border-outline-variant/30 hover:border-[#4648d4]/70 hover:shadow-md hover:shadow-[#4648d4]/15 text-on-surface"
                           }`}
                         >
                           <div>
                             <div className="flex items-center justify-between gap-1.5 mb-1.5">
-                              <div className="w-7 h-7 rounded-lg bg-[#a5b4fc]/20 border border-[#a5b4fc]/40 flex items-center justify-center text-[#a5b4fc] group-hover:scale-105 group-hover:bg-[#a5b4fc] group-hover:text-white transition-all shrink-0">
+                              <div className="w-7 h-7 rounded-lg bg-[#4648d4]/15 border border-[#4648d4]/30 flex items-center justify-center text-[#4648d4] dark:text-[#818cf8] group-hover:scale-105 group-hover:bg-[#4648d4] group-hover:text-white transition-all shrink-0">
                                 <span className="material-symbols-outlined text-[16px]">{template.icon}</span>
                               </div>
                               {template.badge && (
-                                <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-[#a5b4fc] text-white shadow-xs uppercase tracking-wider">
+                                <span className="text-[8.5px] font-bold px-1.5 py-0.2 rounded-full bg-[#4648d4]/15 text-[#4648d4] dark:text-[#818cf8] border border-[#4648d4]/30 uppercase tracking-wider">
                                   {template.badge}
                                 </span>
                               )}
                             </div>
 
-                            <h3 className="text-xs font-bold text-on-surface group-hover:text-[#a5b4fc] transition-colors line-clamp-1">
+                            <h3 className="text-xs font-bold text-on-surface group-hover:text-[#4648d4] dark:group-hover:text-[#818cf8] transition-colors line-clamp-1">
                               {template.name}
                             </h3>
-                            <p className="text-[10px] font-bold text-[#a5b4fc] uppercase tracking-wide truncate">
+                            <p className="text-[9.5px] font-semibold text-[#4648d4] dark:text-[#818cf8] uppercase tracking-wide truncate">
                               {template.framework}
                             </p>
 
@@ -552,7 +552,7 @@ export default function CopywritingStudioPage() {
                               <span className="material-symbols-outlined text-[12px]">tune</span>
                               {template.inputFields.length} Inputs
                             </span>
-                            <span className="inline-flex items-center gap-0.5 text-[#a5b4fc] font-bold text-[11px] group-hover:translate-x-0.5 transition-transform">
+                            <span className="inline-flex items-center gap-0.5 text-[#4648d4] dark:text-[#818cf8] font-bold text-[11px] group-hover:translate-x-0.5 transition-transform">
                               Configure <span className="material-symbols-outlined text-[13px]">arrow_forward</span>
                             </span>
                           </div>
@@ -578,12 +578,12 @@ export default function CopywritingStudioPage() {
                     <button
                       type="button"
                       onClick={() => setStudioStep("catalog")}
-                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:opacity-80 transition-opacity group"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-[#4648d4] dark:text-[#818cf8] hover:underline transition-all group"
                     >
                       <span className="material-symbols-outlined text-[16px] group-hover:-translate-x-0.5 transition-transform">arrow_back</span>
                       <span>Change Template</span>
                     </button>
-                    <span className="text-[9px] font-black px-2.5 py-0.5 rounded-full bg-[#a5b4fc] text-white shadow-xs uppercase tracking-wider">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-surface-container border border-outline-variant/30 text-on-surface-variant uppercase">
                       {currentTemplate.category}
                     </span>
                   </div>
@@ -593,19 +593,19 @@ export default function CopywritingStudioPage() {
                     {/* Header */}
                     <div className="border-b border-outline-variant/20 pb-2 flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-[#a5b4fc]/20 border border-[#a5b4fc]/40 flex items-center justify-center text-[#a5b4fc] shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-[#4648d4]/15 border border-[#4648d4]/30 flex items-center justify-center text-[#4648d4] dark:text-[#818cf8] shrink-0">
                           <span className="material-symbols-outlined text-[18px]">{currentTemplate.icon}</span>
                         </div>
                         <div>
                           <div className="flex items-center gap-1.5">
                             <h2 className="text-xs font-bold text-on-surface leading-tight">{currentTemplate.name}</h2>
                             {currentTemplate.badge && (
-                              <span className="text-[9px] font-black px-2.5 py-0.5 rounded-full bg-[#a5b4fc] text-white shadow-xs uppercase tracking-wider">
+                              <span className="text-[8.5px] font-bold px-1.5 py-0.2 rounded-full bg-[#4648d4]/15 text-[#4648d4] dark:text-[#818cf8] uppercase">
                                 {currentTemplate.badge}
                               </span>
                             )}
                           </div>
-                          <p className="text-[10px] text-[#a5b4fc] font-bold">{currentTemplate.framework}</p>
+                          <p className="text-[10px] text-[#4648d4] dark:text-[#818cf8] font-medium">{currentTemplate.framework}</p>
                         </div>
                       </div>
 
@@ -745,8 +745,8 @@ export default function CopywritingStudioPage() {
 
                     {/* Compact Voice & Tone Selector (Horizontal Row) */}
                     <div className="pt-2 border-t border-outline-variant/20 flex items-center justify-between gap-2">
-                      <span className="text-[11px] font-semibold text-on-surface flex items-center gap-1 shrink-0">
-                        <span className="material-symbols-outlined text-[14px] text-primary">record_voice_over</span>
+                      <span className="text-[11px] font-bold text-on-surface flex items-center gap-1 shrink-0">
+                        <span className="material-symbols-outlined text-[14px] text-[#4648d4] dark:text-[#818cf8]">record_voice_over</span>
                         Tone:
                       </span>
                       <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
@@ -758,9 +758,9 @@ export default function CopywritingStudioPage() {
                               key={toneKey}
                               type="button"
                               onClick={() => setSelectedTone(toneKey)}
-                              className={`px-2 py-0.5 rounded-md border text-[11px] font-medium transition-all flex items-center gap-1 shrink-0 ${
+                              className={`px-2 py-0.5 rounded-md border text-[11px] font-semibold transition-all flex items-center gap-1 shrink-0 ${
                                 isSelected
-                                  ? "bg-primary text-white border-primary shadow-xs"
+                                  ? "bg-[#4648d4] text-white border-[#4648d4] shadow-xs"
                                   : "bg-surface dark:bg-[#161626] border-outline-variant/20 hover:border-outline-variant/40 text-on-surface"
                               }`}
                             >
@@ -778,7 +778,7 @@ export default function CopywritingStudioPage() {
                         type="button"
                         onClick={() => handleExecuteGeneration(activeEngine)}
                         disabled={isGenerating}
-                        className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-primary via-indigo-600 to-primary text-white font-bold text-xs tracking-wide shadow-md shadow-primary/25 hover:opacity-95 disabled:opacity-60 transition-all flex items-center justify-center gap-2 group"
+                        className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#4648d4] via-[#5053e6] to-[#4648d4] hover:from-[#3b3ec2] hover:to-[#4648d4] text-white font-bold text-xs tracking-wide shadow-md shadow-[#4648d4]/30 active:scale-[0.99] disabled:opacity-60 transition-all flex items-center justify-center gap-2 group"
                       >
                         {isGenerating ? (
                           <>

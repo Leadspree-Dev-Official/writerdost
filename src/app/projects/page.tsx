@@ -11,6 +11,7 @@ import {
   publishChipLabels,
 } from "@/lib/app-utils";
 import { PublishDialog } from "@/components/PublishDialog";
+import { CoinsIcon } from "@/components/ui/CoinsIcon";
 import { MARKETPLACE, marketplaceBlocker } from "@/lib/marketplace";
 import type { Project } from "@/lib/app-store";
 
@@ -124,9 +125,8 @@ export default function ProjectsPage() {
           <span className="w-20">Status</span>
           <span className="w-20">Listing</span>
           <span className="w-20 text-right">Words</span>
-          <span className="w-16 text-right flex items-center justify-end gap-0.5" title="Credits deducted via BizAI">
-            <span className="material-symbols-outlined text-[13px] text-amber-500">monetization_on</span>
-            <span>Cr</span>
+          <span className="w-16 text-right flex items-center justify-end" title="Credits deducted via BizAI">
+            <CoinsIcon className="w-3.5 h-3.5 text-amber-500" />
           </span>
           <span className="w-16 text-right">Outline</span>
           <span className="w-16 text-right">Draft</span>
@@ -165,7 +165,7 @@ export default function ProjectsPage() {
                 <span className="block row-meta truncate mt-1">
                   <span className="md:hidden text-on-surface-variant font-medium">
                     {calculateProjectWords(project).toLocaleString()} words ·{" "}
-                    {project.tokensUsed ? `~${Math.round(project.tokensUsed * 1.5).toLocaleString()} cr · ` : ""}
+                    {project.tokensUsed ? `~${Math.round(project.tokensUsed * 0.015).toLocaleString()} credits · ` : ""}
                   </span>
                   {project.tone} · {project.audience} · {project.updatedLabel}
                 </span>
@@ -189,10 +189,10 @@ export default function ProjectsPage() {
               </span>
               <span className="w-16 shrink-0 row-meta text-right hidden md:block">
                 {project.tokensUsed ? (
-                  <span title={`Estimated credits: ~${(project.tokensUsed * 0.015).toFixed(1)} cr`}>
-                    <span className="text-amber-600 dark:text-amber-400 font-medium flex items-center justify-end gap-0.5">
-                      <span className="material-symbols-outlined text-[12px] text-amber-500">monetization_on</span>
-                      <span>~{Math.round(project.tokensUsed * 0.015)}</span>
+                  <span title={`Estimated credits: ~${(project.tokensUsed * 0.015).toFixed(1)} credits`}>
+                    <span className="text-amber-600 dark:text-amber-400 font-medium flex items-center justify-end gap-1">
+                      <CoinsIcon className="w-3 h-3 text-amber-500 shrink-0" />
+                      <span>~{Math.round(project.tokensUsed * 0.015).toLocaleString()}</span>
                     </span>
                   </span>
                 ) : (

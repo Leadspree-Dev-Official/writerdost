@@ -9,6 +9,7 @@ import { useMounted } from "@/lib/use-mounted";
 import { calculateProjectWords } from "@/lib/app-utils";
 import { AnimatePresence, motion } from "framer-motion";
 import { downloadTxt, generateProjectText, triggerPdfExport, downloadDocx, downloadEpub, downloadMarkdown } from "@/lib/export-utils";
+import { CoinsIcon } from "@/components/ui/CoinsIcon";
 
 const SECTION_LABELS: Record<string, string> = {
   "/": "Home",
@@ -240,9 +241,9 @@ export default function Header() {
           title="AI Generation Credits (Click to view packs)"
           className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 transition-all mr-1"
         >
-          <span className="material-symbols-outlined text-[15px] text-amber-500">monetization_on</span>
+          <CoinsIcon className="w-4 h-4 text-amber-500 shrink-0" />
           <span className="font-mono tabular-nums">{userCredits.toLocaleString()}</span>
-          <span className="hidden sm:inline text-[10px] uppercase font-bold opacity-75">cr</span>
+          <span className="hidden sm:inline text-[11px] font-medium opacity-80">credits</span>
         </Link>
 
         <button

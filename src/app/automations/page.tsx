@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api-client";
 import { useAppStore } from "@/lib/app-store";
 import SafeHtml from "@/components/SafeHtml";
+import { CoinsIcon } from "@/components/ui/CoinsIcon";
 import {
   FREQUENCY_LABELS,
   FREQUENCY_ORDER,
@@ -892,7 +893,10 @@ export default function AutomationsPage() {
                               {post.tokens && (
                                 <>
                                   <span>·</span>
-                                  <span>~{Math.round(post.tokens * 1.5).toLocaleString()} cr</span>
+                                  <span className="flex items-center gap-1">
+                                    <CoinsIcon className="w-3 h-3 text-amber-500 shrink-0" />
+                                    <span>~{Math.round(post.tokens * 0.015).toLocaleString()} credits</span>
+                                  </span>
                                 </>
                               )}
                             </div>
@@ -1104,7 +1108,10 @@ export default function AutomationsPage() {
                   {viewingPost.tokens && (
                     <>
                       <span>·</span>
-                      <span>~{Math.round(viewingPost.tokens * 1.5).toLocaleString()} cr</span>
+                      <span className="flex items-center gap-1">
+                        <CoinsIcon className="w-3 h-3 text-amber-500 shrink-0" />
+                        <span>~{Math.round(viewingPost.tokens * 0.015).toLocaleString()} credits</span>
+                      </span>
                     </>
                   )}
                 </div>

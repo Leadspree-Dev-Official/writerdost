@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { CoinsIcon } from "@/components/ui/CoinsIcon";
 
 interface ProjectMetricsProps {
   project: {
@@ -15,8 +16,8 @@ export const ProjectMetrics: React.FC<ProjectMetricsProps> = ({ project }) => {
   const totalTokens = project.tokensUsed || 0;
   const creditsConsumed = Number((totalTokens * 0.015).toFixed(1));
   const creditLabel = creditsConsumed >= 1000
-    ? `${(creditsConsumed / 1000).toFixed(1)}k cr`
-    : `${creditsConsumed} cr`;
+    ? `${(creditsConsumed / 1000).toFixed(1)}k`
+    : `${creditsConsumed}`;
 
   return (
     <div className="rounded-[var(--radius-lg)] border border-outline-variant/10 overflow-hidden">
@@ -30,8 +31,8 @@ export const ProjectMetrics: React.FC<ProjectMetricsProps> = ({ project }) => {
           <span className="text-[10px] font-semibold text-on-surface-variant">Project Metrics</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="chip chip-neutral text-[9px] px-1.5 py-0.5 flex items-center gap-0.5">
-            <span className="material-symbols-outlined text-[11px] text-amber-500">monetization_on</span>
+          <span className="chip chip-neutral text-[9px] px-1.5 py-0.5 flex items-center gap-1">
+            <CoinsIcon className="w-3 h-3 text-amber-500 shrink-0" />
             <span>~{creditLabel}</span>
           </span>
           <span className={`material-symbols-outlined text-slate-400 text-sm transition-transform ${isOpen ? "rotate-180" : ""}`}>
@@ -57,11 +58,11 @@ export const ProjectMetrics: React.FC<ProjectMetricsProps> = ({ project }) => {
             </div>
             <div className="kv text-[11px]">
               <dt className="text-slate-400 flex items-center gap-1">
-                <span className="material-symbols-outlined text-[13px] text-amber-500">monetization_on</span>
+                <CoinsIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                 <span>Est. Credits used</span>
               </dt>
               <dd className="num font-semibold text-amber-600 dark:text-amber-400">
-                ~{creditsConsumed.toLocaleString()} cr
+                ~{creditsConsumed.toLocaleString()} credits
               </dd>
             </div>
           </dl>

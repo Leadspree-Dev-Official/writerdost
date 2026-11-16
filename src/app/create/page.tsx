@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, useRef, useState, useEffect } from "react";
+import { ChangeEvent, useRef, useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAppStore } from "@/lib/app-store";
@@ -13,6 +13,7 @@ import { AiEngineSelectorModal } from "@/components/AiEngineSelectorModal";
 import type { GenerationEngine } from "@/lib/store-types";
 import { AD_EBOOK_TEMPLATES } from "@/lib/ad-ebook-templates";
 import { getDisplayedCreditEstimate } from "@/lib/store-types";
+import { CoinsIcon } from "@/components/ui/CoinsIcon";
 import {
   getSavedDossiers,
   formatDossierSynthesis,
@@ -40,8 +41,28 @@ export default function IdeaAndInput() {
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
   const [researchModalOpen, setResearchModalOpen] = useState(false);
   const [savedDossiers, setSavedDossiers] = useState<SavedDossier[]>([]);
+  const [researchSearchQuery, setResearchSearchQuery] = useState("");
   const [selectedNicheFilter, setSelectedNicheFilter] = useState<string>("All");
   const [isExtendedOmnibus, setIsExtendedOmnibus] = useState<boolean>(createDraft.length > 100000);
+
+  const filteredDossiers = useMemo(() => {
+    if (!researchSearchQuery.trim()) return savedDossiers;
+    const q = researchSearchQuery.toLowerCase();
+    return savedDossiers.filter((entry) => {
+      const d = entry.dossier;
+      return (
+        d.topic?.toLowerCase().includes(q) ||
+        d.executiveSummary?.toLowerCase().includes(q) ||
+        d.targetAudience?.toLowerCase().includes(q) ||
+        d.depth?.toLowerCase().includes(q) ||
+        entry.createdAt?.toLowerCase().includes(q) ||
+        d.coreTheses?.some((t) => t.title?.toLowerCase().includes(q) || t.explanation?.toLowerCase().includes(q) || t.takeaway?.toLowerCase().includes(q)) ||
+        d.factsAndStats?.some((f) => f.stat?.toLowerCase().includes(q) || f.context?.toLowerCase().includes(q) || f.citation?.toLowerCase().includes(q)) ||
+        d.contrarianAngles?.some((a) => a.angle?.toLowerCase().includes(q) || a.counterIntuitiveTruth?.toLowerCase().includes(q)) ||
+        d.chapterSeeds?.some((c) => c.title?.toLowerCase().includes(q) || c.hook?.toLowerCase().includes(q))
+      );
+    });
+  }, [savedDossiers, researchSearchQuery]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -109,7 +130,7 @@ export default function IdeaAndInput() {
         return;
       }
       if (currentCredits < 5) {
-        setMessage(`Wallet balance too low (${currentCredits.toLocaleString()} cr available). A minimum of 5 credits is required to initiate generation. Please top up your wallet.`);
+        setMessage(`Wallet balance too low (${currentCredits.toLocaleString()} credits available). A minimum of 5 credits is required to initiate generation. Please top up your wallet.`);
         return;
       }
     }
@@ -117,7 +138,7 @@ export default function IdeaAndInput() {
     if (!quota.allowed) {
       setMessage(
         quota.source === "none"
-          ? `Monthly project limit reached (${quota.used}/${quota.limit}) and insufficient credits (${(quota.userCredits ?? 0).toLocaleString()} cr available). Please top up credits or use BYOK.`
+          ? `Monthly project limit reached (${quota.used}/${quota.limit}) and insufficient credits (${(quota.userCredits ?? 0).toLocaleString()} credits available). Please top up credits or use BYOK.`
           : `Monthly project limit reached on your ${quota.plan} plan. Please upgrade or top up credits.`
       );
       return;
@@ -226,7 +247,7 @@ export default function IdeaAndInput() {
                 setActiveAgent("Wallet Guard");
                 addGenerationLog({
                   agent: "Wallet Guard",
-                  message: `⚠️ Generation halted: Credit balance exhausted (0 credits remaining). Live deduction: ${usageRes.creditsDeducted.toLocaleString()} cr. Please top up credits to resume.`,
+                  message: `⚠️ Generation halted: Credit balance exhausted (0 credits remaining). Live deduction: ${usageRes.creditsDeducted.toLocaleString()} credits. Please top up credits to resume.`,
                   status: "error",
                 });
                 setMessage("Generation halted: Your credit balance ran out during drafting. Please top up your wallet to continue.");
@@ -306,6 +327,7 @@ export default function IdeaAndInput() {
               className="btn btn-secondary btn-lg w-full sm:w-auto justify-center min-h-[44px] border-primary/40 hover:border-primary text-primary hover:bg-primary/5 flex items-center gap-1.5 cursor-pointer"
               onClick={() => {
                 setSavedDossiers(getSavedDossiers());
+                setResearchSearchQuery("");
                 setResearchModalOpen(true);
               }}
               disabled={isGenerating}
@@ -372,6 +394,7 @@ export default function IdeaAndInput() {
                     type="button"
                     onClick={() => {
                       setSavedDossiers(getSavedDossiers());
+                      setResearchSearchQuery("");
                       setResearchModalOpen(true);
                     }}
                     className="text-[12px] text-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer"
@@ -423,9 +446,9 @@ export default function IdeaAndInput() {
                     <span className="text-[13px] font-bold text-on-surface num">
                       {createDraft.length.toLocaleString()} words
                     </span>
-                    <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[13px]">monetization_on</span>
-                      ~{getDisplayedCreditEstimate(createDraft.length).toLocaleString()} credits
+                    <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1.5">
+                      <CoinsIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                      <span>~{getDisplayedCreditEstimate(createDraft.length).toLocaleString()} credits</span>
                     </span>
                   </div>
                 </div>
@@ -473,9 +496,9 @@ export default function IdeaAndInput() {
                     onChange={(event) => updateCreateDraft({ length: Number(event.target.value) })}
                   />
                   <div className="flex justify-between items-center text-[10.5px] text-on-surface-variant">
-                    <span>1k (~21 cr)</span>
+                    <span>1,000 words</span>
                     <span className="text-[10px] text-slate-500">Pay-as-you-go • 0 with BYOK</span>
-                    <span>{isExtendedOmnibus ? "200k (~4.2k cr)" : "100k (~2.1k cr)"}</span>
+                    <span>{isExtendedOmnibus ? "200,000 words" : "100,000 words"}</span>
                   </div>
                 </div>
 
@@ -836,6 +859,33 @@ export default function IdeaAndInput() {
               </button>
             </div>
 
+            {savedDossiers.length > 0 && (
+              <div className="relative">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant pointer-events-none">
+                  search
+                </span>
+                <input
+                  type="search"
+                  value={researchSearchQuery}
+                  onChange={(e) => setResearchSearchQuery(e.target.value)}
+                  placeholder="Search existing research by topic, thesis, audience, or keyword..."
+                  aria-label="Search existing research"
+                  className="input pl-9 pr-9 text-[13px] w-full"
+                  autoFocus
+                />
+                {researchSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setResearchSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface text-[14px] p-0.5 rounded-full cursor-pointer"
+                    title="Clear search"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            )}
+
             {savedDossiers.length === 0 ? (
               <div className="p-8 text-center space-y-3">
                 <p className="text-[13px] text-on-surface-variant">
@@ -850,9 +900,38 @@ export default function IdeaAndInput() {
                   Go to Research Lab
                 </Link>
               </div>
+            ) : filteredDossiers.length === 0 ? (
+              <div className="p-8 text-center space-y-2 border border-dashed border-[var(--hairline)] rounded-[var(--radius)]">
+                <span className="material-symbols-outlined text-on-surface-variant text-[32px]">search_off</span>
+                <p className="text-[14px] font-semibold text-on-surface">
+                  No research matching &ldquo;{researchSearchQuery}&rdquo;
+                </p>
+                <p className="text-[12px] text-on-surface-variant">
+                  Try searching with a different keyword, topic name, or thesis phrase.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setResearchSearchQuery("")}
+                  className="btn btn-ghost btn-xs text-primary mt-1 cursor-pointer"
+                >
+                  Clear search
+                </button>
+              </div>
             ) : (
               <div className="max-h-[60vh] overflow-y-auto space-y-3 pr-1">
-                {savedDossiers.map((entry) => {
+                {researchSearchQuery.trim() && (
+                  <div className="text-[11px] text-on-surface-variant px-1 font-mono flex items-center justify-between">
+                    <span>Showing {filteredDossiers.length} of {savedDossiers.length} dossiers</span>
+                    <button
+                      type="button"
+                      onClick={() => setResearchSearchQuery("")}
+                      className="text-primary hover:underline text-[11px] cursor-pointer"
+                    >
+                      Reset search
+                    </button>
+                  </div>
+                )}
+                {filteredDossiers.map((entry) => {
                   const d = entry.dossier;
                   return (
                     <div

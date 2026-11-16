@@ -184,7 +184,7 @@ Include sample weekly meal structures, grocery shopping lists, and progress trac
     niche: "Creator Economy",
     headline: "Monetize an Audience of Under 5,000 Followers with Micro-Products, Affiliates & Newsletters",
     description: "The digital product playbook for aspiring creators, educators, and indie makers wanting to monetize small audiences through low-ticket digital sales.",
-    icon: "monetization_on",
+    icon: "trending_up",
     suggestedLength: 15000,
     tone: "Authoritative",
     audience: "Aspiring content creators, newsletter writers, educators, and social media influencers with under 10k followers",

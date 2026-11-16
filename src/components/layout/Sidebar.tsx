@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import clsx from "clsx";
 import { useAppStore } from "@/lib/app-store";
+import { CoinsIcon } from "@/components/ui/CoinsIcon";
 
 type FeatureKey = "createEbook" | "rewriteEbook" | "blogGenerator" | "advancedModels";
 
@@ -239,9 +240,9 @@ export default function Sidebar() {
                 {currentUser.fullName}
               </span>
               <span className="flex items-center gap-1 text-[10.5px] text-on-surface-variant truncate">
-                <span className="font-mono text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-0.5">
-                  <span className="material-symbols-outlined text-[13px] text-amber-500">monetization_on</span>
-                  {userCredits.toLocaleString()} cr
+                <span className="font-mono text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
+                  <CoinsIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span>{userCredits.toLocaleString()} credits</span>
                 </span>
                 <span>•</span>
                 <span>{currentUser.role === "admin" ? "Admin" : currentUser.plan}</span>
