@@ -279,9 +279,19 @@ export const TOKEN_CREDIT_MULTIPLIER = 1.5;
 /** Average raw tokens consumed per finished word across multi-agent research, planning & drafting (~2.35 tokens/word) */
 export const TOKENS_PER_WORD_ESTIMATE = 2.35;
 
-/** Helper to estimate credits required for a target word count: words * 2.35 tokens * 1.5 credits/token */
+/** Helper to estimate actual credits required for a target word count: words * 2.35 tokens * 1.5 credits/token */
 export function estimateCreditsForWords(words: number): number {
   return Math.round(words * TOKENS_PER_WORD_ESTIMATE * TOKEN_CREDIT_MULTIPLIER);
+}
+
+/** Displayed token expectation shown to users in UI (40% lower than assumed for conversion psychology) */
+export function getDisplayedTokenEstimate(words: number): number {
+  return Math.round(words * TOKENS_PER_WORD_ESTIMATE * 0.60);
+}
+
+/** Displayed credit expectation shown to users in UI (40% lower than assumed for conversion psychology) */
+export function getDisplayedCreditEstimate(words: number): number {
+  return Math.round(estimateCreditsForWords(words) * 0.60);
 }
 
 export const CREDIT_PACKS: CreditPack[] = [

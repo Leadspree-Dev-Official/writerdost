@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useAppStore } from "@/lib/app-store";
-import { CREDIT_COSTS, GenerationEngine, estimateCreditsForWords } from "@/lib/store-types";
+import { GenerationEngine, getDisplayedTokenEstimate } from "@/lib/store-types";
 import clsx from "clsx";
 
 interface AiEngineSelectorModalProps {
@@ -36,9 +36,9 @@ export function AiEngineSelectorModal({
   if (!isOpen) return null;
 
   const hasByokConfigured = Boolean(api.apiKey || api.provider === "ollama");
-  const costInCredits = targetWords
-    ? estimateCreditsForWords(targetWords)
-    : CREDIT_COSTS[taskType === "rewrite" ? "rewrite" : taskType];
+  const displayedTokens = targetWords
+    ? getDisplayedTokenEstimate(targetWords)
+    : taskType === "blog" ? 1_500 : 800;
   const quotaCheckBizai = checkQuota(taskType === "rewrite" ? "project" : taskType, "bizai");
 
   const canUseBizai = quotaCheckBizai.source === "plan_quota" ? true : userCredits >= 500;
@@ -146,7 +146,7 @@ export function AiEngineSelectorModal({
                 ) : quotaCheckBizai.source === "credits" ? (
                   <span className="text-indigo-400 font-medium flex items-center gap-1">
                     <span className="material-symbols-outlined text-sm">stars</span>
-                    Deducts 1.5x credits per raw token (~{costInCredits.toLocaleString()} cr est. for {targetWords ? targetWords.toLocaleString() : "this"} words) • Wallet: {userCredits.toLocaleString()} cr
+                    ~{displayedTokens.toLocaleString()} est. tokens to draft • Balance: {userCredits.toLocaleString()} cr
                   </span>
                 ) : (
                   <span className="text-rose-400 font-medium flex items-center gap-1">
@@ -254,7 +254,7 @@ export function AiEngineSelectorModal({
                 {selectedEngine === "bizai"
                   ? quotaCheckBizai.source === "plan_quota"
                     ? "Generate with BizAI (Plan Quota)"
-                    : `Generate with BizAI (${costInCredits} Credits)`
+                    : "Generate with BizAI"
                   : "Generate with BYOK (Unlimited)"}
               </span>
             </button>

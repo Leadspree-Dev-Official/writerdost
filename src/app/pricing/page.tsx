@@ -498,7 +498,7 @@ function PricingContent() {
                 </span>
               </div>
               <div className="flex items-center justify-between text-[11px] text-muted-foreground mt-2">
-                <span>1.5x credits / token spent</span>
+                <span>Pay-as-you-go per token</span>
                 <a
                   href="#credit-packs"
                   className="text-primary hover:underline font-semibold flex items-center gap-0.5"
@@ -846,7 +846,7 @@ function PricingContent() {
                       <span className="material-symbols-outlined text-amber-500 text-base shrink-0 mt-0.5">
                         check_circle
                       </span>
-                      <span>Fair 1.5x deduction rate per token spent</span>
+                      <span>Real-time wallet deduction as tokens stream</span>
                     </div>
                     <div className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300">
                       <span className="material-symbols-outlined text-amber-500 text-base shrink-0 mt-0.5">

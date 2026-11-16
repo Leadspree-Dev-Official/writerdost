@@ -64,14 +64,14 @@ export const ProjectMetrics: React.FC<ProjectMetricsProps> = ({ project }) => {
               </dd>
             </div>
             <div className="kv text-[11px]">
-              <dt className="text-slate-400">Credits used (1.5x)</dt>
+              <dt className="text-slate-400">Credits used</dt>
               <dd className="num font-semibold text-amber-600 dark:text-amber-400">
                 ~{creditsConsumed.toLocaleString()} cr
               </dd>
             </div>
           </dl>
           <p className="text-[10px] text-slate-500 italic px-1">
-            * 1.5x tokens spent via BizAI Gateway. 0 credits if generated with your own BYOK keys.
+            * Deducted via BizAI Gateway. 0 credits if generated with your own BYOK keys.
           </p>
         </div>
       )}

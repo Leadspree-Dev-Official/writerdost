@@ -89,7 +89,7 @@ export default function BlogGeneratorPage() {
           const totalTokens = estimatedTokens + 500;
           const creditsToDeduct = Math.round(totalTokens * 1.5);
           spendCredits(creditsToDeduct);
-          setMessage(`AI draft (~${targetWords} words) generated with BizAI Gateway (${creditsToDeduct.toLocaleString()} credits deducted at 1.5x token rate for ~${totalTokens.toLocaleString()} tokens).`);
+          setMessage(`AI draft (~${targetWords} words) generated with BizAI Gateway (${creditsToDeduct.toLocaleString()} credits deducted).`);
         } else {
           recordMonthlyUsage("blog");
           setMessage(`AI draft (~${targetWords} words) generated with BizAI Gateway (monthly quota used).`);

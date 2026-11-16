@@ -11,7 +11,7 @@ import { LANGUAGE_GROUPS, DEFAULT_LANGUAGE } from "@/lib/languages";
 import { AiEngineSelectorModal } from "@/components/AiEngineSelectorModal";
 import type { GenerationEngine } from "@/lib/store-types";
 import { AD_EBOOK_TEMPLATES } from "@/lib/ad-ebook-templates";
-import { estimateCreditsForWords } from "@/lib/store-types";
+import { getDisplayedTokenEstimate } from "@/lib/store-types";
 
 
 export default function IdeaAndInput() {
@@ -84,13 +84,12 @@ export default function IdeaAndInput() {
 
   const executeGenerateWithAI = async (engine: GenerationEngine) => {
     setEngineModalOpen(false);
-    const estimatedCredits = estimateCreditsForWords(createDraft.length);
     const quota = checkQuota("project", engine);
 
     if (engine === "bizai" && quota.source === "credits") {
       const currentCredits = quota.userCredits ?? 0;
       if (currentCredits <= 0) {
-        setMessage(`Cannot start generation: Your wallet has 0 credits. Estimated credits required: ~${estimatedCredits.toLocaleString()} cr (deducted at 1.5x per raw token). Please top up credits or use BYOK.`);
+        setMessage(`Cannot start generation: Your wallet has 0 credits. Please top up credits or use BYOK.`);
         return;
       }
       if (currentCredits < 500) {
@@ -373,8 +372,8 @@ export default function IdeaAndInput() {
                     <span className="text-[12.5px] font-semibold text-on-surface num">
                       {createDraft.length.toLocaleString()} words
                     </span>
-                    <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-bold" title="1.5x credits per raw token (~2.35 tokens per word estimate)">
-                      ~{estimateCreditsForWords(createDraft.length).toLocaleString()} est. cr
+                    <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-medium">
+                      ~{getDisplayedTokenEstimate(createDraft.length).toLocaleString()} est. tokens
                     </span>
                   </div>
                 </div>
@@ -389,9 +388,9 @@ export default function IdeaAndInput() {
                   onChange={(event) => updateCreateDraft({ length: Number(event.target.value) })}
                 />
                 <div className="flex justify-between items-center text-[11px] text-on-surface-variant mt-1.5">
-                  <span>1k words (1,500 cr)</span>
-                  <span className="text-[10px] text-slate-500">1.5x direct rate • 0 with BYOK</span>
-                  <span>100k words (150,000 cr)</span>
+                  <span>1,000 words</span>
+                  <span className="text-[10px] text-slate-500">Pay-as-you-go • 0 with BYOK</span>
+                  <span>100,000 words</span>
                 </div>
               </div>
             </div>
