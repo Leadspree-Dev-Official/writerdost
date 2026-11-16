@@ -97,6 +97,7 @@ export default function BottomNavigation() {
             if (item.isMoreTrigger) {
               const isMoreActive =
                 moreOpen ||
+                pathname.startsWith("/research") ||
                 pathname.startsWith("/settings") ||
                 pathname.startsWith("/profile") ||
                 pathname.startsWith("/blog-generator") ||
@@ -235,6 +236,17 @@ export default function BottomNavigation() {
                 <p className="text-[11px] font-bold text-on-surface-variant/75 uppercase tracking-wider px-3 py-1">
                   Workflows & Tools
                 </p>
+
+                <Link
+                  href="/research"
+                  onClick={() => setMoreOpen(false)}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-on-surface hover:bg-on-surface/[0.06] transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[20px] text-primary">
+                    travel_explore
+                  </span>
+                  <span>Deep Research Lab</span>
+                </Link>
 
                 <Link
                   href="/blog-generator"

@@ -17,7 +17,7 @@ export default function RoiCalculator() {
   const generationMinutes = Math.max(2, Math.round((targetWords / 25000) * 3.5 * 10) / 10);
 
   return (
-    <section className="py-20 md:py-28 bg-surface-container-low/40 dark:bg-[#0e0e1a] font-body">
+    <section id="roi" className="py-20 md:py-28 bg-surface-container-low/40 dark:bg-[#0e0e1a] font-body">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto rounded-3xl border border-outline-variant/30 bg-surface-container-lowest dark:bg-[#131326] shadow-xl p-6 sm:p-10">
           <div className="text-center space-y-3 mb-10">
@@ -83,13 +83,18 @@ export default function RoiCalculator() {
                 </div>
               </div>
 
-              <p className="text-[11.5px] text-on-surface-variant/80 italic">
+              <div className="p-3.5 rounded-xl bg-surface-container/60 dark:bg-[#191932] border border-outline-variant/20 text-[12px] text-on-surface-variant leading-relaxed">
+                <span className="font-bold text-primary">⚡ Pro Insight: </span>
+                Writerdost pays for itself in your first 15 minutes of drafting. At $19/mo, your cost per book is less than $5.
+              </div>
+
+              <p className="text-[11px] text-on-surface-variant/70 italic">
                 * Based on industry benchmarks of 250 edited words/hour and typical ghostwriter rates of $0.15/word.
               </p>
             </div>
 
             {/* Right Column: Computed Savings Results */}
-            <div className="p-6 rounded-2xl bg-gradient-to-br from-primary/10 via-surface-container to-purple-500/10 dark:bg-[#181832] border border-primary/25 space-y-5">
+            <div className="p-6 sm:p-7 rounded-2xl bg-gradient-to-br from-primary/10 via-surface-container to-purple-500/10 dark:bg-[#181832] border border-primary/25 space-y-5">
               <div>
                 <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
                   Ghostwriting Budget Saved
@@ -130,9 +135,10 @@ export default function RoiCalculator() {
 
               <Link
                 href="/signup"
-                className="btn btn-primary w-full justify-center shadow-md shadow-primary/20 text-[13px] font-bold"
+                className="btn btn-primary w-full justify-center shadow-md shadow-primary/20 text-[13px] font-bold py-3 flex items-center gap-1.5"
               >
-                Claim Your Productivity Boost
+                <span>Start Free · 5,000 Words Included</span>
+                <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
               </Link>
             </div>
           </div>

@@ -5,10 +5,12 @@ import Link from "next/link";
 export default function PersonasSection() {
   const personas = [
     {
+      id: "authors",
       title: "Non-Fiction & Fiction Authors",
       tagline: "Finish your book in days, not years",
       icon: "menu_book",
       color: "from-blue-500 to-indigo-600",
+      ctaText: "Start drafting as an Author",
       benefits: [
         "Overcome the dreaded mid-manuscript slump with narrative arc planning",
         "Generate 10+ chapter blueprints tailored to your specific audience",
@@ -19,10 +21,12 @@ export default function PersonasSection() {
       author: "David Vance, 3x Business Author",
     },
     {
+      id: "publishers",
       title: "Content Agencies & Publishers",
       tagline: "10x production capacity without adding headcount",
       icon: "apartment",
       color: "from-indigo-600 to-primary",
+      ctaText: "Explore Agency Workflows",
       benefits: [
         "Deliver complete client book drafts and whitepapers in record time",
         "Maintain client-specific tone presets across different genres",
@@ -33,10 +37,12 @@ export default function PersonasSection() {
       author: "Elena Rostova, Managing Editor at Nexus Media",
     },
     {
+      id: "bloggers",
       title: "Bloggers & WordPress Publishers",
       tagline: "Hands-free scheduled content engine",
       icon: "rss_feed",
       color: "from-emerald-500 to-teal-600",
+      ctaText: "Automate WordPress Sync",
       benefits: [
         "Transform book chapters into multi-week SEO blog drip campaigns",
         "Native writerdost-connect WordPress plugin pushes straight to your CMS",
@@ -47,10 +53,12 @@ export default function PersonasSection() {
       author: "Marcus Chen, Founder of CloudPulse Blog",
     },
     {
+      id: "founders",
       title: "Founders, Consultants & Coaches",
       tagline: "Turn your expertise into an authority magnet",
       icon: "workspace_premium",
       color: "from-amber-500 to-orange-600",
+      ctaText: "Build Your Authority Book",
       benefits: [
         "Ingest YouTube lectures, workshop transcripts, and slide decks",
         "Extract your proprietary methodologies into authoritative chapters",
@@ -63,7 +71,7 @@ export default function PersonasSection() {
   ];
 
   return (
-    <section className="py-20 md:py-28 font-body">
+    <section id="personas" className="py-20 md:py-28 font-body">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
@@ -74,7 +82,7 @@ export default function PersonasSection() {
             Built for Everyone Who Takes Words Seriously.
           </h2>
           <p className="text-base sm:text-lg text-on-surface-variant leading-relaxed">
-            Whether you are writing a debut novel, building agency client assets, or running a 7-figure affiliate blog, Writerdost adapts to your workflow.
+            Whether you are writing a debut novel, building agency client assets, or running an authority blog, Writerdost adapts to your workflow.
           </p>
         </div>
 
@@ -83,7 +91,7 @@ export default function PersonasSection() {
           {personas.map((p) => (
             <div
               key={p.title}
-              className="p-7 sm:p-8 rounded-2xl border border-outline-variant/30 bg-surface-container-lowest dark:bg-[#131326] shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+              className="p-7 sm:p-8 rounded-2xl border border-outline-variant/30 bg-surface-container-lowest dark:bg-[#131326] shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-primary/40 transition-all duration-200 flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center gap-3.5 mb-3">
@@ -121,10 +129,13 @@ export default function PersonasSection() {
 
               <div className="mt-6 pt-4 border-t border-outline-variant/20">
                 <Link
-                  href="/create"
-                  className="text-[13px] font-bold text-primary hover:underline flex items-center gap-1"
+                  href={`/create?persona=${p.id}`}
+                  className="text-[13px] font-bold text-primary hover:underline flex items-center justify-between group"
                 >
-                  Start creating for your workflow &rarr;
+                  <span>{p.ctaText}</span>
+                  <span className="material-symbols-outlined text-[16px] group-hover:translate-x-1 transition-transform">
+                    arrow_forward
+                  </span>
                 </Link>
               </div>
             </div>

@@ -34,7 +34,7 @@ export function slugify(input: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
-export function robustParseJson(text: string) {
+export function robustParseJson<T = any>(text: string): T | null {
   // 1. Control character sanitization (Standard JSON.parse allows \n between tokens but not within strings)
   const sanitized = text.replace(/[\u0000-\u0009\u000B-\u000C\u000E-\u001F]/g, "");
 
@@ -96,12 +96,12 @@ export function robustParseJson(text: string) {
             } catch (innerError) {
               // Log warning and return null silently
               console.warn("Partial JSON extraction failed, might be a fragment:", innerError);
-              return null;
+              return null as unknown as T;
             }
           }
         }
       }
-      return null;
+      return null as unknown as T;
     }
   }
 }

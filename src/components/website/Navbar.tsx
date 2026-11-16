@@ -24,12 +24,14 @@ export default function WebsiteNavbar() {
   }, []);
 
   const navLinks = [
-    { label: "Features", href: "#features" },
-    { label: "Agent Swarm", href: "#agents" },
-    { label: "How It Works", href: "#how-it-works" },
-    { label: "WordPress Sync", href: "#wordpress" },
-    { label: "Pricing", href: "#pricing" },
-    { label: "FAQ", href: "#faq" },
+    { label: "Features", href: "/#features" },
+    { label: "Research Lab", href: "/research" },
+    { label: "Copywriting", href: "/copywriting" },
+    { label: "Agent Swarm", href: "/#agents" },
+    { label: "How It Works", href: "/#how-it-works" },
+    { label: "WordPress Sync", href: "/#wordpress" },
+    { label: "Pricing", href: "/#pricing" },
+    { label: "FAQ", href: "/#faq" },
   ];
 
   return (
@@ -95,13 +97,13 @@ export default function WebsiteNavbar() {
           {/* Desktop Nav Links */}
           <div className="hidden md:flex items-center gap-1 lg:gap-2">
             {navLinks.map((link) => (
-              <a
+              <Link
                 key={link.label}
                 href={link.href}
                 className="px-3 py-1.5 rounded-lg text-[13px] font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"
               >
                 {link.label}
-              </a>
+              </Link>
             ))}
           </div>
 
@@ -168,14 +170,14 @@ export default function WebsiteNavbar() {
           <div className="md:hidden bg-surface dark:bg-[#0c0c14] border-b border-outline-variant/30 px-4 pt-2 pb-6 space-y-2">
             <div className="flex flex-col space-y-1">
               {navLinks.map((link) => (
-                <a
+                <Link
                   key={link.label}
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
                   className="px-3 py-2 text-[14px] font-medium text-on-surface rounded-lg hover:bg-surface-container transition-colors"
                 >
                   {link.label}
-                </a>
+                </Link>
               ))}
             </div>
 
