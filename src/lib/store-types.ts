@@ -152,8 +152,8 @@ export const PLAN_DEFINITIONS: Record<Exclude<UserPlan, "Custom">, PlanDefinitio
   },
   Enterprise: {
     id: "Enterprise",
-    name: "Custom Enterprise & Private Server",
-    description: "Dedicated private server instance, unlimited everything, and custom AI models.",
+    name: "Studio Suite & Private Server",
+    description: "For agencies, publishing studios, and teams needing private AI instances & unlimited projects.",
     priceMonthly: 49,
     priceYearly: 490,
     currency: "USD",
