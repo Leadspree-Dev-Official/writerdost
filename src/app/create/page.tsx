@@ -349,8 +349,8 @@ export default function IdeaAndInput() {
               <p className="hint">The agents use this as the brief for research and chapter planning.</p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="panel panel-pad">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch">
+              <div className="panel panel-pad flex flex-col">
                 <label htmlFor="audience" className="label">
                   Target audience
                 </label>
@@ -362,70 +362,82 @@ export default function IdeaAndInput() {
                   value={createDraft.audience}
                   onChange={(event) => updateCreateDraft({ audience: event.target.value })}
                 />
+                <p className="hint mt-2 text-[11.5px] text-on-surface-variant leading-relaxed">
+                  Defines the reading level, industry context, and framing used across every chapter.
+                </p>
+                <div className="mt-auto pt-3 border-t border-[var(--hairline)] flex items-center gap-1.5 text-[11px] text-on-surface-variant">
+                  <span className="material-symbols-outlined text-[15px] text-primary">psychology</span>
+                  <span>Directs persona & tone calibration</span>
+                </div>
               </div>
 
-              <div className="panel panel-pad space-y-3">
-                <div className="flex items-baseline justify-between">
-                  <label htmlFor="length" className="label !mb-0">
-                    Book Size & Target Length
+              <div className="panel panel-pad flex flex-col justify-between space-y-3">
+                {/* Header */}
+                <div className="flex items-center justify-between gap-2">
+                  <label htmlFor="length" className="label !mb-0 font-medium">
+                    Target Length
                   </label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[12.5px] font-semibold text-on-surface num">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[13px] font-bold text-on-surface num">
                       {createDraft.length.toLocaleString()} words
                     </span>
-                    <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-medium">
-                      ~{getDisplayedTokenEstimate(createDraft.length).toLocaleString()} est. tokens
+                    <span className="text-[10.5px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-medium">
+                      ~{getDisplayedTokenEstimate(createDraft.length).toLocaleString()} tokens
                     </span>
                   </div>
                 </div>
 
-                {/* Optional Page Counter with Auto-Word Calculation */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 p-2.5 rounded-[var(--radius)] bg-surface-variant/30 border border-[var(--hairline)]">
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <span className="material-symbols-outlined text-[18px] text-primary shrink-0">menu_book</span>
-                    <label htmlFor="page-count-input" className="text-[12px] text-on-surface font-medium whitespace-nowrap">
-                      Approx. Pages:
-                    </label>
-                    <input
-                      id="page-count-input"
-                      type="number"
-                      min="4"
-                      max={isExtendedOmnibus ? 800 : 400}
-                      value={Math.round(createDraft.length / 250)}
-                      onChange={(e) => {
-                        const pages = Math.max(1, parseInt(e.target.value) || 1);
-                        const maxAllowed = isExtendedOmnibus ? 200000 : 100000;
-                        const calculatedWords = Math.min(maxAllowed, Math.max(1000, pages * 250));
-                        updateCreateDraft({ length: calculatedWords });
-                      }}
-                      className="input py-1 px-2 text-xs w-20 text-center font-semibold"
-                      placeholder="Pages"
-                    />
-                    <span className="text-[11px] text-on-surface-variant truncate">
-                      pages (~{Math.round(createDraft.length / 250)} pp @ 250 w/p)
+                {/* Inline Page Calculator Pill */}
+                <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-[var(--radius)] bg-surface-variant/30 border border-[var(--hairline)]">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="material-symbols-outlined text-[17px] text-primary shrink-0">menu_book</span>
+                    <span className="text-[12px] text-on-surface font-medium whitespace-nowrap">Equivalent Volume:</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="relative flex items-center">
+                      <input
+                        id="page-count-input"
+                        type="number"
+                        min="4"
+                        max={isExtendedOmnibus ? 800 : 400}
+                        value={Math.round(createDraft.length / 250)}
+                        onChange={(e) => {
+                          const pages = Math.max(1, parseInt(e.target.value) || 1);
+                          const maxAllowed = isExtendedOmnibus ? 200000 : 100000;
+                          const calculatedWords = Math.min(maxAllowed, Math.max(1000, pages * 250));
+                          updateCreateDraft({ length: calculatedWords });
+                        }}
+                        className="input !py-0.5 !px-1.5 text-xs w-16 text-center font-bold bg-surface"
+                        placeholder="Pages"
+                      />
+                    </div>
+                    <span className="text-[11.5px] text-on-surface-variant font-medium whitespace-nowrap">
+                      pages <span className="opacity-60 text-[10.5px]">(250 w/p)</span>
                     </span>
                   </div>
                 </div>
 
-                {/* Range Slider */}
-                <input
-                  id="length"
-                  className="w-full h-1 mt-2 bg-on-surface/12 rounded-full appearance-none cursor-pointer accent-primary"
-                  max={isExtendedOmnibus ? "200000" : "100000"}
-                  min="1000"
-                  step="1000"
-                  type="range"
-                  value={createDraft.length}
-                  onChange={(event) => updateCreateDraft({ length: Number(event.target.value) })}
-                />
-                <div className="flex justify-between items-center text-[11px] text-on-surface-variant">
-                  <span>1,000 words (~4 pp)</span>
-                  <span className="text-[10px] text-slate-500">Pay-as-you-go • 0 with BYOK</span>
-                  <span>{isExtendedOmnibus ? "200,000 words (~800 pp)" : "100,000 words (~400 pp)"}</span>
+                {/* Slider */}
+                <div className="space-y-1.5">
+                  <input
+                    id="length"
+                    className="w-full h-1.5 bg-on-surface/12 rounded-full appearance-none cursor-pointer accent-primary"
+                    max={isExtendedOmnibus ? "200000" : "100000"}
+                    min="1000"
+                    step="1000"
+                    type="range"
+                    value={createDraft.length}
+                    onChange={(event) => updateCreateDraft({ length: Number(event.target.value) })}
+                  />
+                  <div className="flex justify-between items-center text-[10.5px] text-on-surface-variant">
+                    <span>1k (~4 pp)</span>
+                    <span className="text-[10px] text-slate-500">Pay-as-you-go • 0 with BYOK</span>
+                    <span>{isExtendedOmnibus ? "200k (~800 pp)" : "100k (~400 pp)"}</span>
+                  </div>
                 </div>
 
-                {/* Extended Omnibus Checkbox (Up to 200k Words) */}
-                <div className="pt-2 border-t border-[var(--hairline)]">
+                {/* Extended Omnibus Toggle Checkbox */}
+                <div className="pt-2.5 border-t border-[var(--hairline)]">
                   <label className="flex items-start gap-2.5 cursor-pointer group select-none">
                     <input
                       type="checkbox"
@@ -437,15 +449,15 @@ export default function IdeaAndInput() {
                           updateCreateDraft({ length: 100000 });
                         }
                       }}
-                      className="checkbox mt-0.5 accent-primary"
+                      className="checkbox mt-0.5 accent-primary shrink-0"
                     />
                     <div className="text-[12px] leading-tight">
                       <span className="font-semibold text-on-surface group-hover:text-primary transition-colors flex items-center gap-1.5">
                         <span className="material-symbols-outlined text-[15px] text-amber-500">auto_stories</span>
-                        Full-Length Omnibus Edition (Unlock up to 2 Lakh / 200,000 Words)
+                        Full-Length Omnibus (Unlock 2 Lakh Words)
                       </span>
-                      <p className="text-[11px] text-on-surface-variant mt-0.5">
-                        Enables comprehensive multi-chapter publishing volumes up to 800 pages.
+                      <p className="text-[11px] text-on-surface-variant mt-0.5 leading-snug">
+                        Extends slider ceiling up to 200,000 words (~800 print pages).
                       </p>
                     </div>
                   </label>
