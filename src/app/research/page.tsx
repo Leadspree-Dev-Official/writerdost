@@ -361,8 +361,9 @@ export default function ResearchPage() {
                 Audience: <strong className="text-on-surface">{selectedDossier.dossier.targetAudience}</strong>
               </span>
               <span className="text-[12px] text-on-surface-variant">·</span>
-              <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
-                ~1 approx. credit used • Free with BYOK
+              <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
+                <CoinsIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                <span>~1 approx. credit used • Free with BYOK</span>
               </span>
             </div>
             <h1 className="text-[20px] sm:text-[24px] font-bold text-on-surface leading-tight">
@@ -740,15 +741,18 @@ export default function ResearchPage() {
 
           {/* Table / List Container (Matching Projects Page Table) */}
           <div className="panel overflow-hidden">
-            {/* Table Header Row */}
-            <div className="hidden md:flex items-center gap-4 h-9 px-3.5 border-b border-[var(--hairline)] bg-on-surface/[0.02] text-[11px] font-semibold text-on-surface-variant">
+            <div className="overflow-x-auto">
+              {/* Table Header Row */}
+              <div className="hidden md:flex items-center gap-4 h-9 px-3.5 border-b border-[var(--hairline)] bg-on-surface/[0.02] text-[11px] font-semibold text-on-surface-variant md:min-w-[760px]">
               <span className="flex-1 min-w-0">Topic & Synthesis</span>
-              <span className="w-28">Depth</span>
-              <span className="w-16 text-right">Theses</span>
-              <span className="w-16 text-right">Stats</span>
-              <span className="w-16 text-right">Chapters</span>
-              <span className="w-20 text-right">Est. Credits</span>
-              <span className="w-36 text-right">Actions</span>
+              <span className="w-24">Depth</span>
+              <span className="w-14 text-right">Theses</span>
+              <span className="w-14 text-right">Stats</span>
+              <span className="w-14 text-right">Chapters</span>
+              <span className="w-16 text-right flex items-center justify-end" title="Estimated credits">
+                <CoinsIcon className="w-3.5 h-3.5 text-amber-500" />
+              </span>
+              <span className="w-44 text-right">Actions</span>
             </div>
 
             {visible.length === 0 ? (
@@ -775,7 +779,7 @@ export default function ResearchPage() {
                 return (
                   <div
                     key={id}
-                    className="row px-3.5 py-3 gap-4 border-b border-[var(--hairline)] last:border-0 hover:bg-surface-variant/20 transition-colors"
+                    className="row px-3.5 py-3 gap-4 border-b border-[var(--hairline)] last:border-0 hover:bg-surface-variant/20 transition-colors md:min-w-[760px]"
                   >
                     {/* Title & Preview (Clickable to open viewer) */}
                     <button
@@ -805,38 +809,38 @@ export default function ResearchPage() {
                     </button>
 
                     {/* Depth Chip */}
-                    <span className="w-28 shrink-0 hidden md:flex items-center">
+                    <span className="w-24 shrink-0 hidden md:flex items-center">
                       <span className="chip chip-neutral text-[10px] uppercase font-bold">
                         {d.depth}
                       </span>
                     </span>
 
                     {/* Counts */}
-                    <span className="w-16 shrink-0 row-meta text-right hidden md:block font-mono">
+                    <span className="w-14 shrink-0 row-meta text-right hidden md:block font-mono">
                       {d.coreTheses?.length || 0}
                     </span>
-                    <span className="w-16 shrink-0 row-meta text-right hidden md:block font-mono">
+                    <span className="w-14 shrink-0 row-meta text-right hidden md:block font-mono">
                       {d.factsAndStats?.length || 0}
                     </span>
-                    <span className="w-16 shrink-0 row-meta text-right hidden md:block font-mono">
+                    <span className="w-14 shrink-0 row-meta text-right hidden md:block font-mono">
                       {d.chapterSeeds?.length || 0}
                     </span>
 
                     {/* Credits */}
-                    <span className="w-20 shrink-0 row-meta text-right hidden md:block">
-                      <span className="text-amber-600 dark:text-amber-400 font-medium flex items-center justify-end gap-1">
+                    <span className="w-16 shrink-0 row-meta text-right hidden md:block">
+                      <span className="text-amber-600 dark:text-amber-400 font-medium flex items-center justify-end gap-1" title="Estimated: ~1 credit">
                         <CoinsIcon className="w-3 h-3 text-amber-500 shrink-0" />
-                        <span>~1 credit</span>
+                        <span>~1</span>
                       </span>
                     </span>
 
                     {/* 1-Click Action Buttons */}
-                    <span className="w-36 shrink-0 flex items-center justify-end gap-1">
+                    <span className="w-44 shrink-0 flex items-center justify-end gap-1">
                       {/* Draft Book Button */}
                       <button
                         type="button"
                         onClick={() => handleDraftBook(d)}
-                        className="btn btn-primary btn-sm !px-2 !py-1 text-[11px] flex items-center gap-1 cursor-pointer"
+                        className="btn btn-primary btn-sm !px-2.5 !py-1 text-[11px] flex items-center gap-1 cursor-pointer shrink-0"
                         title="Draft Book from this Research: populates New Ebook with this dossier and navigates to /create"
                       >
                         <span className="material-symbols-outlined text-[15px]">menu_book</span>
@@ -847,7 +851,7 @@ export default function ResearchPage() {
                       <button
                         type="button"
                         onClick={() => handleUseInRewrite(d)}
-                        className="btn btn-secondary btn-icon btn-sm cursor-pointer"
+                        className="btn btn-secondary btn-icon btn-sm cursor-pointer shrink-0"
                         title="Use in Rewrite Studio: transfers chapter seeds to /rewrite"
                       >
                         <span className="material-symbols-outlined text-[17px]">edit_note</span>
@@ -860,7 +864,7 @@ export default function ResearchPage() {
                           setSelectedDossier(entry);
                           setActiveViewerTab("overview");
                         }}
-                        className="btn btn-ghost btn-icon btn-sm cursor-pointer"
+                        className="btn btn-ghost btn-icon btn-sm cursor-pointer shrink-0"
                         title="View Full Dossier"
                       >
                         <span className="material-symbols-outlined text-[17px]">visibility</span>
@@ -870,7 +874,7 @@ export default function ResearchPage() {
                       <button
                         type="button"
                         onClick={() => setDossierToDelete(entry)}
-                        className="btn btn-ghost btn-icon btn-sm text-rose-500 hover:bg-rose-500/10 cursor-pointer"
+                        className="btn btn-ghost btn-icon btn-sm text-rose-500 hover:bg-rose-500/10 cursor-pointer shrink-0"
                         title="Delete Dossier"
                       >
                         <span className="material-symbols-outlined text-[16px]">delete</span>
@@ -880,6 +884,7 @@ export default function ResearchPage() {
                 );
               })
             )}
+            </div>
           </div>
         </div>
       )}
@@ -1163,7 +1168,7 @@ export default function ResearchPage() {
                 {/* Footer Buttons */}
                 <div className="flex items-center justify-between pt-3 border-t border-[var(--hairline)]">
                   <span className="text-[11.5px] text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[15px]">toll</span>
+                    <CoinsIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                     ~1 approx. credit • Free with BYOK
                   </span>
 
