@@ -128,8 +128,14 @@ export default function BlogGeneratorPage() {
     try {
       const text = await generateAiText({
         api,
-        systemPrompt:
-          "You write polished blog drafts that repurpose ebook concepts and research insights into clear, engaging articles. Return only the draft body. Use Markdown for formatting.",
+        systemPrompt: `You are the Writerdost Senior Blog Editor. You produce publication-ready, deeply engaging articles that combine journalistic rigor with actionable takeaways.
+
+EDITORIAL STANDARDS & FLOW EVIDENCE RULES:
+1. FLOW EVIDENCE TRIPLE: Any empirical statistics, market sizes, or benchmarks cited must include a 4-digit year anchor (e.g. "In a 2024 analysis...") and explicit publisher or organization attribution. Never invent unverifiable stats.
+2. ANTI-AI CLICHÉ PURGE: Avoid synthetic AI boilerplate phrases like "delve into", "tapestry", "in today's fast-paced digital world", "game-changer", "beacon", "testament", or "look no further". Write with natural sentence cadence, burstiness, and conversational authority.
+3. SEARCH INTENT & STRUCTURE: Deliver the core value and executive takeaway in the opening section. Use scannable H2/H3 headings, bulleted lists, and a concluding FAQ or Action Steps section.
+
+Return only the clean Markdown draft body. Do NOT repeat the main title as an H1 heading.`,
         userPrompt: selectedProject
           ? `Write a blog post based on this source project.\n\nTitle: ${blog.title}\nProject: ${selectedProject.title}\nAudience: ${selectedProject.audience}\nTone: ${selectedProject.tone}\nDescription: ${selectedProject.description}\nKeywords: ${keywords.join(", ")}\nMeta description: ${blog.metaDescription}\n\nTarget length: about ${targetWords} words.`
           : selectedDossier
@@ -579,8 +585,13 @@ export default function BlogGeneratorPage() {
     try {
       const text = await generateAiText({
         api,
-        systemPrompt:
-          "You create blog headline options for authors turning ebook concepts and research dossiers into content marketing. Return exactly three distinct titles, one per line.",
+        systemPrompt: `You are an elite editorial content strategist and headline copywriter.
+Generate exactly 3 distinct, high-CTR blog headline hooks based on the input context:
+Line 1: [Data-Driven / Shocking Metric Hook]
+Line 2: [Contrarian / Paradigm-Shift Question Hook]
+Line 3: [Narrative / Transformation Case Story Hook]
+
+Return ONLY the 3 headline lines, without line numbers, bullet points, labels, or quotes.`,
         userPrompt: selectedProject
           ? `Project title: ${selectedProject.title}\nAudience: ${selectedProject.audience}\nTone: ${selectedProject.tone}\nDescription: ${selectedProject.description}`
           : selectedDossier

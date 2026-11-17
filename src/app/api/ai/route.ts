@@ -46,7 +46,7 @@ export async function POST(request: Request) {
       api = {
         ...api,
         provider: routingConfig.fallbackProvider,
-        model: routingConfig.fallbackModel || fallbackDefaults?.model || "deepseek-chat",
+        model: routingConfig.fallbackModel || fallbackDefaults?.model || "deepseek-flash",
         baseUrl: fallbackDefaults?.baseUrl || api.baseUrl,
       };
       routed = true;

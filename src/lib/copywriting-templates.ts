@@ -1,5 +1,26 @@
 export type CopywritingCategory = "authority" | "sales" | "traffic";
 
+export const AWARENESS_LEVEL_OPTIONS = [
+  "Unaware (Hook on curious symptoms, relatable stories, or shocking facts)",
+  "Problem-Aware (Agitate acute friction & the real cost of inaction - PAS)",
+  "Solution-Aware (Focus on unique mechanism, methodology & case proof)",
+  "Product-Aware (Direct comparison, key features & competitive differentiation)",
+  "Most-Aware (Irresistible offer, pricing, risk-reversal & urgent CTA)",
+] as const;
+
+export const ANTI_AI_COPYWRITING_RULES = `
+ANTI-AI CLICHÉ BLACKLIST (STRICT):
+Never use: "delve", "tapestry", "in today's digital landscape", "game-changer", "supercharge", "beacon", "testament", "unlock your potential", "elevate", "cutting-edge", "revolutionary", "seamlessly", "dive into", "embark on", "look no further".
+Enforce burstiness: Alternate short, punchy 3-8 word sentences with rhythmic compound thoughts. Write at a clean 5th-to-7th grade reading level.
+`;
+
+export const AD_POLICY_COMPLIANCE_DIRECTIVE = `
+AD PLATFORM COMPLIANCE RULES (Meta & Google Ads Safety):
+1. Prohibited Personal Attributes: NEVER assert or imply personal attributes, medical/health conditions, or sensitive financial distress with accusatory questions (e.g. avoid "Are you struggling with debt?"). Reframe around aspirational outcomes, universal operational frameworks, or third-person case studies.
+2. Unsubstantiated Claims: NEVER promise guaranteed specific monetary returns or instant results (e.g. avoid "Earn $10k in 7 days"). Use process-driven and evidence-backed phrasing.
+3. Deceptive CTAs: Avoid fake countdowns, artificial scarcity, or misleading click-triggers.
+`;
+
 export interface TemplateInputField {
   id: string;
   label: string;
@@ -80,6 +101,14 @@ export const COPYWRITING_TEMPLATES: CopywritingTemplate[] = [
         required: true,
       },
       {
+        id: "awarenessLevel",
+        label: "Prospect Awareness Level (Schwartz Scale)",
+        type: "select",
+        options: [...AWARENESS_LEVEL_OPTIONS],
+        defaultValue: "Problem-Aware (Agitate acute friction & the real cost of inaction - PAS)",
+        helpText: "Calibrates how directly you pitch vs agitate the underlying symptom.",
+      },
+      {
         id: "tone",
         label: "Tone of Voice",
         type: "select",
@@ -96,17 +125,23 @@ export const COPYWRITING_TEMPLATES: CopywritingTemplate[] = [
     systemPrompt: `You are an elite B2B direct-response copywriter specialized in cold outbound campaigns that consistently achieve 35%+ open rates and 8-12%+ positive reply rates.
 
 Key Copywriting Directives:
-1. BREVITY: Cold emails must be between 75 and 125 words. Long emails get deleted immediately.
-2. PAS FRAMEWORK:
+1. BREVITY: Cold emails must be strictly between 75 and 125 words. Long emails get deleted immediately.
+2. SCHWARTZ AWARENESS CALIBRATION:
+   - Match the pitch directly to the prospect's selected awareness level.
+   - If Problem-Aware, highlight the symptom before introducing the solution.
+   - If Solution-Aware, differentiate your specific mechanism against alternatives.
+3. PAS FRAMEWORK:
    - Problem: Call out a specific, real-world symptom the prospect suffers from.
    - Agitate: Briefly illustrate the friction, wasted capital, or anxiety this causes if ignored.
    - Solve: Introduce the mechanism and social proof cleanly, then propose a zero-pressure, interest-based CTA.
-3. ANTI-AI: Never use clichés like "I hope this email finds you well", "In today's fast-paced digital world", "Game changer", "Synergy", or "Unlock your potential".
-4. READABILITY: Use short, punchy paragraphs (1-2 sentences each). Write at a 5th-grade reading level.
+4. READABILITY: Use short, punchy paragraphs (1-2 sentences each). Write at a 5th-to-7th grade reading level.
 5. Provide 3 high-converting, curiosity-driven subject line options with under 4 words each.
-6. Provide a primary cold email and a short 48-hour follow-up bump message.`,
+6. Provide a primary cold email and a short 48-hour follow-up bump message.
+
+${ANTI_AI_COPYWRITING_RULES}`,
     promptBuilder: (inputs) => `Craft an elite B2B Cold Outreach campaign based on these parameters:
 - Target Prospect: ${inputs.prospectRole || "B2B Decision Maker"}
+- Prospect Awareness Level: ${inputs.awarenessLevel || "Problem-Aware"}
 - Core Pain Point: ${inputs.painPoint || "High acquisition costs and inefficient workflows"}
 - Our Solution/Offer: ${inputs.solution || "Automated growth pipeline"}
 - Proof/Metric: ${inputs.proof || "Demonstrated 3x pipeline growth across multiple case studies"}
@@ -177,19 +212,31 @@ Please format your response in clean Markdown with:
         ],
         defaultValue: "60-Second Elevator Pitch",
       },
+      {
+        id: "awarenessLevel",
+        label: "Prospect Awareness Level (Schwartz Scale)",
+        type: "select",
+        options: [...AWARENESS_LEVEL_OPTIONS],
+        defaultValue: "Problem-Aware (Agitate acute friction & the real cost of inaction - PAS)",
+        helpText: "Calibrates how directly you lead with product benefits vs the status quo frustration.",
+      },
     ],
-    systemPrompt: `You are a world-class direct-response sales strategist and messaging architect trained on the principles of Alex Hormozi, Dan Kennedy, and modern SaaS conversion copywriting.
+    systemPrompt: `You are a world-class direct-response sales strategist and messaging architect trained on the principles of Alex Hormozi, Dan Kennedy, Eugene Schwartz, and modern SaaS conversion copywriting.
 
 Your goal is to build an irresistible sales pitch that instantly commands attention, highlights the status quo gap, demonstrates a proprietary mechanism, and presents an obvious next step.
 
 Principles:
+- Align directly with the target buyer's selected awareness level.
 - Hook the visceral problem immediately (no pleasantries or empty throat-clearing).
 - Frame the unique mechanism as the ONLY logical bridge between where they are and where they want to be.
 - Make the transformation clear, measurable, and tangible.
-- Deliver high emotional resonance while maintaining total commercial credibility.`,
+- Deliver high emotional resonance while maintaining total commercial credibility.
+
+${ANTI_AI_COPYWRITING_RULES}`,
     promptBuilder: (inputs) => `Create a high-converting ${inputs.pitchFormat || "60-Second Elevator Pitch"} for:
 - Product/Service: ${inputs.productName}
 - Target Buyer: ${inputs.targetAudience}
+- Prospect Awareness Level: ${inputs.awarenessLevel || "Problem-Aware"}
 - Core Frustration: ${inputs.coreProblem}
 - Unique Mechanism/Features: ${inputs.keyFeatures}
 - Before vs. After Transformation: ${inputs.transformation}
@@ -227,6 +274,14 @@ Format the response in clean Markdown with:
         required: true,
       },
       {
+        id: "awarenessLevel",
+        label: "Searcher Intent / Awareness Level",
+        type: "select",
+        options: [...AWARENESS_LEVEL_OPTIONS],
+        defaultValue: "Solution-Aware (Focus on unique mechanism, methodology & case proof)",
+        helpText: "Determines whether headlines focus on problem queries or direct product offers.",
+      },
+      {
         id: "uniqueValueProp",
         label: "Unique Value Proposition & Hooks",
         type: "textarea",
@@ -248,7 +303,7 @@ Format the response in clean Markdown with:
         required: true,
       },
     ],
-    systemPrompt: `You are an elite Google Ads PPC copywriter and Quality Score optimization specialist.
+    systemPrompt: `You are an elite Google Ads PPC copywriter, compliance auditor, and Quality Score optimization specialist.
 
 CRITICAL CHARACTER LIMIT RULES (NON-NEGOTIABLE):
 - HEADLINES: Maximum 30 characters each (including spaces and punctuation). NEVER exceed 30 characters!
@@ -261,10 +316,14 @@ Guidelines for Google RSA Success:
    - Position 11-15: CTA, Social Proof, and Special Offer
 2. Provide EXACTLY 4 Descriptions (<=90 characters each):
    - Highlight core benefit, differentiators, risk-reversal, and explicit CTA.
-3. Every headline and description MUST display its exact character count in parentheses, e.g. "Write Your Book Today (21/30)".`,
+3. Every headline and description MUST display its exact character count in parentheses, e.g. "Write Your Book Today (21/30)".
+
+${AD_POLICY_COMPLIANCE_DIRECTIVE}
+${ANTI_AI_COPYWRITING_RULES}`,
     promptBuilder: (inputs) => `Generate a complete Google Responsive Search Ad (RSA) pack with strict character limits:
 - Product/Service: ${inputs.productOrService}
 - Target Keywords: ${inputs.targetKeywords}
+- Searcher Awareness Level: ${inputs.awarenessLevel || "Solution-Aware"}
 - Unique Value Prop: ${inputs.uniqueValueProp}
 - Special Offer/Incentive: ${inputs.specialOffer || "Start Free - No Card Needed"}
 - Desired CTA: ${inputs.callToAction || "Start Free Today"}
@@ -273,7 +332,8 @@ Output formatted in clean Markdown with:
 1. ### 🏷️ 15 Headlines (Strictly <= 30 Characters, labeled with char counts)
 2. ### 📝 4 Descriptions (Strictly <= 90 Characters, labeled with char counts)
 3. ### 📌 Pinning Recommendations (Best pairings for Headline 1, 2, and 3)
-4. ### 🔍 Sitelink Asset Ideas (4 sitelinks with 25-char link text & descriptions)`,
+4. ### 🔍 Sitelink Asset Ideas (4 sitelinks with 25-char link text & descriptions)
+5. ### 🛡️ Ad Platform Compliance Audit (Confirmation of compliance against Meta/Google ad policies, verified safe claims, and zero personal attribute violations)`,
   },
 
   {
@@ -602,10 +662,13 @@ Output in clean Markdown:
 
 Strict SEO & Quality Directives:
 1. SEARCH INTENT FULFILLMENT: Answer the core user query within the first 150 words with zero fluff or generic intro clichés.
-2. HEADER HIERARCHY: Use clean H1, H2, and H3 markdown hierarchy. Naturally integrate target keywords in headings without keyword stuffing.
-3. E-E-A-T PROTOCOL: Include concrete data points, operational frameworks, real-world examples, and nuanced trade-offs that generic AI cannot invent.
-4. ENGAGEMENT ELEMENTS: Include callout boxes (> [!NOTE] or > [!TIP]), Markdown comparison tables, and bulleted checklists.
-5. FAQ ACCORDION: Conclude with 3-5 high-value FAQs targeting "People Also Ask" search queries.`,
+2. FLOW EVIDENCE TRIPLE: Any statistic, metric, or study cited must be anchored with a 4-digit year (e.g. 2024), specific publisher or organization attribution, and realistic figures. Do NOT hallucinate data.
+3. HEADER HIERARCHY: Use clean H1, H2, and H3 markdown hierarchy. Naturally integrate target keywords in headings without keyword stuffing.
+4. E-E-A-T PROTOCOL: Include concrete data points, operational frameworks, real-world examples, and nuanced trade-offs that generic AI cannot invent.
+5. ENGAGEMENT ELEMENTS: Include callout boxes (> [!NOTE] or > [!TIP]), Markdown comparison tables, and bulleted checklists.
+6. FAQ & SCHEMA READY: Conclude with 3-5 high-value FAQs targeting "People Also Ask" search queries. Include valid JSON-LD (<script type="application/ld+json">) for FAQPage schema at the end.
+
+${ANTI_AI_COPYWRITING_RULES}`,
     promptBuilder: (inputs) => `Write an authoritative, search-optimized article targeting:
 - Primary Keyword: ${inputs.primaryKeyword}
 - Secondary Keywords: ${inputs.secondaryKeywords || "None specified"}
@@ -620,7 +683,8 @@ Produce a publication-ready Markdown article featuring:
 3. Logical H2 & H3 structured content sections
 4. Markdown data/comparison table
 5. Actionable Implementation Checklist
-6. 4-question FAQ section answering top SERP search queries`,
+6. 4-question FAQ section answering top SERP search queries
+7. Embedded FAQPage JSON-LD schema block`,
   },
 
   {

@@ -66,6 +66,39 @@ export type SavedBlogPost = {
 
 export type OutlinePoint = string | { point: string; subpoints: string[] };
 
+export interface MemoryCharacter {
+  name: string;
+  role: string;
+  traits: string[];
+  arcStatus?: string;
+}
+
+export interface BookMemoryBank {
+  characters: MemoryCharacter[];
+  timelineEvents: string[];
+  unresolvedThreads: string[];
+  thematicDirectives: string[];
+  pacingIntensity: number; // Scale 1-10
+  lastChapterSummary: string;
+}
+
+export type SkillCategory = "blog" | "ebook" | "book" | "research" | "copywriting" | "general";
+
+export interface CustomSkill {
+  id: string;
+  name: string;
+  category: SkillCategory;
+  description: string;
+  author?: string;
+  triggers?: string[];
+  systemPromptAddendum: string;
+  bannedPhrases: string[];
+  rubric?: string;
+  rawMarkdown: string;
+  isCustom: boolean;
+  createdAt: number;
+}
+
 export type GeneratedChapter = {
   id: string;
   title: string;
@@ -703,7 +736,7 @@ export interface BizAiGatewayConfig {
 
 export const DEFAULT_BIZAI_GATEWAY_CONFIG: BizAiGatewayConfig = {
   primaryProvider: "claude",
-  primaryModel: "claude-3-7-sonnet-20250219",
+  primaryModel: "claude-sonnet-5-5",
   serverKeys: {
     anthropic: "",
     openai: "",
@@ -723,20 +756,20 @@ export const DEFAULT_BIZAI_GATEWAY_CONFIG: BizAiGatewayConfig = {
     {
       enabled: true,
       provider: "gemini",
-      model: "gemini-2.5-pro",
+      model: "gemini-3.8-flash",
       label: "Secondary Tier (Automatic Failover)",
     },
     {
       enabled: true,
       provider: "deepseek",
-      model: "deepseek-chat",
+      model: "deepseek-flash",
       label: "Tertiary Tier (Emergency Outage)",
     },
   ],
   contextThresholdEnabled: false,
   contextThresholdTokens: 95000,
   contextFallbackProvider: "deepseek",
-  contextFallbackModel: "deepseek-chat",
+  contextFallbackModel: "deepseek-flash",
 };
 
 

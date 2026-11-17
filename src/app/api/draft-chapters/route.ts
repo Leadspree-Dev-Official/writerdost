@@ -1,4 +1,4 @@
-import { sendStreamEvent, type StreamEvent } from "@/lib/app-utils";
+import { sendStreamEvent, robustParseJson, type StreamEvent } from "@/lib/app-utils";
 import { mdToHtml } from "@/lib/markdown-utils";
 import { EBOOK_FORMATTING_STANDARDS } from "@/lib/ebook-standards";
 import { getToneDirective } from "@/lib/tone-standards";
@@ -6,6 +6,7 @@ import { getLanguageDirective } from "@/lib/languages";
 import { callModel } from "@/lib/ai-server-utils";
 import { guardCostlyRequest } from "@/lib/costly-route";
 import { clampInt, LIMITS } from "@/lib/validation";
+import type { BookMemoryBank } from "@/lib/store-types";
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -58,6 +59,19 @@ export async function POST(req: Request) {
         let cumulativeActualWords = 0;
         let lastSectionTail = "";
 
+        // Persistent Book Memory Bank for cross-chapter continuity
+        let activeMemoryBank: BookMemoryBank = project.memoryBank || {
+          characters: [],
+          timelineEvents: [],
+          unresolvedThreads: [],
+          thematicDirectives: [
+            `Audience: ${project.audience || "General Readers"}`,
+            `Tone: ${project.tone || "Professional"}`,
+          ],
+          pacingIntensity: 5,
+          lastChapterSummary: "",
+        };
+
         for (const chapter of (project.chapters ?? []).slice(0, LIMITS.chapters)) {
           const isWrapperPage = ["title page", "copyright", "table of contents", "next steps / cta", "next steps"].includes(chapter.title.toLowerCase());
           
@@ -92,6 +106,12 @@ export async function POST(req: Request) {
             sendEvent({ type: "active_agent", agent: "Writing Agent" });
             
             const isLastSection = sectionIndex === SECTIONS_PER_CHAPTER;
+            const isFirstSection = sectionIndex === 1;
+            const heroVisualInstruction = isFirstSection ? `
+              At the very beginning of your section, include a single HTML comment with a recommended hero illustration prompt for this chapter:
+              <!-- HERO_VISUAL_PROMPT: Clean modern vector editorial illustration depicting the core concept of "${chapter.title}", minimalist flat palette -->
+            ` : "";
+
             const wrapUpInstruction = isLastSection ? `
               Since this is the final section of the chapter, conclude your prose with a "Chapter Wrap-Up" structured exactly as follows (translate these labels into the output language):
               ### Chapter Wrap-Up
@@ -103,6 +123,15 @@ export async function POST(req: Request) {
               **Your Action Step:** [Specific task]
             ` : "";
 
+            const memoryDirective = `
+              CROSS-CHAPTER CONTINUITY DIRECTIVES (Book Memory Bank):
+              ${activeMemoryBank.lastChapterSummary ? "- PRECEDING CHAPTER SUMMARY: " + activeMemoryBank.lastChapterSummary : ""}
+              ${activeMemoryBank.characters?.length ? "- ESTABLISHED CHARACTERS: " + activeMemoryBank.characters.map((c) => `${c.name} (${c.role}; traits: ${c.traits.join(", ")}; status: ${c.arcStatus || "active"})`).join("; ") : ""}
+              ${activeMemoryBank.timelineEvents?.length ? "- ESTABLISHED TIMELINE & EVENTS: " + activeMemoryBank.timelineEvents.slice(-5).join(" -> ") : ""}
+              ${activeMemoryBank.unresolvedThreads?.length ? "- PENDING PLOT/ARGUMENT THREADS: " + activeMemoryBank.unresolvedThreads.slice(0, 3).join("; ") : ""}
+              Pacing intensity: ${activeMemoryBank.pacingIntensity}/10.
+              CRITICAL: Maintain absolute narrative consistency. Do NOT contradict established facts, character roles, or decisions from earlier chapters.`;
+
             const { text: rawProse, usage: draftUsage } = await callModel({
               api,
               systemPrompt: `You are the Writerdost Prose Drafter. Write a deep, granular section for a manuscript.
@@ -110,6 +139,8 @@ export async function POST(req: Request) {
               Context: This is Section ${sectionIndex} of ${SECTIONS_PER_CHAPTER} for the chapter "${chapter.title}".
               ${getToneDirective(project.tone)}
               ${languageDirective}
+              ${memoryDirective}
+              ${heroVisualInstruction}
               ${lastSectionTail ? "PREVIOUS CONTEXT (Bridge from here): " + lastSectionTail : ""}
               DO NOT use summaries. Use vivid examples, case studies, and detailed arguments.
               
@@ -177,6 +208,58 @@ export async function POST(req: Request) {
           sendEvent({ type: "log", agent: "Writing Agent", message: `Completed Chapter ${chapterIndex}: ${chapterWordCount} words total.`, status: "success" });
           sendEvent({ type: "chapter_completed", index: chapterIndex, total: project.chapters.length, title: chapter.title });
           
+          // Synchronize cross-chapter Book Memory Bank
+          try {
+            sendEvent({
+              type: "log",
+              agent: "Memory Agent",
+              message: `Updating cross-chapter Memory Bank from Chapter ${chapterIndex}...`,
+              status: "pending",
+            });
+
+            const { text: memUpdateText, usage: memUsage } = await callModel({
+              api,
+              systemPrompt: `You are the Writerdost Book Memory Agent. Your role is to maintain cross-chapter narrative & factual continuity.
+Analyze the chapter just written and update the persistent Memory Bank tracking characters, timeline milestones, and unresolved plot/argument threads.
+Return ONLY valid JSON matching this exact structure:
+{
+  "characters": [{"name": "string", "role": "string", "traits": ["string"], "arcStatus": "string"}],
+  "timelineEvents": ["string"],
+  "unresolvedThreads": ["string"],
+  "thematicDirectives": ["string"],
+  "pacingIntensity": 7,
+  "lastChapterSummary": "2-sentence recap of what happened in this chapter"
+}`,
+              userPrompt: `Current Book Memory Bank:
+${JSON.stringify(activeMemoryBank, null, 2)}
+
+Chapter ${chapterIndex} ("${chapter.title}") Content:
+${chapterContent.slice(0, 4000)}...`,
+              temperature: 0.3,
+            });
+
+            sendEvent({ type: "usage", tokens: memUsage.total_tokens });
+            const parsedMem = robustParseJson(memUpdateText) as Partial<BookMemoryBank> | null;
+            if (parsedMem && Array.isArray(parsedMem.characters)) {
+              activeMemoryBank = {
+                characters: parsedMem.characters.length ? parsedMem.characters : activeMemoryBank.characters,
+                timelineEvents: parsedMem.timelineEvents?.length ? parsedMem.timelineEvents : activeMemoryBank.timelineEvents,
+                unresolvedThreads: parsedMem.unresolvedThreads || activeMemoryBank.unresolvedThreads,
+                thematicDirectives: parsedMem.thematicDirectives || activeMemoryBank.thematicDirectives,
+                pacingIntensity: typeof parsedMem.pacingIntensity === "number" ? parsedMem.pacingIntensity : activeMemoryBank.pacingIntensity,
+                lastChapterSummary: parsedMem.lastChapterSummary || `Chapter ${chapterIndex}: ${chapter.title} concluded.`,
+              };
+              sendEvent({
+                type: "log",
+                agent: "Memory Agent",
+                message: `Memory Bank synchronized: ${activeMemoryBank.characters.length} characters tracked, ${activeMemoryBank.timelineEvents.length} milestones logged.`,
+                status: "success",
+              });
+            }
+          } catch (memErr) {
+            console.warn("Memory bank update non-fatal error:", memErr);
+          }
+
           chapterIndex++;
         }
 
@@ -187,6 +270,7 @@ export async function POST(req: Request) {
         const draftedProject = {
           ...project,
           chapters: writingResults,
+          memoryBank: activeMemoryBank,
         };
 
         sendEvent({ type: "log", agent: "System", message: "Drafting complete.", status: "success" });

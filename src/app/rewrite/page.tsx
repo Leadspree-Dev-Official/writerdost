@@ -652,9 +652,9 @@ export default function RewritePage() {
         </div>
 
         {matchedProject && rewrite.flow === "Outline" ? (
-          <div className="mb-5 p-4 rounded-[var(--radius-lg)] bg-indigo-50/90 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-800/60 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+          <div className="mb-5 p-4 rounded-[var(--radius-lg)] bg-primary/10 border border-primary/25 flex flex-wrap items-center justify-between gap-3 shadow-xs">
             <div className="flex items-center gap-3">
-              <span className="material-symbols-outlined text-indigo-600 dark:text-indigo-400 text-2xl">check_circle</span>
+              <span className="material-symbols-outlined text-primary text-2xl">check_circle</span>
               <div>
                 <p className="text-[13.5px] font-semibold text-on-surface">
                   Project &quot;{matchedProject.title}&quot; is created and active in your workspace!
@@ -865,7 +865,7 @@ export default function RewritePage() {
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
                           <div className="group">
-                            <label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase block mb-3 pl-1">Source Project</label>
+                            <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-300 uppercase block mb-3 pl-1">Source Project</label>
                             <select
                               className="w-full bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.06] rounded-[var(--radius-lg)] px-5 py-2 text-sm font-bold focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none transition-all shadow-inner dark:shadow-none text-on-surface"
                               value={rewrite.translateProjectId || ""}
@@ -878,7 +878,7 @@ export default function RewritePage() {
                             </select>
                           </div>
                           <div className="group">
-                            <label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase block mb-3 pl-1">Target Language</label>
+                            <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-300 uppercase block mb-3 pl-1">Target Language</label>
                             <select
                               className="w-full bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.06] rounded-[var(--radius-lg)] px-5 py-2 text-sm font-bold focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none transition-all shadow-inner dark:shadow-none text-on-surface"
                               value={rewrite.targetLanguage || rewrite.language || "Spanish"}
@@ -1250,7 +1250,7 @@ export default function RewritePage() {
                   </div>
                   <div>
                     <h4 className="font-semibold text-lg tracking-tight text-slate-900 dark:text-white">Smart Blueprint Import</h4>
-                    <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold">Import existing book structure to regenerate</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-300 font-semibold">Import existing book structure to regenerate</p>
                   </div>
                 </div>
                 <button 
@@ -1277,7 +1277,7 @@ export default function RewritePage() {
                     Ebook Title
                   </label>
                   <input
-                    className="w-full min-h-[2.625rem] bg-slate-50 dark:bg-white/[0.05] px-5 py-2.5 rounded-[var(--radius-lg)] text-sm font-semibold border border-slate-200 dark:border-white/[0.08] outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/30 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 transition-all"
+                    className="w-full min-h-[2.625rem] bg-slate-50 dark:bg-white/[0.05] px-5 py-2.5 rounded-[var(--radius-lg)] text-sm font-semibold border border-slate-200 dark:border-white/[0.08] outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/30 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-400 transition-all"
                     placeholder="e.g., Marketing Psychology Decoded"
                     value={importTitle}
                     onChange={(e) => setImportTitle(e.target.value)}
@@ -1314,7 +1314,7 @@ export default function RewritePage() {
                   Description / Audience
                 </label>
                 <textarea
-                  className="w-full h-36 bg-slate-50 dark:bg-white/[0.05] px-5 py-3 rounded-[var(--radius-lg)] text-sm font-medium border border-slate-200 dark:border-white/[0.08] outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/30 resize-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 transition-all leading-relaxed"
+                  className="w-full h-36 bg-slate-50 dark:bg-white/[0.05] px-5 py-3 rounded-[var(--radius-lg)] text-sm font-medium border border-slate-200 dark:border-white/[0.08] outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/30 resize-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-400 transition-all leading-relaxed"
                   placeholder="Exploring consumer behavior, persuasion triggers, and marketing psychology for digital marketers and copywriters..."
                   value={importDescription}
                   onChange={(e) => setImportDescription(e.target.value)}
@@ -1328,7 +1328,7 @@ export default function RewritePage() {
                   Curriculum / Outline
                 </label>
                 <textarea
-                  className="w-full h-64 bg-slate-50 dark:bg-white/[0.05] px-5 py-3 rounded-[var(--radius-lg)] text-sm font-medium border border-slate-200 dark:border-white/[0.08] outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/30 resize-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 transition-all font-mono leading-relaxed"
+                  className="w-full h-64 bg-slate-50 dark:bg-white/[0.05] px-5 py-3 rounded-[var(--radius-lg)] text-sm font-medium border border-slate-200 dark:border-white/[0.08] outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/30 resize-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-400 transition-all font-mono leading-relaxed"
                   placeholder={"1. Delving into Minds\n* The psychology of attention\n* Cognitive biases in decision making\n\n2. Persuasion Triggers\n* Social proof and authority\n* Scarcity and urgency"}
                   value={importOutlineText}
                   onChange={(e) => setImportOutlineText(e.target.value)}

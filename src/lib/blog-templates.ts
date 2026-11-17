@@ -12,6 +12,13 @@ export interface BlogTemplate {
   scaffoldMarkdown: string;
 }
 
+export const EDITORIAL_EXCELLENCE_PROMPT = `
+EDITORIAL QUALITY & FLOW EVIDENCE RULES:
+1. FLOW EVIDENCE TRIPLE: Any empirical statistics, market sizes, or benchmarks cited must include a 4-digit year anchor (e.g. "In a 2024 analysis...") and explicit publisher or organization attribution. Never invent unverifiable stats.
+2. ANTI-AI CLICHÉ PURGE: Strictly avoid AI boilerplate phrases like "delve into", "tapestry", "in today's fast-paced digital world", "game-changer", "beacon", "testament", or "look no further". Write with natural rhythm, conversational punch, and clear sentence burstiness.
+3. SEARCH INTENT: Deliver high value immediately in the opening section with direct answers rather than lengthy throat-clearing.
+`;
+
 export const BLOG_TEMPLATES: BlogTemplate[] = [
   {
     id: "how-to-guide",

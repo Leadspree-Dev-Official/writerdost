@@ -6,11 +6,11 @@ import { providerDefaults, getModelDefaultRates } from "@/lib/ai-providers";
 import { generateAiText } from "@/lib/ai-client";
 
 const PROVIDERS = [
-  { key: "openai", name: "OpenAI", description: "GPT-4.5, GPT-4o, o3-mini" },
-  { key: "claude", name: "Claude", description: "Claude 3.7 & 3.5 Sonnet, Haiku" },
-  { key: "gemini", name: "Gemini", description: "Gemini 2.5 & 2.0 Flash & Pro" },
-  { key: "deepseek", name: "DeepSeek", description: "DeepSeek-V3, Reasoner R1" },
-  { key: "groq", name: "Groq", description: "Ultra-fast LPU inference" },
+  { key: "openai", name: "OpenAI", description: "GPT-6.1 Sol, GPT-6 Astra, Luna" },
+  { key: "claude", name: "Claude", description: "Claude Sonnet 5.5, Opus 5.5, Fable 5.2" },
+  { key: "gemini", name: "Gemini", description: "Gemini 4 Carbon, 3.8 Flash & Lite" },
+  { key: "deepseek", name: "DeepSeek", description: "DeepSeek-V4.1 Flash, V4 Pro" },
+  { key: "groq", name: "Groq", description: "LPU inference, Llama 4 Scout, GPT-OSS" },
   { key: "commandcode", name: "CommandCode", description: "Agentic coding & taste-1" },
   { key: "openrouter", name: "OpenRouter", description: "Multi-model unified router" },
   { key: "ollama", name: "Ollama (local)", description: "Runs on localhost:11434" },
@@ -20,6 +20,12 @@ const PROVIDERS = [
 
 export const MODEL_PRESETS: Record<string, string[]> = {
   openai: [
+    "gpt-6.1-sol",
+    "gpt-6-astra",
+    "gpt-6.1-terra",
+    "gpt-6-luna",
+    "gpt-5",
+    "gpt-5-turbo",
     "gpt-4o",
     "gpt-4o-mini",
     "gpt-4.5-preview",
@@ -29,76 +35,112 @@ export const MODEL_PRESETS: Record<string, string[]> = {
     "gpt-4-turbo",
   ],
   claude: [
+    "claude-sonnet-5-5",
+    "claude-opus-5-5",
+    "claude-fable-5-2",
+    "claude-haiku-5.5",
     "claude-3-7-sonnet-20250219",
     "claude-3-5-sonnet-20241022",
     "claude-3-5-haiku-20241022",
-    "claude-haiku-5.5",
     "claude-3-opus-20240229",
   ],
   gemini: [
+    "gemini-4-carbon",
+    "gemini-4-argon",
+    "gemini-4-hydrogen",
+    "gemini-3.8-flash",
+    "gemini-3.5-flash",
+    "gemini-3.5-flash-lite",
     "gemini-2.5-pro",
     "gemini-2.5-flash",
     "gemini-2.0-flash",
-    "gemini-2.0-flash-lite",
     "gemini-1.5-pro",
     "gemini-1.5-flash",
   ],
   deepseek: [
-    "deepseek-chat",
-    "deepseek-reasoner",
+    "deepseek-flash",
+    "deepseek-v4.1-flash",
     "deepseek-v4-pro",
     "deepseek-v4-flash",
+    "deepseek-chat",
+    "deepseek-reasoner",
   ],
   groq: [
+    "meta-llama/llama-4-scout-17b",
     "llama-3.3-70b-versatile",
     "llama-3.1-8b-instant",
-    "deepseek-r1-distill-llama-70b",
-    "qwen-qwq-32b",
-    "qwen/qwen3.8-27b",
     "openai/gpt-oss-120b",
     "openai/gpt-oss-20b",
+    "qwen/qwen3.8-27b",
+    "minimaxai/minimax-m2.7",
+    "deepseek-r1-distill-llama-70b",
+    "qwen-qwq-32b",
     "mixtral-8x7b-32768",
     "gemma2-9b-it",
   ],
   commandcode: [
     "command-code",
     "taste-1",
+    "claude-sonnet-5-5",
+    "claude-opus-5-5",
+    "claude-haiku-5.5",
+    "gpt-6.1-sol",
+    "gemini-3.8-flash",
+    "deepseek-v4-pro",
     "claude-3-7-sonnet",
     "claude-3-5-sonnet",
     "gpt-4o",
     "deepseek-r1",
   ],
   openrouter: [
+    "anthropic/claude-sonnet-5.5",
+    "anthropic/claude-opus-5.5",
+    "anthropic/claude-fable-5.2",
+    "anthropic/claude-haiku-5.5",
+    "openai/gpt-6.1-sol",
+    "openai/gpt-6-astra",
+    "openai/gpt-6.1-terra",
+    "openai/gpt-6-luna",
+    "google/gemini-4-carbon",
+    "google/gemini-4-hydrogen",
+    "google/gemini-3.8-flash",
+    "google/gemini-3.5-flash-lite",
+    "deepseek/deepseek-v4.1-flash",
+    "deepseek/deepseek-v4-pro",
+    "meta-llama/llama-4-scout-17b",
+    "meta-llama/llama-3.3-70b-instruct",
+    "openai/gpt-oss-120b",
+    "qwen/qwen3.8-27b",
     "anthropic/claude-3.7-sonnet",
     "anthropic/claude-3.5-sonnet",
     "openai/gpt-4o",
     "openai/gpt-4o-mini",
-    "openai/o3-mini",
-    "deepseek/deepseek-r1",
-    "deepseek/deepseek-chat",
-    "google/gemini-2.0-flash-001",
-    "google/gemini-2.5-pro-preview",
-    "meta-llama/llama-3.3-70b-instruct",
-    "google/gemma-2-9b-it:free",
   ],
   ollama: [
+    "llama4:scout",
     "llama3.3:70b",
-    "llama3.2:3b",
-    "llama3.1:8b",
+    "deepseek-v4:latest",
+    "qwen3.8:27b",
+    "qwen3:32b",
+    "qwen2.5:32b",
+    "phi4:latest",
     "deepseek-r1:70b",
     "deepseek-r1:14b",
     "deepseek-r1:8b",
-    "qwen2.5:32b",
-    "mistral:7b",
-    "phi4:latest",
-    "gemma2:9b",
-  ],
-  ollama_cloud: [
-    "llama3.3:70b",
     "llama3.2:3b",
     "llama3.1:8b",
     "mistral:7b",
+    "gemma2:9b",
+  ],
+  ollama_cloud: [
+    "llama4:scout",
+    "llama3.3:70b",
+    "deepseek-v4:latest",
+    "qwen3.8:27b",
     "phi4:latest",
+    "llama3.2:3b",
+    "llama3.1:8b",
+    "mistral:7b",
   ],
   custom: [],
 };
@@ -118,7 +160,7 @@ interface ByokModelFormProps {
 
 function ByokModelForm({ initialData, onClose, onSave }: ByokModelFormProps) {
   const initialProvider = initialData?.provider ?? "openai";
-  const initialModel = initialData?.model ?? "gpt-4o-mini";
+  const initialModel = initialData?.model ?? "gpt-6.1-sol";
   const initialRates = initialData
     ? { inputRate: initialData.inputTokenRate, outputRate: initialData.outputTokenRate }
     : getModelDefaultRates(initialProvider, initialModel);
@@ -130,7 +172,7 @@ function ByokModelForm({ initialData, onClose, onSave }: ByokModelFormProps) {
   );
 
   const [provider, setProvider] = useState<ApiProvider>(initialProvider);
-  const [name, setName] = useState(initialData?.name ?? "My OpenAI GPT-4o Mini");
+  const [name, setName] = useState(initialData?.name ?? "My OpenAI GPT-6.1 Sol");
   const [model, setModel] = useState(initialModel);
   const [apiKey, setApiKey] = useState(initialData?.apiKey ?? "");
   const [baseUrl, setBaseUrl] = useState(initialData?.baseUrl ?? providerDefaults.openai.baseUrl);
@@ -326,7 +368,7 @@ function ByokModelForm({ initialData, onClose, onSave }: ByokModelFormProps) {
             required
             value={model}
             onChange={(e) => handleModelChange(e.target.value)}
-            placeholder="e.g. gpt-4o, claude-3-5-sonnet-20240620, deepseek-chat"
+            placeholder="e.g. gpt-6.1-sol, claude-sonnet-5-5, deepseek-flash"
             className="input w-full"
           />
         )}

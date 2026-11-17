@@ -21,6 +21,19 @@ export type ResearchDossier = {
   glossary: Array<{ term: string; definition: string; usageTip: string }>;
   recommendedReadings: Array<{ title: string; type: string; whyItMatters: string }>;
   authorNotes: string[];
+  /** Charlie Munger Inversion Analysis: how the premise breaks down in practice */
+  inversionMatrix?: Array<{
+    premise: string;
+    howItFails: string;
+    hiddenRisks: string;
+    countermeasure: string;
+  }>;
+  /** 3-Tier Source Categorization preventing hallucinated SEO content-farm citations */
+  sourceTiers?: {
+    tier1Primary: string[];
+    tier2Industry: string[];
+    tier3Flagged: string[];
+  };
 };
 
 type ResearchRequestPayload = {
@@ -81,6 +94,10 @@ ${depthDirective}
 
 ${lensesDirective}
 
+CHARLIE MUNGER INVERSION & SOURCE RIGOR:
+- INVERSION MATRIX: Apply Charlie Munger's mental model: "Invert, always invert." Identify how the core thesis or business model fails, unmask hidden operational risks, and detail concrete countermeasures.
+- SOURCE TIERING: Categorize research sources into Tier 1 (peer-reviewed research, empirical surveys, official filings), Tier 2 (reputable industry benchmarks & verifiable case studies), and Tier 3 (unverified claims or SEO content-farm tropes that must be avoided).
+
 CRITICAL FORMATTING INSTRUCTIONS:
 You must respond with pure valid JSON matching this schema exactly. Do not include markdown code fence formatting like \`\`\`json. Return pure JSON:
 {
@@ -97,6 +114,14 @@ You must respond with pure valid JSON matching this schema exactly. Do not inclu
   "contrarianAngles": [
     { "angle": "...", "conventionalView": "...", "counterIntuitiveTruth": "...", "narrativeHook": "..." }
   ],
+  "inversionMatrix": [
+    { "premise": "Core assumption", "howItFails": "How this assumption collapses under pressure", "hiddenRisks": "Unseen downside", "countermeasure": "Evidence-backed safeguard" }
+  ],
+  "sourceTiers": {
+    "tier1Primary": ["Peer-reviewed papers, empirical benchmarks, or official filings"],
+    "tier2Industry": ["Reputable case studies and industry reporting"],
+    "tier3Flagged": ["Unverified SEO spam or content-farm claims to avoid"]
+  },
   "caseStudies": [
     { "title": "...", "subject": "...", "storySummary": "...", "keyLesson": "..." }
   ],
@@ -144,7 +169,7 @@ Generate the comprehensive research dossier JSON now.`;
       api = {
         ...api,
         provider: routingConfig.fallbackProvider,
-        model: routingConfig.fallbackModel || fallbackDefaults?.model || "deepseek-chat",
+        model: routingConfig.fallbackModel || fallbackDefaults?.model || "deepseek-flash",
         baseUrl: fallbackDefaults?.baseUrl || api.baseUrl,
       };
       routed = true;

@@ -17,9 +17,17 @@ describe("BYOK Model Pricing and Rates", () => {
     expect(sonnet.inputRate).toBe(3.0);
     expect(sonnet.outputRate).toBe(15.0);
 
-    const haiku = getModelDefaultRates("claude", "claude-haiku-5.5");
-    expect(haiku.inputRate).toBe(0.8);
-    expect(haiku.outputRate).toBe(4.0);
+    const sonnet55 = getModelDefaultRates("claude", "claude-sonnet-5-5");
+    expect(sonnet55.inputRate).toBe(2.0);
+    expect(sonnet55.outputRate).toBe(10.0);
+
+    const haikuLegacy = getModelDefaultRates("claude", "claude-3-5-haiku");
+    expect(haikuLegacy.inputRate).toBe(0.8);
+    expect(haikuLegacy.outputRate).toBe(4.0);
+
+    const haiku55 = getModelDefaultRates("claude", "claude-haiku-5.5");
+    expect(haiku55.inputRate).toBe(0.1);
+    expect(haiku55.outputRate).toBe(0.5);
   });
 
   it("returns appropriate default rates for DeepSeek models", () => {

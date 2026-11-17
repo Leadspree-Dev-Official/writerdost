@@ -38,8 +38,11 @@ import type {
   ReferralRecord,
   SubscriptionOrder,
   GenerationEngine,
+  BookMemoryBank,
+  CustomSkill,
 } from "@/lib/store-types";
-export type { BlogSource, SavedBlogPost };
+export type { BlogSource, SavedBlogPost, CustomSkill };
+import { parseSkillMarkdown, BUILT_IN_SKILLS, type ParseSkillResult } from "@/lib/skills/parser";
 import { CREDIT_PACKS, CREDIT_COSTS, TOKEN_CREDIT_MULTIPLIER } from "@/lib/store-types";
 import type { KdpLaunchKit } from "@/lib/kdp-types";
 import * as subApi from "@/lib/subscription-client-api";
@@ -238,6 +241,8 @@ export type Project = {
   publish?: PublishState;
   /** Amazon KDP Launch Kit and marketing pack. */
   kdpLaunchKit?: KdpLaunchKit;
+  /** Cross-chapter memory bank for long-form narrative & factual continuity. */
+  memoryBank?: BookMemoryBank;
 };
 
 type CreateDraft = {
@@ -359,6 +364,11 @@ type AppStore = {
   saveBlogPost: (post: Omit<SavedBlogPost, "id" | "createdAt" | "updatedAt"> & { id?: string }) => string;
   deleteBlogPost: (id: string) => void;
   loadSavedBlog: (id: string) => void;
+  skills: CustomSkill[];
+  activeSkillId: string | null;
+  importSkill: (rawMarkdown: string) => ParseSkillResult;
+  deleteSkill: (id: string) => void;
+  setActiveSkill: (id: string | null) => void;
   api: ApiSettings;
   byokModels: ByokModelConfig[];
   activeByokModelId: string | null;
@@ -632,7 +642,7 @@ const defaultRates = getModelDefaultRates(defaultApiSettings.provider, defaultAp
 const defaultByokModels: ByokModelConfig[] = [
   {
     id: "byok_default_primary",
-    name: "OpenAI (GPT-4o Mini)",
+    name: "OpenAI (GPT-6.1 Sol)",
     provider: defaultApiSettings.provider,
     model: defaultApiSettings.model,
     apiKey: defaultApiSettings.apiKey,
@@ -763,6 +773,8 @@ function blankWorkspace() {
     byokModels: defaultByokModels,
     activeByokModelId: "byok_default_primary",
     savedBlogs: [] as SavedBlogPost[],
+    skills: [...BUILT_IN_SKILLS],
+    activeSkillId: null,
     platform: defaultPlatformApi,
     usage: defaultUsage,
     customFonts: [] as FontOption[],
@@ -842,6 +854,8 @@ const SETTINGS_KEYS = [
   "byokModels",
   "activeByokModelId",
   "savedBlogs",
+  "skills",
+  "activeSkillId",
   "platform",
   "usage",
   "customFonts",
@@ -1191,6 +1205,8 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     byokModels: defaultByokModels,
     activeByokModelId: "byok_default_primary",
     savedBlogs: [] as SavedBlogPost[],
+    skills: [...BUILT_IN_SKILLS],
+    activeSkillId: null,
     platform: defaultPlatformApi,
     generationStatus: defaultGenerationStatus,
     usage: defaultUsage,
@@ -1941,6 +1957,22 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         },
       });
     },
+    importSkill: (rawMarkdown) => {
+      const res = parseSkillMarkdown(rawMarkdown);
+      if (res.success && res.skill) {
+        set((state) => ({
+          skills: [res.skill!, ...state.skills.filter((s) => s.id !== res.skill!.id)],
+          activeSkillId: res.skill!.id,
+        }));
+      }
+      return res;
+    },
+    deleteSkill: (id) =>
+      set((state) => ({
+        skills: state.skills.filter((s) => s.id !== id),
+        activeSkillId: state.activeSkillId === id ? null : state.activeSkillId,
+      })),
+    setActiveSkill: (id) => set({ activeSkillId: id }),
     updateChapterContent: (content) => {
       const { currentProjectId, activeChapterId, projects } = get();
       set({
@@ -2621,23 +2653,30 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       if (type === "cost") {
         newSettings.temperature = 0.5;
         newSettings.creativeMode = false;
-        if (api.provider === "openai") newApi.model = "gpt-4o-mini";
-        if (api.provider === "claude") newApi.model = "claude-3-haiku-20240307";
-        if (api.provider === "gemini") newApi.model = "gemini-1.5-flash";
-        if (api.provider === "openrouter") newApi.model = "google/gemini-2.0-flash-001";
+        if (api.provider === "openai") newApi.model = "gpt-6-luna";
+        if (api.provider === "claude") newApi.model = "claude-haiku-5.5";
+        if (api.provider === "gemini") newApi.model = "gemini-3.5-flash-lite";
+        if (api.provider === "deepseek") newApi.model = "deepseek-flash";
+        if (api.provider === "groq") newApi.model = "llama-3.1-8b-instant";
+        if (api.provider === "openrouter") newApi.model = "anthropic/claude-haiku-5.5";
       } else if (type === "speed") {
         newSettings.temperature = 0.1;
         newSettings.creativeMode = false;
-        if (api.provider === "openai") newApi.model = "gpt-4o-mini";
-        if (api.provider === "claude") newApi.model = "claude-3-haiku-20240307";
-        if (api.provider === "gemini") newApi.model = "gemini-1.5-flash";
+        if (api.provider === "openai") newApi.model = "gpt-6.1-terra";
+        if (api.provider === "claude") newApi.model = "claude-haiku-5.5";
+        if (api.provider === "gemini") newApi.model = "gemini-3.8-flash";
+        if (api.provider === "deepseek") newApi.model = "deepseek-flash";
+        if (api.provider === "groq") newApi.model = "llama-3.1-8b-instant";
+        if (api.provider === "openrouter") newApi.model = "google/gemini-3.8-flash";
       } else if (type === "quality") {
         newSettings.temperature = 0.8;
         newSettings.creativeMode = true;
-        if (api.provider === "openai") newApi.model = "gpt-4o";
-        if (api.provider === "claude") newApi.model = "claude-3-5-sonnet-latest";
-        if (api.provider === "gemini") newApi.model = "gemini-1.5-pro";
-        if (api.provider === "openrouter") newApi.model = "anthropic/claude-3.5-sonnet";
+        if (api.provider === "openai") newApi.model = "gpt-6.1-sol";
+        if (api.provider === "claude") newApi.model = "claude-sonnet-5-5";
+        if (api.provider === "gemini") newApi.model = "gemini-4-carbon";
+        if (api.provider === "deepseek") newApi.model = "deepseek-v4-pro";
+        if (api.provider === "groq") newApi.model = "llama-3.3-70b-versatile";
+        if (api.provider === "openrouter") newApi.model = "anthropic/claude-sonnet-5.5";
       }
 
       set({ api: newApi, settings: newSettings });
@@ -2976,18 +3015,33 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         } else {
           // Estimated cost per 1M tokens fallback
           const rates: Record<string, number> = {
-            "gpt-4o": 5.0,
+            "gpt-6-astra": 10.0,
+            "gpt-6.1-sol": 2.0,
+            "gpt-6.1-terra": 1.0,
+            "gpt-6-luna": 0.10,
+            "gpt-5": 2.50,
+            "gpt-4o": 2.50,
             "gpt-4o-mini": 0.15,
             "gpt-4-turbo": 10.0,
-            "claude-haiku-5.5": 0.30,
+            "claude-fable-5-2": 8.0,
+            "claude-opus-5-5": 4.0,
+            "claude-sonnet-5-5": 2.0,
+            "claude-haiku-5.5": 0.10,
+            "claude-3-7-sonnet": 3.0,
             "claude-3-5-sonnet": 3.0,
             "claude-3-opus": 15.0,
             "claude-3-haiku": 0.25,
+            "gemini-4-carbon": 2.0,
+            "gemini-3.8-flash": 0.10,
+            "gemini-3.5-flash": 0.075,
+            "gemini-2.0-flash": 0.10,
             "gemini-1.5-flash": 0.075,
             "gemini-1.5-pro": 1.25,
-            "gemini-2.0-flash": 0.1,
+            "deepseek-v4-pro": 0.25,
+            "deepseek-flash": 0.10,
             "deepseek-chat": 0.14,
-            "deepseek-reasoner": 0.14,
+            "deepseek-reasoner": 0.55,
+            "llama-4-scout": 0.20,
             "gpt-oss": 0,
           };
           const modelKey =

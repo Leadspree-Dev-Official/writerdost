@@ -199,7 +199,7 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
                 value={gatewayConfig.primaryProvider}
                 onChange={(e) => {
                   const newProvider = e.target.value as ApiProvider;
-                  const defaultModel = MODEL_PRESETS[newProvider]?.[0] || "claude-3-7-sonnet-20250219";
+                  const defaultModel = MODEL_PRESETS[newProvider]?.[0] || "claude-sonnet-5-5";
                   setGatewayConfig({
                     ...gatewayConfig,
                     primaryProvider: newProvider,
@@ -208,11 +208,11 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
                   setCustomPrimaryModelMode(false);
                 }}
               >
-                <option value="claude">Anthropic Claude (Claude 3.7 / 3.5 Sonnet)</option>
-                <option value="openai">OpenAI (GPT-4o, o3-mini)</option>
-                <option value="gemini">Google Gemini (Gemini 2.5 / 2.0 Pro)</option>
-                <option value="deepseek">DeepSeek (DeepSeek V3 / R1)</option>
-                <option value="groq">Groq Cloud (Llama 3.3 70B, Qwen)</option>
+                <option value="claude">Anthropic Claude (Claude Sonnet 5.5, Opus 5.5, Fable 5.2)</option>
+                <option value="openai">OpenAI (GPT-6.1 Sol, GPT-6 Astra)</option>
+                <option value="gemini">Google Gemini (Gemini 4 Carbon, 3.8 Flash)</option>
+                <option value="deepseek">DeepSeek (DeepSeek V4.1 Flash, V4 Pro)</option>
+                <option value="groq">Groq Cloud (Llama 4 Scout, Llama 3.3 70B)</option>
                 <option value="commandcode">CommandCode (Command-Code, Taste-1)</option>
                 <option value="openrouter">OpenRouter (Multi-model router)</option>
               </select>
@@ -234,7 +234,7 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
                   type="text"
                   value={gatewayConfig.primaryModel}
                   onChange={(e) => setGatewayConfig({ ...gatewayConfig, primaryModel: e.target.value })}
-                  placeholder="e.g. claude-3-7-sonnet-20250219"
+                  placeholder="e.g. claude-sonnet-5-5"
                   className="input font-mono text-xs"
                 />
               ) : (

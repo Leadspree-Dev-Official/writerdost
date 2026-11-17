@@ -30,6 +30,18 @@ const PLACEHOLDER_PATTERNS = [
   /\bI cannot\b.{0,40}\bfulfil/i,
 ];
 
+/** Synthetic AI cliché phrases that reduce editorial credibility. */
+const AI_SLOP_PATTERNS = [
+  /\bdelve(?:s|d|ing)? into\b/i,
+  /\btapestry of\b/i,
+  /\bin today'?s (?:fast-paced|ever-evolving|digital) (?:world|landscape|era)\b/i,
+  /\btestament to\b/i,
+  /\bbeacon of\b/i,
+  /\bgame-changer\b/i,
+  /\bunlock(?:ing)? (?:your|the) potential\b/i,
+  /\blook no further\b/i,
+];
+
 /**
  * The gate that decides whether a post is safe to publish unattended.
  *
@@ -55,6 +67,12 @@ export function assessQuality(post: GeneratedPost, targetWords: number): Quality
       issues.push("The draft still contains placeholder or refusal text.");
       break;
     }
+  }
+
+  // Check for excessive repetitive AI clichés
+  const slopMatches = AI_SLOP_PATTERNS.filter((pattern) => pattern.test(post.bodyMarkdown));
+  if (slopMatches.length >= 3) {
+    issues.push(`The draft contains excessive AI clichés (${slopMatches.length} flagged patterns like delve/tapestry).`);
   }
 
   if (!post.metaDescription.trim()) issues.push("No meta description was produced.");
@@ -118,13 +136,18 @@ ${content.citeSource ? `- Include one attribution link to the source: <a href="$
 
   const { text, usage } = await callModel({
     api,
-    systemPrompt: `You are the Writerdost Blog Agent. You produce publication-ready blog posts.
+    systemPrompt: `You are the Writerdost Blog Agent. You produce publication-ready, human-quality blog posts.
 
 ${houseStyle}
 
 Audience: ${content.audience || "general readers"}
 Target length: ${content.targetWords || 1000} words.
 ${content.keywords.length ? `Work these keywords in naturally: ${content.keywords.join(", ")}.` : ""}
+
+EDITORIAL EXCELLENCE & ANTI-AI GUIDELINES:
+- FLOW EVIDENCE TRIPLE: Any empirical statistics, benchmarks, or studies cited MUST include a 4-digit year (e.g. "In a 2024 survey...") and the publishing entity/institution name. Do NOT fabricate ungrounded statistics.
+- ANTI-AI CLICHÉS: Never use filler words such as "delve into", "tapestry of", "in today's fast-paced digital world", "beacon of", "testament to", "game-changer", "look no further", or "unlock your potential".
+- Vary sentence length and structure to create an engaging, conversational, yet authoritative rhythm.
 
 Return ONLY raw JSON, no markdown fence, exactly:
 {

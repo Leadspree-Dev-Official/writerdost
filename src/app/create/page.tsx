@@ -540,7 +540,7 @@ export default function IdeaAndInput() {
                   />
                   <div className="flex justify-between items-center text-[10px] text-on-surface-variant">
                     <span>1,000 words</span>
-                    <span className="text-[9.5px] text-slate-500">Pay-as-you-go • 0 with BYOK</span>
+                    <span className="text-[10px] text-on-surface-variant font-medium">Pay-as-you-go • 0 with BYOK</span>
                     <span>{isExtendedOmnibus ? "200,000 words" : "100,000 words"}</span>
                   </div>
                 </div>
@@ -871,7 +871,7 @@ export default function IdeaAndInput() {
               <button
                 type="button"
                 onClick={() => setResearchModalOpen(false)}
-                className="btn btn-ghost btn-icon btn-sm text-slate-400 hover:text-on-surface cursor-pointer"
+                className="btn btn-ghost btn-icon btn-sm text-on-surface-variant hover:text-on-surface cursor-pointer"
               >
                 ✕
               </button>
