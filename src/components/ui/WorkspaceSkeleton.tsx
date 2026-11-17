@@ -114,7 +114,7 @@ export function PageContentSkeleton() {
         {[1, 2, 3].map((i) => (
           <div
             key={i}
-            className="p-5 rounded-xl border border-[var(--hairline)] bg-surface dark:bg-white/[0.02] space-y-3"
+            className="p-5 rounded-xl border border-[var(--hairline)] bg-surface-container-lowest dark:bg-white/[0.02] space-y-3"
           >
             <div className="flex items-center gap-3">
               <SkeletonBox className="w-10 h-10" rounded="rounded-lg" />
@@ -129,7 +129,7 @@ export function PageContentSkeleton() {
       </div>
 
       {/* Main Panel */}
-      <div className="p-6 rounded-xl border border-[var(--hairline)] bg-surface dark:bg-white/[0.02] space-y-4">
+      <div className="p-6 rounded-xl border border-[var(--hairline)] bg-surface-container-lowest dark:bg-white/[0.02] space-y-4">
         <SkeletonBox className="h-5 w-48" />
         <div className="space-y-2.5">
           <SkeletonBox className="h-3 w-full" />
@@ -150,9 +150,9 @@ export default function WorkspaceSkeleton({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen w-full bg-[#0c0c14] text-slate-100 flex flex-col justify-between overflow-x-hidden selection:bg-primary/20">
+    <div className="min-h-screen w-full bg-surface dark:bg-[#0c0c14] text-on-surface dark:text-slate-100 flex flex-col justify-between overflow-x-hidden selection:bg-primary/20">
       {/* Top Header Skeleton */}
-      <header className="h-[var(--app-header-h)] border-b border-white/[0.06] flex items-center justify-between px-4 lg:px-6 bg-[#0c0c14]/90 backdrop-blur sticky top-0 z-30">
+      <header className="h-[var(--app-header-h)] border-b border-[var(--hairline)] flex items-center justify-between px-4 lg:px-6 bg-surface/85 dark:bg-[#0c0c14]/90 backdrop-blur sticky top-0 z-30">
         <div className="flex items-center gap-3">
           <SkeletonBox className="w-7 h-7 md:hidden" rounded="rounded-md" />
           <SkeletonBox className="w-28 h-4 hidden sm:block" rounded="rounded" />
@@ -166,10 +166,10 @@ export default function WorkspaceSkeleton({
 
       <div className="flex flex-1">
         {/* Desktop Sidebar Skeleton */}
-        <aside className="w-[var(--app-sidebar-w)] hidden md:flex flex-col border-r border-white/[0.06] p-4 bg-[#0a0a12] space-y-6 shrink-0">
+        <aside className="w-[var(--app-sidebar-w)] hidden md:flex flex-col border-r border-[var(--hairline)] p-4 bg-surface-container-low dark:bg-[#09090f] space-y-6 shrink-0">
           {/* Logo */}
           <div className="flex items-center gap-2.5 px-2 py-1">
-            <SkeletonBox className="w-8 h-8 bg-indigo-500/20" rounded="rounded-lg" />
+            <SkeletonBox className="w-8 h-8 bg-primary/20 dark:bg-indigo-500/20" rounded="rounded-lg" />
             <SkeletonBox className="w-24 h-4" rounded="rounded" />
           </div>
 
@@ -206,17 +206,17 @@ export default function WorkspaceSkeleton({
           </div>
 
           {/* Bottom Card */}
-          <div className="p-3 rounded-xl border border-white/[0.06] bg-white/[0.02] space-y-2">
+          <div className="p-3 rounded-xl border border-[var(--hairline)] bg-surface-container-lowest dark:bg-white/[0.02] space-y-2">
             <SkeletonBox className="w-20 h-3" />
             <SkeletonBox className="w-full h-2" rounded="rounded-full" />
           </div>
         </aside>
 
         {/* Main Content Area */}
-        <main className="flex-1 flex flex-col min-w-0 bg-[#0c0c14]">
+        <main className="flex-1 flex flex-col min-w-0 bg-surface dark:bg-[#0c0c14]">
           {label && (
-            <div className="px-6 pt-4 pb-0 flex items-center gap-2 text-xs font-semibold text-slate-400">
-              <SkeletonBox className="w-2 h-2 rounded-full bg-indigo-500 animate-ping" />
+            <div className="px-6 pt-4 pb-0 flex items-center gap-2 text-xs font-semibold text-on-surface-variant/75 dark:text-slate-400">
+              <span className="w-2 h-2 rounded-full bg-primary animate-ping" />
               <span>{label}</span>
             </div>
           )}

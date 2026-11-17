@@ -158,7 +158,7 @@ export default async function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="bg-[#0c0c14] text-slate-100 selection:bg-primary/20 min-h-screen">
+      <body className="bg-surface dark:bg-[#0c0c14] text-on-surface dark:text-slate-100 selection:bg-primary/20 min-h-screen">
         <LayoutWrapper>
           {children}
         </LayoutWrapper>
