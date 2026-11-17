@@ -69,14 +69,21 @@ function ByokModelForm({ initialData, onClose, onSave }: ByokModelFormProps) {
   const initialRates = initialData
     ? { inputRate: initialData.inputTokenRate, outputRate: initialData.outputTokenRate }
     : getModelDefaultRates(initialProvider, initialModel);
+  const initialIsFree = Boolean(
+    initialData?.isFree ||
+    initialProvider === "ollama" ||
+    initialProvider === "ollama_cloud" ||
+    (initialRates.inputRate === 0 && initialRates.outputRate === 0)
+  );
 
   const [provider, setProvider] = useState<ApiProvider>(initialProvider);
   const [name, setName] = useState(initialData?.name ?? "My OpenAI GPT-4o Mini");
   const [model, setModel] = useState(initialModel);
   const [apiKey, setApiKey] = useState(initialData?.apiKey ?? "");
   const [baseUrl, setBaseUrl] = useState(initialData?.baseUrl ?? providerDefaults.openai.baseUrl);
-  const [inputTokenRate, setInputTokenRate] = useState<number>(initialRates.inputRate);
-  const [outputTokenRate, setOutputTokenRate] = useState<number>(initialRates.outputRate);
+  const [inputTokenRate, setInputTokenRate] = useState<number>(initialIsFree ? 0 : initialRates.inputRate);
+  const [outputTokenRate, setOutputTokenRate] = useState<number>(initialIsFree ? 0 : initialRates.outputRate);
+  const [isFree, setIsFree] = useState(initialIsFree);
   const [isDefault, setIsDefault] = useState(Boolean(initialData?.isDefault));
   const [showKey, setShowKey] = useState(false);
   const [customModelMode, setCustomModelMode] = useState(
@@ -90,6 +97,18 @@ function ByokModelForm({ initialData, onClose, onSave }: ByokModelFormProps) {
     message: "",
   });
 
+  const handleIsFreeChange = (free: boolean) => {
+    setIsFree(free);
+    if (free) {
+      setInputTokenRate(0);
+      setOutputTokenRate(0);
+    } else {
+      const rates = getModelDefaultRates(provider, model);
+      setInputTokenRate(rates.inputRate > 0 ? rates.inputRate : 1.0);
+      setOutputTokenRate(rates.outputRate > 0 ? rates.outputRate : 2.0);
+    }
+  };
+
   const handleProviderChange = (newProvider: ApiProvider) => {
     setProvider(newProvider);
     const defaults = providerDefaults[newProvider];
@@ -97,8 +116,10 @@ function ByokModelForm({ initialData, onClose, onSave }: ByokModelFormProps) {
     setModel(defaultModel);
     setBaseUrl(defaults?.baseUrl || "");
     const rates = getModelDefaultRates(newProvider, defaultModel);
-    setInputTokenRate(rates.inputRate);
-    setOutputTokenRate(rates.outputRate);
+    const freeByDefault = newProvider === "ollama" || newProvider === "ollama_cloud";
+    setIsFree(freeByDefault);
+    setInputTokenRate(freeByDefault ? 0 : rates.inputRate);
+    setOutputTokenRate(freeByDefault ? 0 : rates.outputRate);
     setCustomModelMode(false);
     if (!initialData) {
       const pObj = PROVIDERS.find((p) => p.key === newProvider);
@@ -108,9 +129,15 @@ function ByokModelForm({ initialData, onClose, onSave }: ByokModelFormProps) {
 
   const handleModelChange = (newModel: string) => {
     setModel(newModel);
-    const rates = getModelDefaultRates(provider, newModel);
-    setInputTokenRate(rates.inputRate);
-    setOutputTokenRate(rates.outputRate);
+    if (newModel.includes(":free")) {
+      setIsFree(true);
+      setInputTokenRate(0);
+      setOutputTokenRate(0);
+    } else if (!isFree) {
+      const rates = getModelDefaultRates(provider, newModel);
+      setInputTokenRate(rates.inputRate);
+      setOutputTokenRate(rates.outputRate);
+    }
     if (!initialData && name.startsWith("My ")) {
       const pObj = PROVIDERS.find((p) => p.key === provider);
       setName(`My ${pObj?.name || provider} (${newModel})`);
@@ -154,9 +181,10 @@ function ByokModelForm({ initialData, onClose, onSave }: ByokModelFormProps) {
       model: model.trim(),
       apiKey: apiKey.trim(),
       baseUrl: baseUrl.trim(),
-      inputTokenRate: Number(inputTokenRate) || 0,
-      outputTokenRate: Number(outputTokenRate) || 0,
+      inputTokenRate: isFree ? 0 : Number(inputTokenRate) || 0,
+      outputTokenRate: isFree ? 0 : Number(outputTokenRate) || 0,
       isDefault,
+      isFree,
     });
     onClose();
   };
@@ -289,34 +317,61 @@ function ByokModelForm({ initialData, onClose, onSave }: ByokModelFormProps) {
       </div>
 
       {/* Rates: Input & Output per 1M */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-outline-variant/20">
-        <div className="space-y-1.5">
-          <label className="label text-xs">Input Rate ($ / 1M tokens)</label>
-          <div className="relative">
-            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-on-surface-variant">$</span>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={inputTokenRate}
-              onChange={(e) => setInputTokenRate(parseFloat(e.target.value) || 0)}
-              className="input pl-6 w-full text-xs font-mono"
-            />
+      <div className="pt-2 border-t border-outline-variant/20 space-y-3">
+        {/* Free Provider / Zero-Cost Tick Option */}
+        <label className="flex items-center gap-2.5 cursor-pointer p-2.5 rounded-xl bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/20 transition-all select-none">
+          <input
+            type="checkbox"
+            checked={isFree}
+            onChange={(e) => handleIsFreeChange(e.target.checked)}
+            className="checkbox checkbox-primary rounded w-4 h-4 accent-emerald-500"
+          />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-on-surface">
+                Free Provider / Zero-Cost API
+              </span>
+              <span className="chip bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-[10px] py-0 px-1.5 border border-emerald-500/25">
+                $0.00 / 1M
+              </span>
+            </div>
+            <p className="text-[11px] text-on-surface-variant">
+              Nullify cost calculations for this model (ideal for local Ollama, free-tier keys, or open-source proxies).
+            </p>
           </div>
-        </div>
+        </label>
 
-        <div className="space-y-1.5">
-          <label className="label text-xs">Output Rate ($ / 1M tokens)</label>
-          <div className="relative">
-            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-on-surface-variant">$</span>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={outputTokenRate}
-              onChange={(e) => setOutputTokenRate(parseFloat(e.target.value) || 0)}
-              className="input pl-6 w-full text-xs font-mono"
-            />
+        <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 transition-opacity ${isFree ? "opacity-40 pointer-events-none" : ""}`}>
+          <div className="space-y-1.5">
+            <label className="label text-xs">Input Rate ($ / 1M tokens)</label>
+            <div className="relative">
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-on-surface-variant">$</span>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                disabled={isFree}
+                value={isFree ? 0 : inputTokenRate}
+                onChange={(e) => setInputTokenRate(parseFloat(e.target.value) || 0)}
+                className="input pl-6 w-full text-xs font-mono"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="label text-xs">Output Rate ($ / 1M tokens)</label>
+            <div className="relative">
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-on-surface-variant">$</span>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                disabled={isFree}
+                value={isFree ? 0 : outputTokenRate}
+                onChange={(e) => setOutputTokenRate(parseFloat(e.target.value) || 0)}
+                className="input pl-6 w-full text-xs font-mono"
+              />
+            </div>
           </div>
         </div>
       </div>

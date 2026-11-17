@@ -28,6 +28,7 @@ export type ByokModelConfig = {
   inputTokenRate: number; // USD per 1M tokens
   outputTokenRate: number; // USD per 1M tokens
   isDefault?: boolean;
+  isFree?: boolean; // When true, token usage is tracked but cost calculations are nullified ($0.00)
   createdAt: number;
   usage: ByokModelUsage;
 };

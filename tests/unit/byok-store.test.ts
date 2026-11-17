@@ -131,4 +131,37 @@ describe("BYOK Models & Per-Model Usage Store", () => {
     expect(m1?.usage.totalRequests).toBe(0);
     expect(m2?.usage.totalTokens).toBe(20_000);
   });
+
+  it("nullifies cost calculation when model is configured as free provider", () => {
+    const store = useAppStore.getState();
+
+    const freeModelId = store.addByokModel({
+      name: "Free Local Proxy",
+      provider: "custom",
+      model: "mistral-free",
+      apiKey: "free-key",
+      baseUrl: "https://my-free-proxy.internal/v1",
+      inputTokenRate: 0,
+      outputTokenRate: 0,
+      isFree: true,
+      isDefault: true,
+    });
+
+    const model = useAppStore.getState().byokModels.find((m) => m.id === freeModelId);
+    expect(model?.isFree).toBe(true);
+    expect(model?.inputTokenRate).toBe(0);
+    expect(model?.outputTokenRate).toBe(0);
+
+    // Record usage: 20k input, 30k output
+    store.recordUsage(50_000, "custom", "mistral-free", {
+      inputTokens: 20_000,
+      outputTokens: 30_000,
+      byokModelId: freeModelId,
+    });
+
+    const afterUsage = useAppStore.getState().byokModels.find((m) => m.id === freeModelId);
+    expect(afterUsage?.usage.inputTokens).toBe(20_000);
+    expect(afterUsage?.usage.outputTokens).toBe(30_000);
+    expect(afterUsage?.usage.totalCost).toBe(0);
+  });
 });

@@ -51,4 +51,12 @@ describe("BYOK Model Pricing and Rates", () => {
     const deepseekCost = calculateModelCost(10_000, 20_000, 0.14, 0.28);
     expect(deepseekCost).toBeCloseTo(0.007, 5);
   });
+
+  it("nullifies cost calculation to 0 when isFree is true or rates are 0", () => {
+    const freeCost = calculateModelCost(1_000_000, 500_000, 2.5, 10.0, true);
+    expect(freeCost).toBe(0);
+
+    const zeroRateCost = calculateModelCost(1_000_000, 500_000, 0, 0);
+    expect(zeroRateCost).toBe(0);
+  });
 });

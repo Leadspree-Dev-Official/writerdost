@@ -97,8 +97,10 @@ export function calculateModelCost(
   inputTokens: number,
   outputTokens: number,
   inputRate: number,
-  outputRate: number
+  outputRate: number,
+  isFree?: boolean
 ): number {
+  if (isFree) return 0;
   const inCost = (Math.max(0, inputTokens) / 1_000_000) * Math.max(0, inputRate);
   const outCost = (Math.max(0, outputTokens) / 1_000_000) * Math.max(0, outputRate);
   return Number((inCost + outCost).toFixed(6));

@@ -52,9 +52,10 @@ export function ByokModelCard({
   const [testStatus, setTestStatus] = useState<"idle" | "success" | "error">("idle");
   const [testMessage, setTestMessage] = useState("");
 
-  const inputCost = (model.usage.inputTokens / 1_000_000) * model.inputTokenRate;
-  const outputCost = (model.usage.outputTokens / 1_000_000) * model.outputTokenRate;
-  const totalCost = model.usage.totalCost || (inputCost + outputCost);
+  const isFree = Boolean(model.isFree || (model.inputTokenRate === 0 && model.outputTokenRate === 0));
+  const inputCost = isFree ? 0 : (model.usage.inputTokens / 1_000_000) * model.inputTokenRate;
+  const outputCost = isFree ? 0 : (model.usage.outputTokens / 1_000_000) * model.outputTokenRate;
+  const totalCost = isFree ? 0 : (model.usage.totalCost || (inputCost + outputCost));
   const totalTokens = model.usage.totalTokens || (model.usage.inputTokens + model.usage.outputTokens);
 
   // Input vs Output ratio for the progress bar
@@ -122,6 +123,12 @@ export function ByokModelCard({
           <span className="text-xs text-on-surface-variant font-mono bg-surface-container-highest px-1.5 py-0.5 rounded">
             {model.model}
           </span>
+          {isFree && (
+            <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded-full border border-emerald-500/25">
+              <span className="material-symbols-outlined text-[12px]">money_off</span>
+              Free
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-1.5 ml-auto">
@@ -258,7 +265,9 @@ export function ByokModelCard({
             <p className="text-[10px] text-on-surface-variant uppercase font-medium">Input Usage</p>
             <p className="font-bold text-on-surface mt-0.5">{formatTokens(model.usage.inputTokens)}</p>
             <p className="text-[11px] text-indigo-400 font-mono">{formatCurrency(inputCost)}</p>
-            <p className="text-[10px] text-on-surface-variant mt-0.5">${model.inputTokenRate.toFixed(2)}/1M</p>
+            <p className="text-[10px] text-on-surface-variant mt-0.5">
+              {isFree ? "Free ($0.00/1M)" : `$${model.inputTokenRate.toFixed(2)}/1M`}
+            </p>
           </div>
 
           {/* Output details */}
@@ -266,14 +275,18 @@ export function ByokModelCard({
             <p className="text-[10px] text-on-surface-variant uppercase font-medium">Output Usage</p>
             <p className="font-bold text-on-surface mt-0.5">{formatTokens(model.usage.outputTokens)}</p>
             <p className="text-[11px] text-amber-400 font-mono">{formatCurrency(outputCost)}</p>
-            <p className="text-[10px] text-on-surface-variant mt-0.5">${model.outputTokenRate.toFixed(2)}/1M</p>
+            <p className="text-[10px] text-on-surface-variant mt-0.5">
+              {isFree ? "Free ($0.00/1M)" : `$${model.outputTokenRate.toFixed(2)}/1M`}
+            </p>
           </div>
 
           {/* Total Cost */}
           <div className="bg-surface-container/60 p-2 rounded-lg border border-outline-variant/10">
             <p className="text-[10px] text-on-surface-variant uppercase font-medium">Total Spend</p>
             <p className="font-bold text-emerald-400 text-sm mt-0.5 font-mono">{formatCurrency(totalCost)}</p>
-            <p className="text-[10px] text-on-surface-variant mt-0.5">Calculated cost</p>
+            <p className="text-[10px] text-on-surface-variant mt-0.5">
+              {isFree ? "Free / Zero-cost" : "Calculated cost"}
+            </p>
           </div>
 
           {/* Requests & Activity */}

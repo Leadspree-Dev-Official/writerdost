@@ -1092,6 +1092,7 @@ async function openWorkspace(userId: string | null): Promise<void> {
     if (!byokModels || byokModels.length === 0) {
       const apiSettings = saved.api || defaultApiSettings;
       const rates = getModelDefaultRates(apiSettings.provider, apiSettings.model);
+      const isFree = apiSettings.provider === "ollama" || apiSettings.provider === "ollama_cloud" || (rates.inputRate === 0 && rates.outputRate === 0);
       byokModels = [
         {
           id: "byok_default_primary",
@@ -1100,9 +1101,10 @@ async function openWorkspace(userId: string | null): Promise<void> {
           model: apiSettings.model,
           apiKey: apiSettings.apiKey || "",
           baseUrl: apiSettings.baseUrl || "",
-          inputTokenRate: rates.inputRate,
-          outputTokenRate: rates.outputRate,
+          inputTokenRate: isFree ? 0 : rates.inputRate,
+          outputTokenRate: isFree ? 0 : rates.outputRate,
           isDefault: true,
+          isFree,
           createdAt: Date.now(),
           usage: {
             inputTokens: 0,
@@ -2726,10 +2728,17 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       })),
     addByokModel: (config) => {
       const id = `byok_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-      const rates =
-        config.inputTokenRate !== undefined && config.outputTokenRate !== undefined
-          ? { inputRate: config.inputTokenRate, outputRate: config.outputTokenRate }
-          : getModelDefaultRates(config.provider, config.model);
+      const isFree = Boolean(
+        config.isFree ||
+        config.provider === "ollama" ||
+        config.provider === "ollama_cloud" ||
+        (config.inputTokenRate === 0 && config.outputTokenRate === 0)
+      );
+      const rates = isFree
+        ? { inputRate: 0, outputRate: 0 }
+        : config.inputTokenRate !== undefined && config.outputTokenRate !== undefined
+        ? { inputRate: config.inputTokenRate, outputRate: config.outputTokenRate }
+        : getModelDefaultRates(config.provider, config.model);
 
       const isFirst = get().byokModels.length === 0;
       const isDefault = config.isDefault ?? isFirst;
@@ -2737,8 +2746,9 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       const newModel: ByokModelConfig = {
         ...config,
         id,
-        inputTokenRate: rates.inputRate,
-        outputTokenRate: rates.outputRate,
+        isFree,
+        inputTokenRate: isFree ? 0 : rates.inputRate,
+        outputTokenRate: isFree ? 0 : rates.outputRate,
         isDefault,
         createdAt: Date.now(),
         usage: {
@@ -2778,8 +2788,14 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         const updatedModels = state.byokModels.map((m) => {
           if (m.id === id) {
             const next = { ...m, ...patch };
-            // If provider/model changed but rates weren't explicitly passed, recalculate rates
-            if ((patch.provider || patch.model) && patch.inputTokenRate === undefined && patch.outputTokenRate === undefined) {
+            if (next.isFree) {
+              next.inputTokenRate = 0;
+              next.outputTokenRate = 0;
+            } else if (
+              (patch.provider || patch.model || patch.isFree === false) &&
+              patch.inputTokenRate === undefined &&
+              patch.outputTokenRate === undefined
+            ) {
               const rates = getModelDefaultRates(next.provider, next.model);
               next.inputTokenRate = rates.inputRate;
               next.outputTokenRate = rates.outputRate;
@@ -2948,12 +2964,15 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         // Calculate cost: if target model exists, use its inputTokenRate and outputTokenRate
         let cost = 0;
         if (targetModel) {
-          cost = calculateModelCost(
-            inputTokens,
-            outputTokens,
-            targetModel.inputTokenRate,
-            targetModel.outputTokenRate
-          );
+          cost = targetModel.isFree
+            ? 0
+            : calculateModelCost(
+                inputTokens,
+                outputTokens,
+                targetModel.inputTokenRate,
+                targetModel.outputTokenRate,
+                targetModel.isFree
+              );
         } else {
           // Estimated cost per 1M tokens fallback
           const rates: Record<string, number> = {
