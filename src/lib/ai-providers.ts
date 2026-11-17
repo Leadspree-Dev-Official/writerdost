@@ -3,31 +3,39 @@ import type { ApiProvider } from "@/lib/store-types";
 export const providerDefaults: Record<ApiProvider, { baseUrl: string; model: string }> = {
   openai: {
     baseUrl: "https://api.openai.com/v1/chat/completions",
-    model: "gpt-4o-mini",
+    model: "gpt-4o",
   },
   claude: {
     baseUrl: "https://api.anthropic.com/v1/messages",
-    model: "claude-3-5-sonnet-20240620",
+    model: "claude-3-7-sonnet-20250219",
   },
   gemini: {
     baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-    model: "gemini-1.5-flash",
+    model: "gemini-2.0-flash",
   },
   deepseek: {
     baseUrl: "https://api.deepseek.com/v1/chat/completions",
     model: "deepseek-chat",
   },
+  groq: {
+    baseUrl: "https://api.groq.com/openai/v1/chat/completions",
+    model: "llama-3.3-70b-versatile",
+  },
+  commandcode: {
+    baseUrl: "https://api.commandcode.ai/provider/v1/chat/completions",
+    model: "command-code",
+  },
   openrouter: {
     baseUrl: "https://openrouter.ai/api/v1/chat/completions",
-    model: "openai/gpt-4o-mini",
+    model: "anthropic/claude-3.7-sonnet",
   },
   ollama: {
     baseUrl: "http://localhost:11434/v1/chat/completions",
-    model: "llama3.1:8b",
+    model: "llama3.3:70b",
   },
   ollama_cloud: {
     baseUrl: "https://ollama.com/api",
-    model: "llama3.1:8b",
+    model: "llama3.3:70b",
   },
   custom: {
     baseUrl: "",
@@ -45,25 +53,45 @@ const MODEL_RATE_TABLE: Array<{ match: string; inputRate: number; outputRate: nu
   // OpenAI
   { match: "gpt-4o-mini", inputRate: 0.15, outputRate: 0.60 },
   { match: "gpt-4o", inputRate: 2.50, outputRate: 10.00 },
+  { match: "gpt-4.5", inputRate: 75.00, outputRate: 150.00 },
+  { match: "o3-mini", inputRate: 1.10, outputRate: 4.40 },
+  { match: "o1-mini", inputRate: 1.10, outputRate: 4.40 },
+  { match: "o1", inputRate: 15.00, outputRate: 60.00 },
   { match: "gpt-4-turbo", inputRate: 10.00, outputRate: 30.00 },
-  { match: "o1-mini", inputRate: 3.00, outputRate: 12.00 },
-  { match: "o1-preview", inputRate: 15.00, outputRate: 60.00 },
   { match: "gpt-4", inputRate: 30.00, outputRate: 60.00 },
 
   // Claude
+  { match: "claude-3-7-sonnet", inputRate: 3.00, outputRate: 15.00 },
   { match: "claude-3-5-sonnet", inputRate: 3.00, outputRate: 15.00 },
-  { match: "claude-haiku", inputRate: 0.80, outputRate: 4.00 },
-  { match: "claude-3-haiku", inputRate: 0.25, outputRate: 1.25 },
+  { match: "claude-3-5-haiku", inputRate: 0.80, outputRate: 4.00 },
+  { match: "claude-haiku-5.5", inputRate: 0.30, outputRate: 1.50 },
   { match: "claude-3-opus", inputRate: 15.00, outputRate: 75.00 },
 
   // DeepSeek
   { match: "deepseek-reasoner", inputRate: 0.55, outputRate: 2.19 },
   { match: "deepseek-chat", inputRate: 0.14, outputRate: 0.28 },
+  { match: "deepseek-v4-pro", inputRate: 0.25, outputRate: 0.50 },
+  { match: "deepseek-v4-flash", inputRate: 0.08, outputRate: 0.16 },
 
   // Gemini
-  { match: "gemini-1.5-flash", inputRate: 0.075, outputRate: 0.30 },
+  { match: "gemini-2.5-pro", inputRate: 1.25, outputRate: 5.00 },
+  { match: "gemini-2.5-flash", inputRate: 0.075, outputRate: 0.30 },
+  { match: "gemini-2.0-flash-lite", inputRate: 0.075, outputRate: 0.30 },
   { match: "gemini-2.0-flash", inputRate: 0.10, outputRate: 0.40 },
+  { match: "gemini-1.5-flash", inputRate: 0.075, outputRate: 0.30 },
   { match: "gemini-1.5-pro", inputRate: 1.25, outputRate: 5.00 },
+
+  // Groq
+  { match: "llama-3.3-70b-versatile", inputRate: 0.59, outputRate: 0.79 },
+  { match: "llama-3.1-8b-instant", inputRate: 0.05, outputRate: 0.08 },
+  { match: "deepseek-r1-distill-llama-70b", inputRate: 0.75, outputRate: 0.99 },
+  { match: "qwen-qwq-32b", inputRate: 0.29, outputRate: 0.39 },
+  { match: "openai/gpt-oss-120b", inputRate: 0.49, outputRate: 0.79 },
+  { match: "openai/gpt-oss-20b", inputRate: 0.10, outputRate: 0.15 },
+
+  // CommandCode
+  { match: "command-code", inputRate: 2.00, outputRate: 6.00 },
+  { match: "taste-1", inputRate: 1.50, outputRate: 5.00 },
 ];
 
 export function getModelDefaultRates(provider: ApiProvider, model: string): ModelRate {
@@ -82,6 +110,10 @@ export function getModelDefaultRates(provider: ApiProvider, model: string): Mode
   switch (provider) {
     case "deepseek":
       return { inputRate: 0.14, outputRate: 0.28 };
+    case "groq":
+      return { inputRate: 0.59, outputRate: 0.79 };
+    case "commandcode":
+      return { inputRate: 2.00, outputRate: 6.00 };
     case "gemini":
       return { inputRate: 0.075, outputRate: 0.30 };
     case "claude":

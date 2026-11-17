@@ -2,8 +2,10 @@ import {
   Coupon,
   DEFAULT_FOUNDER_CAMPAIGN,
   DEFAULT_CONTEXT_ROUTING,
+  DEFAULT_BIZAI_GATEWAY_CONFIG,
   FounderCampaignConfig,
   ContextRoutingConfig,
+  BizAiGatewayConfig,
   ReferralRecord,
   SubscriptionOrder,
 } from "./store-types";
@@ -16,6 +18,11 @@ declare global {
   var __writerdost_subscriptions: SubscriptionOrder[] | undefined;
   var __writerdost_founder_campaign: FounderCampaignConfig | undefined;
   var __writerdost_context_routing: ContextRoutingConfig | undefined;
+  var __writerdost_bizai_gateway: BizAiGatewayConfig | undefined;
+}
+
+if (!globalThis.__writerdost_bizai_gateway) {
+  globalThis.__writerdost_bizai_gateway = { ...DEFAULT_BIZAI_GATEWAY_CONFIG };
 }
 
 if (!globalThis.__writerdost_context_routing) {
@@ -136,16 +143,108 @@ export function updateFounderCampaign(updates: Partial<FounderCampaignConfig>): 
   return next;
 }
 
+export function getBizAiGatewayConfig(): BizAiGatewayConfig {
+  if (!globalThis.__writerdost_bizai_gateway) {
+    globalThis.__writerdost_bizai_gateway = { ...DEFAULT_BIZAI_GATEWAY_CONFIG };
+  }
+  return globalThis.__writerdost_bizai_gateway;
+}
+
+export function getMaskedBizAiGatewayConfig(): BizAiGatewayConfig {
+  const config = getBizAiGatewayConfig();
+  const maskedKeys: Record<string, string> = {};
+
+  const providers = ["anthropic", "openai", "gemini", "deepseek", "groq", "commandcode", "openrouter"] as const;
+  for (const p of providers) {
+    const directKey = config.serverKeys?.[p];
+    const envKey =
+      p === "anthropic" ? process.env.ANTHROPIC_API_KEY :
+      p === "openai" ? process.env.OPENAI_API_KEY :
+      p === "gemini" ? process.env.GEMINI_API_KEY :
+      p === "deepseek" ? process.env.DEEPSEEK_API_KEY :
+      p === "groq" ? process.env.GROQ_API_KEY :
+      p === "commandcode" ? process.env.COMMANDCODE_API_KEY :
+      p === "openrouter" ? process.env.OPENROUTER_API_KEY : "";
+
+    const activeKey = directKey || envKey || "";
+    if (activeKey) {
+      if (activeKey.length > 8) {
+        maskedKeys[p] = `${activeKey.slice(0, 4)}••••••••${activeKey.slice(-4)}`;
+      } else {
+        maskedKeys[p] = "••••••••";
+      }
+    } else {
+      maskedKeys[p] = "";
+    }
+  }
+
+  return {
+    ...config,
+    serverKeys: maskedKeys,
+  };
+}
+
+export function updateBizAiGatewayConfig(updates: Partial<BizAiGatewayConfig>): BizAiGatewayConfig {
+  const current = getBizAiGatewayConfig();
+
+  let updatedKeys = { ...current.serverKeys };
+  if (updates.serverKeys) {
+    for (const [k, v] of Object.entries(updates.serverKeys)) {
+      const keyName = k as keyof BizAiGatewayConfig["serverKeys"];
+      if (typeof v === "string") {
+        const trimmed = v.trim();
+        // If empty string or includes bullets (masked indicator), don't overwrite if it was already set
+        if (trimmed.includes("••••")) {
+          continue;
+        }
+        updatedKeys[keyName] = trimmed;
+      }
+    }
+  }
+
+  const next: BizAiGatewayConfig = {
+    ...current,
+    ...updates,
+    serverKeys: updatedKeys,
+  };
+
+  globalThis.__writerdost_bizai_gateway = next;
+
+  // Keep context routing synchronized
+  if (updates.contextThresholdEnabled !== undefined || updates.contextThresholdTokens !== undefined || updates.contextFallbackProvider !== undefined || updates.contextFallbackModel !== undefined) {
+    globalThis.__writerdost_context_routing = {
+      enabled: next.contextThresholdEnabled,
+      thresholdTokens: next.contextThresholdTokens,
+      fallbackProvider: next.contextFallbackProvider,
+      fallbackModel: next.contextFallbackModel,
+    };
+  }
+
+  return next;
+}
+
 export function getContextRouting(): ContextRoutingConfig {
-  return globalThis.__writerdost_context_routing || { ...DEFAULT_CONTEXT_ROUTING };
+  const gateway = getBizAiGatewayConfig();
+  return {
+    enabled: gateway.contextThresholdEnabled,
+    thresholdTokens: gateway.contextThresholdTokens,
+    fallbackProvider: gateway.contextFallbackProvider,
+    fallbackModel: gateway.contextFallbackModel,
+  };
 }
 
 export function updateContextRouting(updates: Partial<ContextRoutingConfig>): ContextRoutingConfig {
-  const current = getContextRouting();
-  const next: ContextRoutingConfig = {
-    ...current,
-    ...updates,
+  const current = getBizAiGatewayConfig();
+  const next = updateBizAiGatewayConfig({
+    contextThresholdEnabled: updates.enabled !== undefined ? updates.enabled : current.contextThresholdEnabled,
+    contextThresholdTokens: updates.thresholdTokens !== undefined ? updates.thresholdTokens : current.contextThresholdTokens,
+    contextFallbackProvider: updates.fallbackProvider !== undefined ? updates.fallbackProvider : current.contextFallbackProvider,
+    contextFallbackModel: updates.fallbackModel !== undefined ? updates.fallbackModel : current.contextFallbackModel,
+  });
+  return {
+    enabled: next.contextThresholdEnabled,
+    thresholdTokens: next.contextThresholdTokens,
+    fallbackProvider: next.contextFallbackProvider,
+    fallbackModel: next.contextFallbackModel,
   };
-  globalThis.__writerdost_context_routing = next;
-  return next;
 }

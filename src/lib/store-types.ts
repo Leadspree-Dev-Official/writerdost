@@ -1,4 +1,14 @@
-export type ApiProvider = "openai" | "claude" | "gemini" | "deepseek" | "openrouter" | "ollama" | "ollama_cloud" | "custom";
+export type ApiProvider =
+  | "openai"
+  | "claude"
+  | "gemini"
+  | "deepseek"
+  | "groq"
+  | "commandcode"
+  | "openrouter"
+  | "ollama"
+  | "ollama_cloud"
+  | "custom";
 
 export type ApiSettings = {
   provider: ApiProvider;
@@ -651,4 +661,82 @@ export const DEFAULT_CONTEXT_ROUTING: ContextRoutingConfig = {
   fallbackProvider: "deepseek",
   fallbackModel: "deepseek-chat",
 };
+
+export interface GatewayFallbackTier {
+  enabled: boolean;
+  provider: ApiProvider;
+  model: string;
+  label: string;
+}
+
+export interface BizAiGatewayConfig {
+  // Platform default primary provider & model
+  primaryProvider: ApiProvider;
+  primaryModel: string;
+
+  // Server-managed gateway API keys (stored server-side, masked when returned to client)
+  serverKeys: {
+    anthropic?: string;
+    openai?: string;
+    gemini?: string;
+    deepseek?: string;
+    groq?: string;
+    commandcode?: string;
+    openrouter?: string;
+  };
+
+  // Failover Chain
+  failoverEnabled: boolean;
+  failoverTriggers: {
+    rateLimit429: boolean;
+    serverErrors5xx: boolean;
+    timeout: boolean;
+  };
+  fallbacks: GatewayFallbackTier[];
+
+  // Token threshold fallback (e.g. >95k token Claude requests)
+  contextThresholdEnabled: boolean;
+  contextThresholdTokens: number;
+  contextFallbackProvider: ApiProvider;
+  contextFallbackModel: string;
+}
+
+export const DEFAULT_BIZAI_GATEWAY_CONFIG: BizAiGatewayConfig = {
+  primaryProvider: "claude",
+  primaryModel: "claude-3-7-sonnet-20250219",
+  serverKeys: {
+    anthropic: "",
+    openai: "",
+    gemini: "",
+    deepseek: "",
+    groq: "",
+    commandcode: "",
+    openrouter: "",
+  },
+  failoverEnabled: true,
+  failoverTriggers: {
+    rateLimit429: true,
+    serverErrors5xx: true,
+    timeout: true,
+  },
+  fallbacks: [
+    {
+      enabled: true,
+      provider: "gemini",
+      model: "gemini-2.5-pro",
+      label: "Secondary Tier (Automatic Failover)",
+    },
+    {
+      enabled: true,
+      provider: "deepseek",
+      model: "deepseek-chat",
+      label: "Tertiary Tier (Emergency Outage)",
+    },
+  ],
+  contextThresholdEnabled: false,
+  contextThresholdTokens: 95000,
+  contextFallbackProvider: "deepseek",
+  contextFallbackModel: "deepseek-chat",
+};
+
 

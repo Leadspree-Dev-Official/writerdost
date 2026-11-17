@@ -10,10 +10,10 @@
 import { assertPublicHost as assertPublicAddresses } from "@/lib/net-guard";
 import { isLoopbackAddress } from "@/lib/outbound-policy";
 import { providerDefaults } from "@/lib/ai-providers";
-import type { ApiSettings } from "@/lib/store-types";
+import type { ApiProvider, ApiSettings } from "@/lib/store-types";
 
-/** Providers whose endpoint is fixed by us and never taken from the client. */
-const PINNED_PROVIDERS = new Set(["openai", "claude", "gemini", "deepseek", "openrouter"]);
+/** Providers whose default endpoint is pre-configured by us. */
+const PINNED_PROVIDERS = new Set(["openai", "claude", "gemini", "deepseek", "groq", "commandcode", "openrouter"]);
 
 /**
  * Extra hosts a self-hoster may allow for `custom` / `ollama_cloud`.
@@ -37,46 +37,38 @@ function deny(message: string): never {
   throw new UpstreamNotAllowedError(message);
 }
 
-/**
- * Returns the settings to actually call the provider with. For known providers
- * the endpoint is ours; for custom/self-hosted ones the client URL is parsed,
- * scheme-checked and resolved before it is trusted.
- */
-export async function resolveUpstream(api: ApiSettings): Promise<ApiSettings> {
-  if (!api || typeof api !== "object") deny("Missing AI provider settings.");
-
-  const provider = api.provider;
-  if (!provider || !(provider in providerDefaults)) {
-    deny(`Unknown AI provider "${String(provider)}".`);
+/** Resolves the server-managed gateway key for a provider from admin config or env. */
+export function getServerGatewayKeyForProvider(provider: ApiProvider): string {
+  try {
+    // Dynamic import to prevent circular issues
+    const { getBizAiGatewayConfig } = require("@/lib/server-subscription-store");
+    const gateway = getBizAiGatewayConfig();
+    const serverKey =
+      provider === "claude" ? gateway?.serverKeys?.anthropic :
+      provider === "openai" ? gateway?.serverKeys?.openai :
+      provider === "gemini" ? gateway?.serverKeys?.gemini :
+      provider === "deepseek" ? gateway?.serverKeys?.deepseek :
+      provider === "groq" ? gateway?.serverKeys?.groq :
+      provider === "commandcode" ? gateway?.serverKeys?.commandcode :
+      provider === "openrouter" ? gateway?.serverKeys?.openrouter : "";
+    if (serverKey) return serverKey;
+  } catch {
+    // ignore
   }
 
-  // Pinned providers: ignore whatever baseUrl the client sent.
-  if (PINNED_PROVIDERS.has(provider)) {
-    const defaults = providerDefaults[provider];
-    const serverFallbackKey =
-      process.env.BIZAI_GATEWAY_KEY ||
-      process.env.OPENROUTER_API_KEY ||
-      process.env.OPENAI_API_KEY ||
-      process.env.ANTHROPIC_API_KEY ||
-      process.env.GEMINI_API_KEY;
-    const effectiveApiKey = api.apiKey || serverFallbackKey;
+  if (provider === "claude") return process.env.ANTHROPIC_API_KEY || process.env.BIZAI_GATEWAY_KEY || "";
+  if (provider === "openai") return process.env.OPENAI_API_KEY || process.env.BIZAI_GATEWAY_KEY || "";
+  if (provider === "gemini") return process.env.GEMINI_API_KEY || process.env.BIZAI_GATEWAY_KEY || "";
+  if (provider === "deepseek") return process.env.DEEPSEEK_API_KEY || process.env.BIZAI_GATEWAY_KEY || "";
+  if (provider === "groq") return process.env.GROQ_API_KEY || process.env.BIZAI_GATEWAY_KEY || "";
+  if (provider === "commandcode") return process.env.COMMANDCODE_API_KEY || process.env.BIZAI_GATEWAY_KEY || "";
+  if (provider === "openrouter") return process.env.OPENROUTER_API_KEY || process.env.BIZAI_GATEWAY_KEY || "";
 
-    if (!effectiveApiKey) {
-      deny("An API key is required for the selected provider. Add your personal BYOK key in Settings or set up the BizAI Gateway server key.");
-    }
-    return {
-      ...api,
-      apiKey: effectiveApiKey,
-      baseUrl: defaults.baseUrl,
-      model: api.model || defaults.model,
-    };
-  }
+  return process.env.BIZAI_GATEWAY_KEY || "";
+}
 
-  // Ollama / custom: the user supplies the endpoint, so validate it.
-  let raw = (api.baseUrl || "").trim();
-  if (!raw) deny("A base URL is required for this provider.");
-
-  // Accept the bare Ollama roots people paste and complete them.
+/** Validates and canonicalizes any arbitrary or custom AI endpoint URL against SSRF rules. */
+async function validateEndpointUrl(rawUrl: string, provider: ApiProvider): Promise<string> {
   const ollamaShorthand: Record<string, string> = {
     "https://ollama.com": "https://ollama.com/v1/chat/completions",
     "https://ollama.com/api": "https://ollama.com/v1/chat/completions",
@@ -85,21 +77,21 @@ export async function resolveUpstream(api: ApiSettings): Promise<ApiSettings> {
     "http://localhost:11434/api": "http://localhost:11434/v1/chat/completions",
     "http://localhost:11434/api/": "http://localhost:11434/v1/chat/completions",
   };
-  raw = ollamaShorthand[raw] ?? raw;
+  const normalizedRaw = ollamaShorthand[rawUrl] ?? rawUrl;
 
   let url: URL;
   try {
-    url = new URL(raw);
+    url = new URL(normalizedRaw);
   } catch {
-    deny("The AI base URL is not a valid URL.");
+    deny("The AI endpoint URL is not a valid URL.");
   }
 
   if (url.protocol !== "https:" && url.protocol !== "http:") {
-    deny("The AI base URL must use http or https.");
+    deny("The AI endpoint URL must use http or https.");
   }
 
-  // Normalize OpenAI-compatible base URLs ending with /v1 or /v1/ to chat/completions
-  if (url.pathname.endsWith("/v1") || url.pathname.endsWith("/v1/")) {
+  // Normalize OpenAI-compatible base URLs ending with /v1 or /v1/ to chat/completions (except for claude native format)
+  if (provider !== "claude" && (url.pathname.endsWith("/v1") || url.pathname.endsWith("/v1/"))) {
     url.pathname = url.pathname.replace(/\/+$/, "") + "/chat/completions";
   }
 
@@ -119,11 +111,57 @@ export async function resolveUpstream(api: ApiSettings): Promise<ApiSettings> {
     }
   }
 
+  return url.toString();
+}
+
+/**
+ * Returns the settings to actually call the provider with. For known providers
+ * the default endpoint is standard, but custom proxy endpoints are validated and
+ * accepted. For custom/self-hosted providers the client URL is parsed,
+ * scheme-checked and resolved before it is trusted.
+ */
+export async function resolveUpstream(api: ApiSettings): Promise<ApiSettings> {
+  if (!api || typeof api !== "object") deny("Missing AI provider settings.");
+
+  const provider = api.provider;
+  if (!provider || !(provider in providerDefaults)) {
+    deny(`Unknown AI provider "${String(provider)}".`);
+  }
+
+  // Pinned providers: use default standard endpoint, or custom endpoint if supplied by user.
+  if (PINNED_PROVIDERS.has(provider)) {
+    const defaults = providerDefaults[provider];
+    const serverFallbackKey = getServerGatewayKeyForProvider(provider);
+    const effectiveApiKey = api.apiKey || serverFallbackKey;
+
+    if (!effectiveApiKey) {
+      deny("An API key is required for the selected provider. Add your personal BYOK key in Settings or set up the BizAI Gateway server key in Admin.");
+    }
+
+    let targetBaseUrl = defaults.baseUrl;
+    const clientBaseUrl = (api.baseUrl || "").trim();
+    if (clientBaseUrl && clientBaseUrl !== defaults.baseUrl) {
+      targetBaseUrl = await validateEndpointUrl(clientBaseUrl, provider);
+    }
+
+    return {
+      ...api,
+      apiKey: effectiveApiKey,
+      baseUrl: targetBaseUrl,
+      model: api.model || defaults.model,
+    };
+  }
+
+  // Ollama / custom: the user supplies the endpoint, so validate it.
+  const raw = (api.baseUrl || "").trim();
+  if (!raw) deny("A base URL is required for this provider.");
+  const validatedBaseUrl = await validateEndpointUrl(raw, provider);
+
   if (provider !== "ollama" && !api.apiKey) {
     deny("An API key is required for the selected provider.");
   }
 
   if (!api.model) deny("A model name is required.");
 
-  return { ...api, baseUrl: url.toString() };
+  return { ...api, baseUrl: validatedBaseUrl };
 }

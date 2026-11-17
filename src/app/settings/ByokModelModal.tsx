@@ -6,46 +6,99 @@ import { providerDefaults, getModelDefaultRates } from "@/lib/ai-providers";
 import { generateAiText } from "@/lib/ai-client";
 
 const PROVIDERS = [
-  { key: "openai", name: "OpenAI", description: "GPT-4o, GPT-4o-mini" },
-  { key: "claude", name: "Claude", description: "Claude 3.5 Sonnet, Haiku" },
-  { key: "gemini", name: "Gemini", description: "Gemini 1.5 Flash & Pro" },
-  { key: "deepseek", name: "DeepSeek", description: "DeepSeek-Chat, Reasoner" },
-  { key: "openrouter", name: "OpenRouter", description: "Multi-model router" },
+  { key: "openai", name: "OpenAI", description: "GPT-4.5, GPT-4o, o3-mini" },
+  { key: "claude", name: "Claude", description: "Claude 3.7 & 3.5 Sonnet, Haiku" },
+  { key: "gemini", name: "Gemini", description: "Gemini 2.5 & 2.0 Flash & Pro" },
+  { key: "deepseek", name: "DeepSeek", description: "DeepSeek-V3, Reasoner R1" },
+  { key: "groq", name: "Groq", description: "Ultra-fast LPU inference" },
+  { key: "commandcode", name: "CommandCode", description: "Agentic coding & taste-1" },
+  { key: "openrouter", name: "OpenRouter", description: "Multi-model unified router" },
   { key: "ollama", name: "Ollama (local)", description: "Runs on localhost:11434" },
   { key: "ollama_cloud", name: "Ollama Cloud", description: "Ollama hosted models" },
   { key: "custom", name: "Custom", description: "OpenAI-compatible endpoint" },
 ] as const;
 
-const MODEL_PRESETS: Record<string, string[]> = {
-  openai: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "o1-preview", "o1-mini"],
-  claude: [
-    "claude-haiku-5.5",
-    "claude-3-5-sonnet-20240620",
-    "claude-3-5-sonnet-latest",
-    "claude-3-opus-20240229",
-    "claude-3-haiku-20240307",
+export const MODEL_PRESETS: Record<string, string[]> = {
+  openai: [
+    "gpt-4o",
+    "gpt-4o-mini",
+    "gpt-4.5-preview",
+    "o3-mini",
+    "o1",
+    "o1-mini",
+    "gpt-4-turbo",
   ],
-  gemini: ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash", "gemini-1.0-pro"],
-  deepseek: ["deepseek-chat", "deepseek-reasoner"],
+  claude: [
+    "claude-3-7-sonnet-20250219",
+    "claude-3-5-sonnet-20241022",
+    "claude-3-5-haiku-20241022",
+    "claude-haiku-5.5",
+    "claude-3-opus-20240229",
+  ],
+  gemini: [
+    "gemini-2.5-pro",
+    "gemini-2.5-flash",
+    "gemini-2.0-flash",
+    "gemini-2.0-flash-lite",
+    "gemini-1.5-pro",
+    "gemini-1.5-flash",
+  ],
+  deepseek: [
+    "deepseek-chat",
+    "deepseek-reasoner",
+    "deepseek-v4-pro",
+    "deepseek-v4-flash",
+  ],
+  groq: [
+    "llama-3.3-70b-versatile",
+    "llama-3.1-8b-instant",
+    "deepseek-r1-distill-llama-70b",
+    "qwen-qwq-32b",
+    "qwen/qwen3.8-27b",
+    "openai/gpt-oss-120b",
+    "openai/gpt-oss-20b",
+    "mixtral-8x7b-32768",
+    "gemma2-9b-it",
+  ],
+  commandcode: [
+    "command-code",
+    "taste-1",
+    "claude-3-7-sonnet",
+    "claude-3-5-sonnet",
+    "gpt-4o",
+    "deepseek-r1",
+  ],
   openrouter: [
-    "openai/gpt-4o-mini",
+    "anthropic/claude-3.7-sonnet",
     "anthropic/claude-3.5-sonnet",
-    "google/gemini-pro-1.5",
-    "meta-llama/llama-3.1-8b-instruct:free",
+    "openai/gpt-4o",
+    "openai/gpt-4o-mini",
+    "openai/o3-mini",
+    "deepseek/deepseek-r1",
+    "deepseek/deepseek-chat",
+    "google/gemini-2.0-flash-001",
+    "google/gemini-2.5-pro-preview",
+    "meta-llama/llama-3.3-70b-instruct",
     "google/gemma-2-9b-it:free",
   ],
   ollama: [
-    "llama3.1:8b",
+    "llama3.3:70b",
     "llama3.2:3b",
+    "llama3.1:8b",
+    "deepseek-r1:70b",
+    "deepseek-r1:14b",
+    "deepseek-r1:8b",
+    "qwen2.5:32b",
     "mistral:7b",
-    "phi3:latest",
-    "gemma3",
+    "phi4:latest",
+    "gemma2:9b",
   ],
   ollama_cloud: [
-    "llama3.1:8b",
+    "llama3.3:70b",
     "llama3.2:3b",
+    "llama3.1:8b",
     "mistral:7b",
-    "phi3:latest",
+    "phi4:latest",
   ],
   custom: [],
 };
@@ -89,6 +142,9 @@ function ByokModelForm({ initialData, onClose, onSave }: ByokModelFormProps) {
   const [customModelMode, setCustomModelMode] = useState(
     Boolean(initialData && !MODEL_PRESETS[initialData.provider]?.includes(initialData.model))
   );
+  const [customEndpointMode, setCustomEndpointMode] = useState(
+    Boolean(initialData && initialData.baseUrl && initialData.baseUrl !== providerDefaults[initialData.provider]?.baseUrl)
+  );
 
   // Test connection state
   const [testing, setTesting] = useState(false);
@@ -114,7 +170,9 @@ function ByokModelForm({ initialData, onClose, onSave }: ByokModelFormProps) {
     const defaults = providerDefaults[newProvider];
     const defaultModel = defaults?.model || "";
     setModel(defaultModel);
-    setBaseUrl(defaults?.baseUrl || "");
+    if (!customEndpointMode) {
+      setBaseUrl(defaults?.baseUrl || "");
+    }
     const rates = getModelDefaultRates(newProvider, defaultModel);
     const freeByDefault = newProvider === "ollama" || newProvider === "ollama_cloud";
     setIsFree(freeByDefault);
@@ -191,7 +249,7 @@ function ByokModelForm({ initialData, onClose, onSave }: ByokModelFormProps) {
 
   const presets = MODEL_PRESETS[provider] || [];
   const keyOptional = provider === "ollama";
-  const endpointIsPinned = ["openai", "claude", "gemini", "deepseek", "openrouter"].includes(provider);
+  const endpointIsPinned = ["openai", "claude", "gemini", "deepseek", "groq", "commandcode", "openrouter"].includes(provider);
 
   return (
     <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
@@ -303,17 +361,46 @@ function ByokModelForm({ initialData, onClose, onSave }: ByokModelFormProps) {
 
       {/* Base URL */}
       <div className="space-y-1.5">
-        <label className="label">
-          API Endpoint URL {endpointIsPinned && <span className="text-xs font-normal text-on-surface-variant">(Standard endpoint)</span>}
-        </label>
+        <div className="flex items-center justify-between">
+          <label className="label">
+            API Endpoint URL {endpointIsPinned && !customEndpointMode && (
+              <span className="text-xs font-normal text-on-surface-variant">(Standard endpoint)</span>
+            )}
+          </label>
+          {endpointIsPinned && (
+            <button
+              type="button"
+              onClick={() => {
+                if (customEndpointMode) {
+                  const defaultEndpoint = providerDefaults[provider]?.baseUrl || "";
+                  setBaseUrl(defaultEndpoint);
+                  setCustomEndpointMode(false);
+                } else {
+                  setCustomEndpointMode(true);
+                }
+              }}
+              className="text-xs text-primary hover:underline"
+            >
+              {customEndpointMode ? "Reset to standard endpoint" : "Enter Custom API Endpoint URL"}
+            </button>
+          )}
+        </div>
         <input
           type="text"
           required
-          readOnly={endpointIsPinned}
+          readOnly={endpointIsPinned && !customEndpointMode}
           value={baseUrl}
           onChange={(e) => setBaseUrl(e.target.value)}
-          className={`input w-full font-mono text-xs ${endpointIsPinned ? "opacity-75 bg-surface-container-highest cursor-not-allowed" : ""}`}
+          placeholder={providerDefaults[provider]?.baseUrl || "https://..."}
+          className={`input w-full font-mono text-xs ${
+            endpointIsPinned && !customEndpointMode ? "opacity-75 bg-surface-container-highest cursor-not-allowed" : ""
+          }`}
         />
+        {endpointIsPinned && customEndpointMode && (
+          <p className="text-[11px] text-on-surface-variant">
+            Custom endpoint active for {provider}. Useful for Cloudflare AI Gateway, Portkey, LiteLLM, Helicone, or corporate proxies.
+          </p>
+        )}
       </div>
 
       {/* Rates: Input & Output per 1M */}

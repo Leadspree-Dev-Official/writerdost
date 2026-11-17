@@ -12,8 +12,12 @@ import {
   DEFAULT_FOUNDER_CAMPAIGN,
   ContextRoutingConfig,
   DEFAULT_CONTEXT_ROUTING,
+  BizAiGatewayConfig,
+  DEFAULT_BIZAI_GATEWAY_CONFIG,
+  GatewayFallbackTier,
   ApiProvider,
 } from "@/lib/store-types";
+import { MODEL_PRESETS } from "@/app/settings/ByokModelModal";
 
 export default function AdminDashboard() {
   const users = useAppStore((state) => state.users);
@@ -48,42 +52,46 @@ export default function AdminDashboard() {
   }, [loadUsers, loadUpgradeRequests, loadCoupons, loadSubscriptions, loadReferrals]);
 
   // Tab State
-  const [activeTab, setActiveTab] = useState<"users" | "requests" | "coupons" | "referrals" | "campaign" | "routing">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "requests" | "coupons" | "referrals" | "campaign" | "gateway">("users");
 
-  // Context Routing Admin State (95K Threshold Fallback)
-  const [routingConfig, setRoutingConfig] = useState<ContextRoutingConfig>(DEFAULT_CONTEXT_ROUTING);
-  const [routingSaving, setRoutingSaving] = useState(false);
-  const [routingMsg, setRoutingMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  // BizAI Gateway & Fallover Chain State
+  const [gatewayConfig, setGatewayConfig] = useState<BizAiGatewayConfig>(DEFAULT_BIZAI_GATEWAY_CONFIG);
+  const [gatewaySaving, setGatewaySaving] = useState(false);
+  const [gatewayMsg, setGatewayMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [showKeyToggles, setShowKeyToggles] = useState<Record<string, boolean>>({});
+  const [customPrimaryModelMode, setCustomPrimaryModelMode] = useState(false);
 
   useEffect(() => {
-    fetch("/api/admin/context-routing")
+    fetch("/api/admin/gateway")
       .then((r) => r.json())
       .then((d) => {
-        if (d?.config) setRoutingConfig(d.config);
+        if (d?.config) {
+          setGatewayConfig(d.config);
+        }
       })
       .catch(() => {});
   }, []);
 
-  const handleSaveRouting = async () => {
-    setRoutingSaving(true);
-    setRoutingMsg(null);
+  const handleSaveGateway = async () => {
+    setGatewaySaving(true);
+    setGatewayMsg(null);
     try {
-      const res = await fetch("/api/admin/context-routing", {
+      const res = await fetch("/api/admin/gateway", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(routingConfig),
+        body: JSON.stringify(gatewayConfig),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to update routing settings");
-      setRoutingConfig(data.config);
-      setRoutingMsg({
+      if (!res.ok) throw new Error(data.error || "Failed to update BizAI Gateway settings");
+      setGatewayConfig(data.config);
+      setGatewayMsg({
         type: "success",
-        text: "Context routing fallback settings saved successfully!",
+        text: "BizAI Gateway & Failover Chain settings saved successfully!",
       });
     } catch (err) {
-      setRoutingMsg({ type: "error", text: err instanceof Error ? err.message : "Save failed" });
+      setGatewayMsg({ type: "error", text: err instanceof Error ? err.message : "Save failed" });
     } finally {
-      setRoutingSaving(false);
+      setGatewaySaving(false);
     }
   };
 
@@ -475,13 +483,13 @@ export default function AdminDashboard() {
           Founder Campaign {campaignConfig.isEnabled ? "🟢" : "⚪"}
         </button>
         <button
-          onClick={() => { setActiveTab("routing"); setShowAddForm(false); }}
+          onClick={() => { setActiveTab("gateway"); setShowAddForm(false); }}
           className="tab"
-          data-active={activeTab === "routing"}
+          data-active={activeTab === "gateway"}
           role="tab"
           type="button"
         >
-          AI Context Routing {routingConfig.enabled ? "⚡ ON" : "⚪ OFF"}
+          BizAI Gateway & Failover {gatewayConfig.failoverEnabled ? "🛡️ Active" : "⚪ Off"}
         </button>
       </div>
 
@@ -1078,133 +1086,465 @@ export default function AdminDashboard() {
             </div>
           </div>
         </section>
-      ) : activeTab === "routing" ? (
-        /* AI Context Routing & Fallback Section */
-        <section className="panel panel-pad max-w-4xl space-y-6">
+      ) : activeTab === "gateway" ? (
+        /* BizAI Gateway & Real-Time Multi-Model Failover Section */
+        <section className="panel panel-pad max-w-5xl space-y-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-outline-variant/10">
             <div>
-              <h3 className="text-xl font-bold text-on-surface flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">alt_route</span>
-                AI Context-Aware Model Switching
-              </h3>
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-2xl">shield_lock</span>
+                <h3 className="text-xl font-bold text-on-surface">BizAI Gateway & Failover Engine</h3>
+                <span className={`chip text-[11px] font-semibold py-0.5 px-2 ${gatewayConfig.failoverEnabled ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30" : "bg-surface-container text-on-surface-variant"}`}>
+                  {gatewayConfig.failoverEnabled ? "Failover Protected" : "Single Upstream"}
+                </span>
+              </div>
               <p className="text-xs text-on-surface-variant mt-1">
-                Configure whether to switch Claude sessions to DeepSeek Flash when context passes 95K tokens to avoid 5x context bill spikes.
+                Configure platform primary AI models, manage server-side gateway API keys, and orchestrate real-time multi-model failover chains so book generation never freezes on 429 rate limits or upstream outages.
               </p>
             </div>
             <button
               type="button"
-              onClick={handleSaveRouting}
-              disabled={routingSaving}
-              className="btn btn-primary btn-sm flex items-center gap-1.5"
+              onClick={handleSaveGateway}
+              disabled={gatewaySaving}
+              className="btn btn-primary btn-sm flex items-center gap-1.5 shrink-0 shadow-sm"
             >
               <span className="material-symbols-outlined text-[16px]">save</span>
-              {routingSaving ? "Saving..." : "Save Routing Settings"}
+              {gatewaySaving ? "Saving..." : "Save Gateway Settings"}
             </button>
           </div>
 
-          {routingMsg && (
+          {gatewayMsg && (
             <div
-              className={`p-3 rounded-lg text-xs font-semibold ${
-                routingMsg.type === "success"
+              className={`p-3.5 rounded-xl text-xs font-semibold ${
+                gatewayMsg.type === "success"
                   ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
                   : "bg-rose-500/10 border border-rose-500/30 text-rose-500"
               }`}
             >
-              {routingMsg.text}
+              {gatewayMsg.text}
             </div>
           )}
 
-          {/* Master Toggle */}
-          <div className="p-5 rounded-xl border border-outline-variant/20 bg-surface-container-low/30 space-y-4">
+          {/* Active Chain Summary Pill */}
+          <div className="p-4 rounded-xl border border-primary/20 bg-primary/5 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2 text-on-surface font-semibold">
+              <span className="material-symbols-outlined text-primary text-sm">route</span>
+              <span>Active Platform Chain:</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 font-mono text-[11px]">
+              <span className="px-2.5 py-1 rounded-lg bg-surface-container-high border border-outline-variant/30 text-primary font-bold">
+                1. Primary: {gatewayConfig.primaryProvider} ({gatewayConfig.primaryModel})
+              </span>
+              <span className="text-on-surface-variant">➔</span>
+              {gatewayConfig.fallbacks.map((f, i) => (
+                <span
+                  key={i}
+                  className={`px-2.5 py-1 rounded-lg border font-medium ${
+                    f.enabled && gatewayConfig.failoverEnabled
+                      ? "bg-surface-container-low border-outline-variant/30 text-on-surface"
+                      : "opacity-40 line-through bg-surface-container-lowest border-transparent text-on-surface-variant"
+                  }`}
+                >
+                  {i + 2}. {f.label.split("(")[0].trim()}: {f.provider} ({f.model})
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Section 1: Platform Default Primary Engine */}
+          <div className="p-5 rounded-2xl border border-outline-variant/20 bg-surface-container-low/40 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="text-sm font-bold text-on-surface">Enable Automatic Context Switching</h4>
+                <h4 className="text-sm font-bold text-on-surface flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-primary text-[18px]">verified</span>
+                  Platform Default Primary AI Engine
+                </h4>
                 <p className="text-xs text-on-surface-variant mt-0.5">
-                  When turned OFF (default), no switching occurs and Claude continues throughout the session. When turned ON, sessions that cross the threshold automatically route to the fallback model.
+                  Default model powering novel chapters, research dossiers, and rewrites for subscribers and platform accounts.
                 </p>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+              <div className="space-y-1.5">
+                <label className="label text-xs">Primary Provider</label>
+                <select
+                  className="select w-full text-xs"
+                  value={gatewayConfig.primaryProvider}
+                  onChange={(e) => {
+                    const newProvider = e.target.value as ApiProvider;
+                    const defaultModel = MODEL_PRESETS[newProvider]?.[0] || "claude-3-7-sonnet-20250219";
+                    setGatewayConfig({
+                      ...gatewayConfig,
+                      primaryProvider: newProvider,
+                      primaryModel: defaultModel,
+                    });
+                    setCustomPrimaryModelMode(false);
+                  }}
+                >
+                  <option value="claude">Anthropic Claude (Claude 3.7 / 3.5 Sonnet)</option>
+                  <option value="openai">OpenAI (GPT-4o, o3-mini)</option>
+                  <option value="gemini">Google Gemini (Gemini 2.5 / 2.0 Pro)</option>
+                  <option value="deepseek">DeepSeek (DeepSeek V3 / R1)</option>
+                  <option value="groq">Groq Cloud (Llama 3.3 70B, Qwen)</option>
+                  <option value="commandcode">CommandCode (Command-Code, Taste-1)</option>
+                  <option value="openrouter">OpenRouter (Multi-model router)</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="label text-xs">Primary Model Name</label>
+                  <button
+                    type="button"
+                    onClick={() => setCustomPrimaryModelMode(!customPrimaryModelMode)}
+                    className="text-[11px] text-primary hover:underline"
+                  >
+                    {customPrimaryModelMode ? "Select from presets" : "Enter custom model"}
+                  </button>
+                </div>
+                {customPrimaryModelMode || !(MODEL_PRESETS[gatewayConfig.primaryProvider]?.length) ? (
+                  <input
+                    type="text"
+                    value={gatewayConfig.primaryModel}
+                    onChange={(e) => setGatewayConfig({ ...gatewayConfig, primaryModel: e.target.value })}
+                    placeholder="e.g. claude-3-7-sonnet-20250219"
+                    className="input w-full text-xs font-mono"
+                  />
+                ) : (
+                  <select
+                    className="select w-full text-xs font-mono"
+                    value={gatewayConfig.primaryModel}
+                    onChange={(e) => setGatewayConfig({ ...gatewayConfig, primaryModel: e.target.value })}
+                  >
+                    {MODEL_PRESETS[gatewayConfig.primaryProvider]?.map((m) => (
+                      <option key={m} value={m}>
+                        {m}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2: Server Gateway API Keys Management */}
+          <div className="p-5 rounded-2xl border border-outline-variant/20 bg-surface-container-low/40 space-y-4">
+            <div>
+              <h4 className="text-sm font-bold text-on-surface flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-primary text-[18px]">key</span>
+                Server Gateway API Keys Management
+              </h4>
+              <p className="text-xs text-on-surface-variant mt-0.5">
+                Enter your platform-level API keys. Stored encrypted on the server and never exposed to client browsers. If left blank, Writerdost will check server environment variables.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-2">
+              {[
+                { id: "anthropic", label: "Anthropic Claude Key", placeholder: "sk-ant-api03-...", prefix: "sk-ant" },
+                { id: "openai", label: "OpenAI Gateway Key", placeholder: "sk-proj-...", prefix: "sk-" },
+                { id: "gemini", label: "Google Gemini API Key", placeholder: "AIzaSy...", prefix: "AIza" },
+                { id: "deepseek", label: "DeepSeek API Key", placeholder: "sk-...", prefix: "sk-" },
+                { id: "groq", label: "Groq Cloud API Key", placeholder: "gsk_...", prefix: "gsk_" },
+                { id: "commandcode", label: "CommandCode API Key", placeholder: "cmd_...", prefix: "cmd_" },
+                { id: "openrouter", label: "OpenRouter Unified Key", placeholder: "sk-or-v1-...", prefix: "sk-or" },
+              ].map((item) => {
+                const keyId = item.id as keyof BizAiGatewayConfig["serverKeys"];
+                const val = gatewayConfig.serverKeys?.[keyId] || "";
+                const isConfigured = Boolean(val && (val.includes("••••") || val.length > 5));
+                const isShowing = Boolean(showKeyToggles[item.id]);
+
+                return (
+                  <div key={item.id} className="p-3.5 rounded-xl border border-outline-variant/20 bg-surface-container-low/60 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-on-surface">{item.label}</span>
+                        {isConfigured ? (
+                          <span className="chip bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-[10px] py-0 px-1.5 border border-emerald-500/25">
+                            Configured
+                          </span>
+                        ) : (
+                          <span className="chip bg-amber-500/15 text-amber-600 dark:text-amber-400 text-[10px] py-0 px-1.5 border border-amber-500/25">
+                            Not Set
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowKeyToggles({ ...showKeyToggles, [item.id]: !isShowing })}
+                        className="text-[11px] text-on-surface-variant hover:text-on-surface flex items-center gap-1"
+                      >
+                        <span className="material-symbols-outlined text-[13px]">
+                          {isShowing ? "visibility_off" : "visibility"}
+                        </span>
+                        <span>{isShowing ? "Hide" : "Show"}</span>
+                      </button>
+                    </div>
+                    <input
+                      type={isShowing ? "text" : "password"}
+                      value={val}
+                      onChange={(e) =>
+                        setGatewayConfig({
+                          ...gatewayConfig,
+                          serverKeys: {
+                            ...gatewayConfig.serverKeys,
+                            [keyId]: e.target.value,
+                          },
+                        })
+                      }
+                      placeholder={item.placeholder}
+                      className="input w-full text-xs font-mono py-1.5"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Section 3: Multi-Model Outage / 429 Failover Chain */}
+          <div className="p-5 rounded-2xl border border-outline-variant/20 bg-surface-container-low/40 space-y-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <h4 className="text-sm font-bold text-on-surface flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-amber-500 text-[18px]">bolt</span>
+                  Multi-Model Outage / 429 Failover Chain
+                </h4>
+                <p className="text-xs text-on-surface-variant mt-0.5">
+                  If Primary hits a rate limit (429) or upstream error (500/503), the engine automatically falls back in real time so user book generation never halts mid-manuscript.
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-4">
                 <input
                   type="checkbox"
-                  checked={routingConfig.enabled}
-                  onChange={(e) => setRoutingConfig({ ...routingConfig, enabled: e.target.checked })}
+                  checked={gatewayConfig.failoverEnabled}
+                  onChange={(e) => setGatewayConfig({ ...gatewayConfig, failoverEnabled: e.target.checked })}
                   className="sr-only peer"
                 />
                 <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
               </label>
             </div>
+
+            {/* Triggers */}
+            <div className="p-3.5 rounded-xl border border-outline-variant/20 bg-surface-container-low/60 space-y-2">
+              <span className="text-xs font-semibold text-on-surface block">Failover Activation Triggers:</span>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <label className="flex items-center gap-2 text-xs text-on-surface cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={gatewayConfig.failoverTriggers.rateLimit429}
+                    onChange={(e) =>
+                      setGatewayConfig({
+                        ...gatewayConfig,
+                        failoverTriggers: {
+                          ...gatewayConfig.failoverTriggers,
+                          rateLimit429: e.target.checked,
+                        },
+                      })
+                    }
+                    className="checkbox checkbox-primary rounded w-4 h-4"
+                  />
+                  <span>HTTP 429 Rate Limits</span>
+                </label>
+                <label className="flex items-center gap-2 text-xs text-on-surface cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={gatewayConfig.failoverTriggers.serverErrors5xx}
+                    onChange={(e) =>
+                      setGatewayConfig({
+                        ...gatewayConfig,
+                        failoverTriggers: {
+                          ...gatewayConfig.failoverTriggers,
+                          serverErrors5xx: e.target.checked,
+                        },
+                      })
+                    }
+                    className="checkbox checkbox-primary rounded w-4 h-4"
+                  />
+                  <span>500 / 502 / 503 Outages</span>
+                </label>
+                <label className="flex items-center gap-2 text-xs text-on-surface cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={gatewayConfig.failoverTriggers.timeout}
+                    onChange={(e) =>
+                      setGatewayConfig({
+                        ...gatewayConfig,
+                        failoverTriggers: {
+                          ...gatewayConfig.failoverTriggers,
+                          timeout: e.target.checked,
+                        },
+                      })
+                    }
+                    className="checkbox checkbox-primary rounded w-4 h-4"
+                  />
+                  <span>Request Timeout (&gt;300s)</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Fallback Tiers */}
+            <div className="space-y-3">
+              <span className="text-xs font-semibold text-on-surface block">Sequential Fallback Chain:</span>
+              {gatewayConfig.fallbacks.map((tier, idx) => (
+                <div
+                  key={idx}
+                  className="p-4 rounded-xl border border-outline-variant/20 bg-surface-container-low/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="w-6 h-6 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0">
+                      {idx + 1}
+                    </span>
+                    <div>
+                      <span className="text-xs font-bold text-on-surface">{tier.label}</span>
+                      <p className="text-[11px] text-on-surface-variant">
+                        {idx === 0
+                          ? "Tier 1: Immediate failover target when primary is throttled or down."
+                          : "Tier 2: Emergency backup target if Tier 1 also encounters errors."}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+                    <select
+                      className="select py-1.5 text-xs"
+                      value={tier.provider}
+                      onChange={(e) => {
+                        const newProvider = e.target.value as ApiProvider;
+                        const newFallbacks = [...gatewayConfig.fallbacks];
+                        newFallbacks[idx] = {
+                          ...tier,
+                          provider: newProvider,
+                          model: MODEL_PRESETS[newProvider]?.[0] || tier.model,
+                        };
+                        setGatewayConfig({ ...gatewayConfig, fallbacks: newFallbacks });
+                      }}
+                    >
+                      <option value="gemini">Google Gemini</option>
+                      <option value="deepseek">DeepSeek</option>
+                      <option value="groq">Groq</option>
+                      <option value="commandcode">CommandCode</option>
+                      <option value="openai">OpenAI</option>
+                      <option value="claude">Claude</option>
+                      <option value="openrouter">OpenRouter</option>
+                    </select>
+
+                    <input
+                      type="text"
+                      value={tier.model}
+                      onChange={(e) => {
+                        const newFallbacks = [...gatewayConfig.fallbacks];
+                        newFallbacks[idx] = { ...tier, model: e.target.value };
+                        setGatewayConfig({ ...gatewayConfig, fallbacks: newFallbacks });
+                      }}
+                      placeholder="model name"
+                      className="input py-1.5 text-xs font-mono w-44"
+                    />
+
+                    <label className="flex items-center gap-1.5 text-xs text-on-surface cursor-pointer select-none ml-2">
+                      <input
+                        type="checkbox"
+                        checked={tier.enabled}
+                        onChange={(e) => {
+                          const newFallbacks = [...gatewayConfig.fallbacks];
+                          newFallbacks[idx] = { ...tier, enabled: e.target.checked };
+                          setGatewayConfig({ ...gatewayConfig, fallbacks: newFallbacks });
+                        }}
+                        className="checkbox checkbox-primary rounded w-4 h-4"
+                      />
+                      <span>Enabled</span>
+                    </label>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Configuration Parameters */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 rounded-xl border border-outline-variant/20 bg-surface-container-low/30 space-y-3">
+          {/* Section 4: AI Context Window Threshold Fallback */}
+          <div className="p-5 rounded-2xl border border-outline-variant/20 bg-surface-container-low/40 space-y-4">
+            <div className="flex items-center justify-between">
               <div>
-                <label className="block text-xs font-semibold text-on-surface mb-1">
-                  Context Window Threshold (Tokens)
-                </label>
+                <h4 className="text-sm font-bold text-on-surface flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-primary text-[18px]">alt_route</span>
+                  Context Window & High-Volume Token Threshold Switching
+                </h4>
+                <p className="text-xs text-on-surface-variant mt-0.5">
+                  Automatically switch long Claude sessions exceeding a token threshold to an economical high-capacity model (e.g. DeepSeek V3) to prevent unexpected context billing spikes.
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-4">
+                <input
+                  type="checkbox"
+                  checked={gatewayConfig.contextThresholdEnabled}
+                  onChange={(e) =>
+                    setGatewayConfig({ ...gatewayConfig, contextThresholdEnabled: e.target.checked })
+                  }
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+              </label>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              <div className="p-3.5 rounded-xl border border-outline-variant/20 bg-surface-container-low/60 space-y-1.5">
+                <label className="label text-xs font-semibold">Threshold Limit (Tokens)</label>
                 <input
                   type="number"
                   min="10000"
                   max="200000"
                   step="5000"
-                  value={routingConfig.thresholdTokens}
+                  value={gatewayConfig.contextThresholdTokens}
                   onChange={(e) =>
-                    setRoutingConfig({
-                      ...routingConfig,
-                      thresholdTokens: Math.max(1000, parseInt(e.target.value) || 95000),
+                    setGatewayConfig({
+                      ...gatewayConfig,
+                      contextThresholdTokens: Math.max(1000, parseInt(e.target.value) || 95000),
                     })
                   }
-                  className="input py-2 text-xs"
+                  className="input w-full text-xs font-mono py-1.5"
                 />
-                <p className="text-[11px] text-on-surface-variant mt-1.5">
+                <p className="text-[11px] text-on-surface-variant mt-1">
                   Default: <strong>95,000 tokens</strong>. Claude Haiku 5.5 transitions to standard $0.50/$2.50 tier past 100K tokens. Setting it to 95K provides a safety margin.
                 </p>
               </div>
-            </div>
 
-            <div className="p-4 rounded-xl border border-outline-variant/20 bg-surface-container-low/30 space-y-3">
-              <div>
-                <label className="block text-xs font-semibold text-on-surface mb-1">
-                  Fallback Provider & Model
-                </label>
+              <div className="p-3.5 rounded-xl border border-outline-variant/20 bg-surface-container-low/60 space-y-1.5">
+                <label className="label text-xs font-semibold">Fallback Provider & Model</label>
                 <div className="grid grid-cols-2 gap-2">
                   <select
                     className="select py-1.5 text-xs"
-                    value={routingConfig.fallbackProvider}
+                    value={gatewayConfig.contextFallbackProvider}
                     onChange={(e) =>
-                      setRoutingConfig({
-                        ...routingConfig,
-                        fallbackProvider: e.target.value as ApiProvider,
+                      setGatewayConfig({
+                        ...gatewayConfig,
+                        contextFallbackProvider: e.target.value as ApiProvider,
                       })
                     }
                   >
                     <option value="deepseek">DeepSeek</option>
+                    <option value="groq">Groq</option>
+                    <option value="commandcode">CommandCode</option>
                     <option value="gemini">Google Gemini</option>
                     <option value="openai">OpenAI</option>
                     <option value="openrouter">OpenRouter</option>
                   </select>
                   <input
                     type="text"
-                    value={routingConfig.fallbackModel}
+                    value={gatewayConfig.contextFallbackModel}
                     onChange={(e) =>
-                      setRoutingConfig({
-                        ...routingConfig,
-                        fallbackModel: e.target.value,
+                      setGatewayConfig({
+                        ...gatewayConfig,
+                        contextFallbackModel: e.target.value,
                       })
                     }
                     placeholder="deepseek-chat"
-                    className="input py-1.5 text-xs"
+                    className="input py-1.5 text-xs font-mono"
                   />
                 </div>
-                <p className="text-[11px] text-on-surface-variant mt-1.5">
-                  Default: <strong>deepseek-chat (DeepSeek V3 / Flash)</strong>. Flat rate without large-context penalties.
+                <p className="text-[11px] text-on-surface-variant mt-1">
+                  Default: <strong>deepseek-chat (DeepSeek V3)</strong>. Flat rate without large-context multipliers.
                 </p>
               </div>
             </div>
-          </div>
-
-          <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-400">
-            <strong>Admin Note:</strong> By default, this option is set to <strong>OFF (No Switch)</strong>. If you enable it, the backend proxy will automatically intercept Claude requests exceeding {routingConfig.thresholdTokens.toLocaleString()} tokens and route them to {routingConfig.fallbackModel || "DeepSeek Flash"} to eliminate surprise billing spikes.
           </div>
         </section>
       ) : (

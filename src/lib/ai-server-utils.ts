@@ -1,6 +1,7 @@
 import { resolveUpstream, UpstreamNotAllowedError } from "@/lib/ai-upstream";
 import { BlockedRequestError, safeFetch } from "@/lib/net-guard";
-import type { ApiSettings } from "@/lib/store-types";
+import { providerDefaults } from "@/lib/ai-providers";
+import type { ApiSettings, BizAiGatewayConfig } from "@/lib/store-types";
 
 export type ChatResponse = {
   text: string;
@@ -125,24 +126,16 @@ function readPayload(payload: ProviderPayload, isClaude: boolean): ChatResponse 
 export const readPayloadForTest = readPayload;
 
 /**
- * Calls the configured AI provider. The endpoint is validated by
- * `resolveUpstream` before any request leaves the server; transient failures
- * (429 / 5xx) are retried with exponential backoff, definitive 4xx are not.
+ * Executes a single AI provider call against a resolved upstream.
+ * Transient failures (5xx) are retried; definitive 4xx are thrown immediately.
  */
-export async function callModel({
-  api,
-  systemPrompt,
-  userPrompt,
-  temperature = 0.7,
-  topP = 0.9,
-}: {
-  api: ApiSettings;
-  systemPrompt: string;
-  userPrompt: string;
-  temperature?: number;
-  topP?: number;
-}): Promise<ChatResponse> {
-  const upstream = await resolveUpstream(api);
+async function executeUpstreamAttempt(
+  upstream: ApiSettings,
+  systemPrompt: string,
+  userPrompt: string,
+  temperature: number,
+  topP: number
+): Promise<ChatResponse> {
   const isClaude = upstream.provider === "claude";
   const headers = buildHeaders(upstream, isClaude);
   const bodyData = buildBody(upstream, isClaude, systemPrompt, userPrompt, temperature, topP);
@@ -151,10 +144,10 @@ export async function callModel({
     process.env.WRITERDOST_ALLOW_LOCAL_AI === "true" &&
     (process.env.WRITERDOST_SELF_HOSTED === "true" || process.env.NODE_ENV === "development");
 
-  let retries = 3;
+  let retries = 2;
   let delay = 1000;
 
-  while (retries > 0) {
+  while (retries >= 0) {
     try {
       const response = await safeFetch(upstream.baseUrl, {
         method: "POST",
@@ -197,28 +190,182 @@ export async function callModel({
 
       return result;
     } catch (error) {
-      // A blocked or timed-out endpoint is a configuration problem — never retry it.
       if (error instanceof UpstreamNotAllowedError) throw error;
       if (error instanceof BlockedRequestError) {
         if (error.message.startsWith("Timed out")) {
-          throw new Error("The AI provider timed out.");
+          const timeoutErr = new Error("The AI provider timed out.") as ProviderError;
+          timeoutErr.status = 504;
+          throw timeoutErr;
         }
         throw new UpstreamNotAllowedError(error.message);
       }
 
       const err = error as ProviderError;
-      retries -= 1;
       const status = err.status;
       const isDefinitive4xx = typeof status === "number" && status >= 400 && status < 500 && status !== 429;
 
-      if (retries === 0 || isDefinitive4xx) {
-        throw new Error(err.message || "Network error while connecting to AI provider.");
+      // For rate limits (429), fail fast to let failover chain immediately activate
+      if (status === 429 || retries === 0 || isDefinitive4xx) {
+        throw err;
       }
 
+      retries -= 1;
       await new Promise((resolve) => setTimeout(resolve, delay));
       delay *= 2;
     }
   }
 
   throw new Error("Failed to call AI model after maximum retries.");
+}
+
+function shouldTriggerFailover(
+  error: unknown,
+  triggers: BizAiGatewayConfig["failoverTriggers"]
+): boolean {
+  const err = error as ProviderError;
+  const status = err?.status;
+  const message = (err?.message || "").toLowerCase();
+
+  if (
+    triggers.rateLimit429 &&
+    (status === 429 ||
+      message.includes("429") ||
+      message.includes("rate limit") ||
+      message.includes("rate_limit") ||
+      message.includes("quota exceeded") ||
+      message.includes("resource has been exhausted") ||
+      message.includes("too many requests"))
+  ) {
+    return true;
+  }
+
+  if (
+    triggers.serverErrors5xx &&
+    ((typeof status === "number" && status >= 500 && status < 600) ||
+      message.includes("500") ||
+      message.includes("502") ||
+      message.includes("503") ||
+      message.includes("504") ||
+      message.includes("upstream error") ||
+      message.includes("bad gateway") ||
+      message.includes("service unavailable") ||
+      message.includes("internal server error"))
+  ) {
+    return true;
+  }
+
+  if (
+    triggers.timeout &&
+    (status === 504 ||
+      message.includes("timed out") ||
+      message.includes("timeout") ||
+      message.includes("aborted"))
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Calls the configured AI provider with Multi-Model Outage / 429 Failover Chain.
+ * If Primary hits a rate limit (429), server error (500/503), or timeout,
+ * it seamlessly fails over in real-time to Secondary and Tertiary tiers
+ * so user book generation never halts mid-manuscript.
+ */
+export async function callModel({
+  api,
+  systemPrompt,
+  userPrompt,
+  temperature = 0.7,
+  topP = 0.9,
+}: {
+  api: ApiSettings;
+  systemPrompt: string;
+  userPrompt: string;
+  temperature?: number;
+  topP?: number;
+}): Promise<ChatResponse> {
+  // If provider/model is not explicitly defined in api, fall back to platform default
+  let effectiveApi = { ...api };
+  let gatewayConfig: BizAiGatewayConfig | null = null;
+  try {
+    const { getBizAiGatewayConfig } = require("@/lib/server-subscription-store");
+    gatewayConfig = getBizAiGatewayConfig();
+    if (!effectiveApi.provider && gatewayConfig?.primaryProvider) {
+      effectiveApi.provider = gatewayConfig.primaryProvider;
+      effectiveApi.model = gatewayConfig.primaryModel;
+    }
+  } catch {
+    // ignore
+  }
+
+  const primaryUpstream = await resolveUpstream(effectiveApi);
+
+  try {
+    return await executeUpstreamAttempt(
+      primaryUpstream,
+      systemPrompt,
+      userPrompt,
+      temperature,
+      topP
+    );
+  } catch (primaryError) {
+    // Check if failover chain is applicable
+    if (
+      gatewayConfig &&
+      gatewayConfig.failoverEnabled &&
+      gatewayConfig.fallbacks &&
+      gatewayConfig.fallbacks.length > 0 &&
+      shouldTriggerFailover(primaryError, gatewayConfig.failoverTriggers)
+    ) {
+      console.warn(
+        `[BizAI Gateway Failover] Primary model (${primaryUpstream.provider}/${primaryUpstream.model}) failed: ${(primaryError as Error).message}. Initiating multi-model failover chain...`
+      );
+
+      const activeFallbacks = gatewayConfig.fallbacks.filter(
+        (f) =>
+          f.enabled &&
+          (f.provider !== primaryUpstream.provider || f.model !== primaryUpstream.model)
+      );
+
+      for (const fallback of activeFallbacks) {
+        try {
+          console.warn(
+            `[BizAI Gateway Failover] Attempting ${fallback.label || "Fallback"} (${fallback.provider}/${fallback.model})...`
+          );
+
+          const fallbackSettings: ApiSettings = {
+            provider: fallback.provider,
+            model: fallback.model,
+            baseUrl: providerDefaults[fallback.provider]?.baseUrl || "",
+            apiKey: effectiveApi.apiKey || "", // if user provided BYOK key; else resolveUpstream uses server gateway key
+            appName: effectiveApi.appName || "Writerdost AI",
+            siteUrl: effectiveApi.siteUrl || "",
+          };
+
+          const fallbackUpstream = await resolveUpstream(fallbackSettings);
+          const fallbackResult = await executeUpstreamAttempt(
+            fallbackUpstream,
+            systemPrompt,
+            userPrompt,
+            temperature,
+            topP
+          );
+
+          console.info(
+            `[BizAI Gateway Failover] SUCCESS: Generation safely recovered by ${fallback.label || "Fallback"} (${fallback.provider}/${fallback.model})!`
+          );
+          return fallbackResult;
+        } catch (fallbackError) {
+          console.error(
+            `[BizAI Gateway Failover] Tier (${fallback.provider}/${fallback.model}) failed: ${(fallbackError as Error).message}. Continuing to next tier...`
+          );
+        }
+      }
+    }
+
+    // If failover was not enabled or all tiers failed, rethrow the original primary error
+    throw primaryError;
+  }
 }
