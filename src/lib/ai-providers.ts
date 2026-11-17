@@ -3,19 +3,19 @@ import type { ApiProvider } from "@/lib/store-types";
 export const providerDefaults: Record<ApiProvider, { baseUrl: string; model: string }> = {
   openai: {
     baseUrl: "https://api.openai.com/v1/chat/completions",
-    model: "gpt-4o",
+    model: "gpt-6.1-sol",
   },
   claude: {
     baseUrl: "https://api.anthropic.com/v1/messages",
-    model: "claude-3-7-sonnet-20250219",
+    model: "claude-sonnet-5-5",
   },
   gemini: {
     baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-    model: "gemini-2.0-flash",
+    model: "gemini-3.8-flash",
   },
   deepseek: {
     baseUrl: "https://api.deepseek.com/v1/chat/completions",
-    model: "deepseek-chat",
+    model: "deepseek-flash",
   },
   groq: {
     baseUrl: "https://api.groq.com/openai/v1/chat/completions",
@@ -27,7 +27,7 @@ export const providerDefaults: Record<ApiProvider, { baseUrl: string; model: str
   },
   openrouter: {
     baseUrl: "https://openrouter.ai/api/v1/chat/completions",
-    model: "anthropic/claude-3.7-sonnet",
+    model: "anthropic/claude-sonnet-5.5",
   },
   ollama: {
     baseUrl: "http://localhost:11434/v1/chat/completions",
@@ -51,9 +51,16 @@ export type ModelRate = {
 /** Default input/output rates per million tokens */
 const MODEL_RATE_TABLE: Array<{ match: string; inputRate: number; outputRate: number }> = [
   // OpenAI
+  { match: "gpt-6-astra", inputRate: 10.00, outputRate: 50.00 },
+  { match: "gpt-6.1-sol", inputRate: 2.00, outputRate: 10.00 },
+  { match: "gpt-6.1-terra", inputRate: 1.00, outputRate: 5.00 },
+  { match: "gpt-6-luna", inputRate: 0.10, outputRate: 0.50 },
+  { match: "gpt-5-turbo", inputRate: 2.00, outputRate: 8.00 },
+  { match: "gpt-5", inputRate: 2.50, outputRate: 10.00 },
+  { match: "gpt-4.5", inputRate: 75.00, outputRate: 150.00 },
   { match: "gpt-4o-mini", inputRate: 0.15, outputRate: 0.60 },
   { match: "gpt-4o", inputRate: 2.50, outputRate: 10.00 },
-  { match: "gpt-4.5", inputRate: 75.00, outputRate: 150.00 },
+  { match: "o4-mini", inputRate: 1.10, outputRate: 4.40 },
   { match: "o3-mini", inputRate: 1.10, outputRate: 4.40 },
   { match: "o1-mini", inputRate: 1.10, outputRate: 4.40 },
   { match: "o1", inputRate: 15.00, outputRate: 60.00 },
@@ -61,19 +68,27 @@ const MODEL_RATE_TABLE: Array<{ match: string; inputRate: number; outputRate: nu
   { match: "gpt-4", inputRate: 30.00, outputRate: 60.00 },
 
   // Claude
+  { match: "claude-fable-5-2", inputRate: 8.00, outputRate: 40.00 },
+  { match: "claude-fable-5.2", inputRate: 8.00, outputRate: 40.00 },
+  { match: "claude-opus-5-5", inputRate: 4.00, outputRate: 20.00 },
+  { match: "claude-opus-5.5", inputRate: 4.00, outputRate: 20.00 },
+  { match: "claude-sonnet-5-5", inputRate: 2.00, outputRate: 10.00 },
+  { match: "claude-sonnet-5.5", inputRate: 2.00, outputRate: 10.00 },
+  { match: "claude-haiku-5.5", inputRate: 0.10, outputRate: 0.50 },
+  { match: "claude-haiku-5-5", inputRate: 0.10, outputRate: 0.50 },
   { match: "claude-3-7-sonnet", inputRate: 3.00, outputRate: 15.00 },
   { match: "claude-3-5-sonnet", inputRate: 3.00, outputRate: 15.00 },
   { match: "claude-3-5-haiku", inputRate: 0.80, outputRate: 4.00 },
-  { match: "claude-haiku-5.5", inputRate: 0.30, outputRate: 1.50 },
+  { match: "claude-3-haiku", inputRate: 0.25, outputRate: 1.25 },
   { match: "claude-3-opus", inputRate: 15.00, outputRate: 75.00 },
 
-  // DeepSeek
-  { match: "deepseek-reasoner", inputRate: 0.55, outputRate: 2.19 },
-  { match: "deepseek-chat", inputRate: 0.14, outputRate: 0.28 },
-  { match: "deepseek-v4-pro", inputRate: 0.25, outputRate: 0.50 },
-  { match: "deepseek-v4-flash", inputRate: 0.08, outputRate: 0.16 },
-
   // Gemini
+  { match: "gemini-4-carbon", inputRate: 2.00, outputRate: 8.00 },
+  { match: "gemini-4-argon", inputRate: 1.25, outputRate: 5.00 },
+  { match: "gemini-4-hydrogen", inputRate: 0.20, outputRate: 0.80 },
+  { match: "gemini-3.8-flash", inputRate: 0.10, outputRate: 0.40 },
+  { match: "gemini-3.5-flash-lite", inputRate: 0.03, outputRate: 0.12 },
+  { match: "gemini-3.5-flash", inputRate: 0.075, outputRate: 0.30 },
   { match: "gemini-2.5-pro", inputRate: 1.25, outputRate: 5.00 },
   { match: "gemini-2.5-flash", inputRate: 0.075, outputRate: 0.30 },
   { match: "gemini-2.0-flash-lite", inputRate: 0.075, outputRate: 0.30 },
@@ -81,11 +96,22 @@ const MODEL_RATE_TABLE: Array<{ match: string; inputRate: number; outputRate: nu
   { match: "gemini-1.5-flash", inputRate: 0.075, outputRate: 0.30 },
   { match: "gemini-1.5-pro", inputRate: 1.25, outputRate: 5.00 },
 
+  // DeepSeek
+  { match: "deepseek-v4-pro", inputRate: 0.25, outputRate: 0.50 },
+  { match: "deepseek-v4.1-flash", inputRate: 0.10, outputRate: 0.20 },
+  { match: "deepseek-flash", inputRate: 0.10, outputRate: 0.20 },
+  { match: "deepseek-v4-flash", inputRate: 0.08, outputRate: 0.16 },
+  { match: "deepseek-reasoner", inputRate: 0.55, outputRate: 2.19 },
+  { match: "deepseek-chat", inputRate: 0.14, outputRate: 0.28 },
+
   // Groq
+  { match: "llama-4-scout", inputRate: 0.20, outputRate: 0.30 },
   { match: "llama-3.3-70b-versatile", inputRate: 0.59, outputRate: 0.79 },
   { match: "llama-3.1-8b-instant", inputRate: 0.05, outputRate: 0.08 },
   { match: "deepseek-r1-distill-llama-70b", inputRate: 0.75, outputRate: 0.99 },
+  { match: "qwen/qwen3.8-27b", inputRate: 0.29, outputRate: 0.39 },
   { match: "qwen-qwq-32b", inputRate: 0.29, outputRate: 0.39 },
+  { match: "minimax-m2.7", inputRate: 0.25, outputRate: 0.50 },
   { match: "openai/gpt-oss-120b", inputRate: 0.49, outputRate: 0.79 },
   { match: "openai/gpt-oss-20b", inputRate: 0.10, outputRate: 0.15 },
 
@@ -109,17 +135,17 @@ export function getModelDefaultRates(provider: ApiProvider, model: string): Mode
   // Fallbacks by provider
   switch (provider) {
     case "deepseek":
-      return { inputRate: 0.14, outputRate: 0.28 };
+      return { inputRate: 0.10, outputRate: 0.20 };
     case "groq":
-      return { inputRate: 0.59, outputRate: 0.79 };
+      return { inputRate: 0.20, outputRate: 0.30 };
     case "commandcode":
       return { inputRate: 2.00, outputRate: 6.00 };
     case "gemini":
-      return { inputRate: 0.075, outputRate: 0.30 };
+      return { inputRate: 0.10, outputRate: 0.40 };
     case "claude":
-      return { inputRate: 3.00, outputRate: 15.00 };
+      return { inputRate: 2.00, outputRate: 10.00 };
     case "openai":
-      return { inputRate: 2.50, outputRate: 10.00 };
+      return { inputRate: 2.00, outputRate: 10.00 };
     default:
       return { inputRate: 1.00, outputRate: 2.00 };
   }
