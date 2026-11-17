@@ -10,6 +10,7 @@
 import { assertPublicHost as assertPublicAddresses } from "@/lib/net-guard";
 import { isLoopbackAddress } from "@/lib/outbound-policy";
 import { providerDefaults } from "@/lib/ai-providers";
+import { getBizAiGatewayConfig } from "@/lib/server-subscription-store";
 import type { ApiProvider, ApiSettings } from "@/lib/store-types";
 
 /** Providers whose default endpoint is pre-configured by us. */
@@ -40,8 +41,6 @@ function deny(message: string): never {
 /** Resolves the server-managed gateway key for a provider from admin config or env. */
 export function getServerGatewayKeyForProvider(provider: ApiProvider): string {
   try {
-    // Dynamic import to prevent circular issues
-    const { getBizAiGatewayConfig } = require("@/lib/server-subscription-store");
     const gateway = getBizAiGatewayConfig();
     const serverKey =
       provider === "claude" ? gateway?.serverKeys?.anthropic :

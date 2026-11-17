@@ -1,6 +1,7 @@
 import { resolveUpstream, UpstreamNotAllowedError } from "@/lib/ai-upstream";
 import { BlockedRequestError, safeFetch } from "@/lib/net-guard";
 import { providerDefaults } from "@/lib/ai-providers";
+import { getBizAiGatewayConfig } from "@/lib/server-subscription-store";
 import type { ApiSettings, BizAiGatewayConfig } from "@/lib/store-types";
 
 export type ChatResponse = {
@@ -287,10 +288,9 @@ export async function callModel({
   topP?: number;
 }): Promise<ChatResponse> {
   // If provider/model is not explicitly defined in api, fall back to platform default
-  let effectiveApi = { ...api };
+  const effectiveApi = { ...api };
   let gatewayConfig: BizAiGatewayConfig | null = null;
   try {
-    const { getBizAiGatewayConfig } = require("@/lib/server-subscription-store");
     gatewayConfig = getBizAiGatewayConfig();
     if (!effectiveApi.provider && gatewayConfig?.primaryProvider) {
       effectiveApi.provider = gatewayConfig.primaryProvider;

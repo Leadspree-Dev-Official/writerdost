@@ -187,7 +187,7 @@ export function getMaskedBizAiGatewayConfig(): BizAiGatewayConfig {
 export function updateBizAiGatewayConfig(updates: Partial<BizAiGatewayConfig>): BizAiGatewayConfig {
   const current = getBizAiGatewayConfig();
 
-  let updatedKeys = { ...current.serverKeys };
+  const updatedKeys = { ...current.serverKeys };
   if (updates.serverKeys) {
     for (const [k, v] of Object.entries(updates.serverKeys)) {
       const keyName = k as keyof BizAiGatewayConfig["serverKeys"];

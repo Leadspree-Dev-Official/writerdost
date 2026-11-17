@@ -421,14 +421,14 @@ export default function IdeaAndInput() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-stretch">
               <div className="panel p-3.5 sm:p-4 flex flex-col justify-between">
                 <div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-3">
                     <div className="flex flex-col">
                       <label htmlFor="audience" className="label !mb-1 text-[12px] font-medium">
                         Target audience
                       </label>
                       <input
                         id="audience"
-                        className="input !py-1.5 !px-2.5 text-xs"
+                        className="input !py-1.5 !px-2.5 text-xs w-full"
                         placeholder="Founders, teachers…"
                         type="text"
                         value={createDraft.audience}
