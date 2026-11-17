@@ -66,7 +66,7 @@ export async function POST(request: Request) {
           sendEvent({
             type: "error",
             message:
-              "No AI provider is configured. Add a provider, model and API key in Settings → API, then run the agents again.",
+              "No AI provider is configured. Add a provider, model and API key in Settings → API, then run the Agents again.",
           });
           controller.close();
           return;

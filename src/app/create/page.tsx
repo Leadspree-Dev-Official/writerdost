@@ -320,10 +320,10 @@ export default function IdeaAndInput() {
       <div className="page">
         <div className="page-head">
           <div>
-            <h1 className="page-title">New ebook</h1>
+            <h1 className="page-title">New Book</h1>
             <p className="page-sub">
-              Describe the book once. Quick draft creates the project immediately; the agents research,
-              plan and write the chapters for you.
+              Describe the book once. Quick draft creates the project immediately; the AI Agents research,
+              plan and write the chapters for you (up to 300,000 words).
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
@@ -354,7 +354,7 @@ export default function IdeaAndInput() {
               onClick={() => {
                 const quota = checkQuota("project");
                 if (!quota.allowed) {
-                  setMessage(`Monthly project limit reached (${quota.used}/${quota.limit}) on your ${quota.plan} plan. Please upgrade to create more ebooks.`);
+                  setMessage(`Monthly project limit reached (${quota.used}/${quota.limit}) on your ${quota.plan} plan. Please upgrade to create more books.`);
                   return;
                 }
                 const project = createProjectFromDraft();
@@ -372,7 +372,7 @@ export default function IdeaAndInput() {
               type="button"
             >
               <span className="material-symbols-outlined">auto_awesome</span>
-              {isGenerating ? "Running agents…" : "Generate with agents"}
+              {isGenerating ? "Running Agents…" : "Generate with Agents"}
             </button>
           </div>
         </div>
@@ -389,25 +389,9 @@ export default function IdeaAndInput() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2 min-w-0 space-y-4">
             <div className="panel panel-pad">
-              <div className="flex items-center justify-between mb-1">
-                <label htmlFor="vision" className="label !mb-0">
-                  What is the book about?
-                </label>
-                {savedDossiers.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSavedDossiers(getSavedDossiers());
-                      setResearchSearchQuery("");
-                      setResearchModalOpen(true);
-                    }}
-                    className="text-[12px] text-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-[15px]">travel_explore</span>
-                    Use saved research ({savedDossiers.length})
-                  </button>
-                )}
-              </div>
+              <label htmlFor="vision" className="label">
+                What is the book about?
+              </label>
               <textarea
                 id="vision"
                 className="textarea min-h-[12rem] text-[14px] leading-relaxed p-3.5"
@@ -415,7 +399,7 @@ export default function IdeaAndInput() {
                 value={createDraft.vision}
                 onChange={(event) => updateCreateDraft({ vision: event.target.value })}
               />
-              <p className="hint">The agents use this as the brief for research and chapter planning.</p>
+              <p className="hint">The Agents use this as the brief for research and chapter planning.</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-stretch">
@@ -508,11 +492,11 @@ export default function IdeaAndInput() {
                         id="page-count-input"
                         type="number"
                         min="4"
-                        max={isExtendedOmnibus ? 800 : 400}
+                        max={isExtendedOmnibus ? 1200 : 400}
                         value={Math.round(createDraft.length / 250)}
                         onChange={(e) => {
                           const pages = Math.max(1, parseInt(e.target.value) || 1);
-                          const maxAllowed = isExtendedOmnibus ? 200000 : 100000;
+                          const maxAllowed = isExtendedOmnibus ? 300000 : 100000;
                           const calculatedWords = Math.min(maxAllowed, Math.max(1000, pages * 250));
                           updateCreateDraft({ length: calculatedWords });
                         }}
@@ -531,7 +515,7 @@ export default function IdeaAndInput() {
                   <input
                     id="length"
                     className="w-full h-1.5 bg-on-surface/12 rounded-full appearance-none cursor-pointer accent-primary"
-                    max={isExtendedOmnibus ? "200000" : "100000"}
+                    max={isExtendedOmnibus ? "300000" : "100000"}
                     min="1000"
                     step="1000"
                     type="range"
@@ -541,7 +525,7 @@ export default function IdeaAndInput() {
                   <div className="flex justify-between items-center text-[10px] text-on-surface-variant">
                     <span>1,000 words</span>
                     <span className="text-[10px] text-on-surface-variant font-medium">Pay-as-you-go • 0 with BYOK</span>
-                    <span>{isExtendedOmnibus ? "200,000 words" : "100,000 words"}</span>
+                    <span>{isExtendedOmnibus ? "300,000 words" : "100,000 words"}</span>
                   </div>
                 </div>
 
@@ -563,10 +547,10 @@ export default function IdeaAndInput() {
                     <div className="text-[11.5px] leading-tight">
                       <span className="font-semibold text-on-surface group-hover:text-primary transition-colors flex items-center gap-1.5">
                         <span className="material-symbols-outlined text-[14px] text-amber-500">auto_stories</span>
-                        Full-Length Omnibus (Unlock 2 Lakh Words)
+                        Full-Length Omnibus (Unlock 3 Lakh Words)
                       </span>
                       <p className="text-[10.5px] text-on-surface-variant mt-0.5 leading-snug">
-                        Extends slider ceiling up to 200,000 words (~800 print pages).
+                        Extends slider ceiling up to 300,000 words (~1,200 print pages).
                       </p>
                     </div>
                   </label>
@@ -685,7 +669,7 @@ export default function IdeaAndInput() {
                   ))}
                   {!createDraft.researchSources?.length && (
                     <p className="text-[12px] text-on-surface-variant py-2">
-                      Optional. Sources ground the research agent in your own material.
+                      Optional. Sources ground the Research Agent in your own material.
                     </p>
                   )}
                 </div>
@@ -828,7 +812,7 @@ export default function IdeaAndInput() {
                           tone: tpl.tone,
                         });
                         setTemplateModalOpen(false);
-                        setMessage(`Loaded "${tpl.name}" template (${tpl.pricePoint} funnel format). Click "Generate with agents" to start!`);
+                        setMessage(`Loaded "${tpl.name}" template (${tpl.pricePoint} funnel format). Click "Generate with Agents" to start!`);
                       }}
                     >
                       <span className="material-symbols-outlined text-[16px]">check_circle</span>

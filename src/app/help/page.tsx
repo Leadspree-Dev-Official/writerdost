@@ -11,7 +11,7 @@ const WRITERDOST_CONTEXT = `
 Writerdost AI is a premium writing workspace for authors and content creators. 
 Key Features:
 1. Dashboard: Overview of projects, total words managed, tokens used, and generation stats.
-2. Create Ebook: A structured pipeline to generate ebooks. You provide a vision, audience, and tone. AI agents collaborate to generate a blueprint and then the chapters.
+2. Create Book: A structured pipeline to generate books. You provide a vision, audience, and tone. AI Agents collaborate to generate a blueprint and then the chapters.
 3. Manuscript Editor: A powerful editor with AI slash commands (type '/') and contextual bubble menus for rephrasing or expanding text. Supports chapter management and status tracking.
 4. Rewrite Ebook: Allows uploading (PDF/DOCX/EPUB) or pasting existing drafts to humanize, deep-rewrite, or translate them.
 5. Blog Generator: Turns ebook projects into SEO-optimized blog posts, complete with meta descriptions and social snippets.
@@ -29,7 +29,7 @@ const categories = [
     color: "text-emerald-500",
     bg: "bg-emerald-500/10",
     articles: [
-      { id: "g1", title: "Creating your first Ebook", content: "To start a new project, click 'Create New Ebook' on the dashboard. You'll need to provide a vision, target audience, and preferred tone. Our AI agents will then generate a comprehensive outline and chapter structure for you." },
+      { id: "g1", title: "Creating your first Book", content: "To start a new project, click 'Create New Book' on the dashboard. You'll need to provide a vision, target audience, and preferred tone. Our AI Agents will then generate a comprehensive outline and chapter structure for you." },
       { id: "g2", title: "Setting up your Author Profile", content: "Go to the Profile section to set your pen name, bio, and writing preferences. These settings act as a 'Style Guide' for the AI, ensuring every chapter it writes matches your unique voice." },
       { id: "g3", title: "Connecting your API Keys", content: "Writerdost requires an LLM provider (like OpenAI, Anthropic, or local Ollama). Go to Settings > API Settings to enter your keys. We support custom base URLs for proxy services as well." },
     ]

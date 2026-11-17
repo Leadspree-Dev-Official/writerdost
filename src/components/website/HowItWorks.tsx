@@ -26,7 +26,7 @@ export default function HowItWorks() {
       icon: "bolt",
       badge: "Autonomous Drafting",
       description:
-        "Specialized writer agents draft chapters simultaneously while consulting global continuity memory. What once took weeks finishes in under four minutes with zero context degradation.",
+        "Specialized writer Agents draft chapters simultaneously while consulting global continuity memory. What once took weeks finishes in under four minutes with zero context degradation.",
     },
     {
       num: "04",

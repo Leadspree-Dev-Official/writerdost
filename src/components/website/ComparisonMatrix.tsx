@@ -12,7 +12,7 @@ export default function ComparisonMatrix() {
     },
     {
       name: "Parallel Agent Swarm",
-      writerdost: "Yes (4 specialized agents in sync)",
+      writerdost: "Yes (4 specialized Agents in sync)",
       chatgpt: "No (single prompt bottleneck)",
       agency: "No (sequential manual labor)",
     },

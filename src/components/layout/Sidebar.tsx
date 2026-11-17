@@ -27,16 +27,16 @@ const NAV_GROUPS: Array<{
     items: [
       { name: "Dashboard", href: "/dashboard", icon: "dashboard" },
       { name: "Projects", href: "/projects", icon: "menu_book" },
+      { name: "Research Lab", href: "/research", icon: "travel_explore" },
     ],
   },
   {
     label: "Create",
     items: [
-      { name: "New ebook", href: "/create", icon: "auto_awesome", feature: "createEbook" },
-      { name: "Research Lab", href: "/research", icon: "travel_explore" },
+      { name: "New Book", href: "/create", icon: "auto_stories", feature: "createEbook" },
       { name: "Outline & Rewrite", href: "/rewrite", icon: "auto_awesome_motion", feature: "rewriteEbook" },
       { name: "Copywriting", href: "/copywriting", icon: "campaign" },
-      { name: "Blog draft", href: "/blog-generator", icon: "edit_note", feature: "blogGenerator" },
+      { name: "Blog Draft", href: "/blog-generator", icon: "edit_note", feature: "blogGenerator" },
       { name: "BlogGen", href: "/automations", icon: "schedule_send", feature: "blogGenerator", badge: "Soon" },
     ],
   },

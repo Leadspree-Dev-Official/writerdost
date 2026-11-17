@@ -40,7 +40,7 @@ export default function Hero() {
           <p className="text-base sm:text-lg lg:text-xl text-on-surface-variant max-w-2xl mx-auto leading-relaxed font-normal">
             Turn raw outlines into ready-to-publish manuscripts in{" "}
             <span className="line-through decoration-primary/50 decoration-2 opacity-75">months</span>{" "}
-            <span className="font-bold text-on-surface">an afternoon</span>. Four AI agents research, outline, write chapters in parallel, and format print-ready exports.
+            <span className="font-bold text-on-surface">an afternoon</span>. Four AI Agents research, outline, write chapters in parallel, and format print-ready exports.
           </p>
 
           {/* Call to Action Buttons */}

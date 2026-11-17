@@ -30,7 +30,7 @@ export default function CtaBanner() {
 
           {/* Subtitle */}
           <p className="relative z-10 text-base sm:text-lg text-slate-300 max-w-xl mx-auto mt-4 mb-8 leading-relaxed font-normal">
-            Tell Writerdost your book idea and let four AI agents handle the research, outlining, writing, and polishing. Export to Kindle or publish straight to WordPress.
+            Tell Writerdost your book idea and let four AI Agents handle the research, outlining, writing, and polishing. Export to Kindle or publish straight to WordPress.
           </p>
 
           {/* Action Buttons */}

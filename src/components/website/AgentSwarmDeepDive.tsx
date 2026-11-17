@@ -51,7 +51,7 @@ export default function AgentSwarmDeepDive() {
       color: "from-primary to-indigo-600",
       bgBadge: "bg-primary/10 text-primary border-primary/20",
       description:
-        "Instead of sluggish sequential drafting that degrades over long contexts, specialized writer agents draft chapters in parallel. Each agent maintains cross-chapter memory, voice calibration, and domain vocabulary.",
+        "Instead of sluggish sequential drafting that degrades over long contexts, specialized writer Agents draft chapters in parallel. Each agent maintains cross-chapter memory, voice calibration, and domain vocabulary.",
       deliverables: [
         "Simultaneous chapter drafting (3x-5x faster)",
         "Consistent stylistic voice preservation",
@@ -96,7 +96,7 @@ export default function AgentSwarmDeepDive() {
             </span>
           </h2>
           <p className="text-base sm:text-lg text-on-surface-variant leading-relaxed">
-            Standard AI models forget context after 3,000 words. Writerdost deploys a coordinated pipeline of 4 specialized autonomous agents working in synchrony to deliver cohesive manuscripts up to 200,000 words.
+            Standard AI models forget context after 3,000 words. Writerdost deploys a coordinated pipeline of 4 specialized autonomous Agents working in synchrony to deliver cohesive manuscripts up to 300,000 words.
           </p>
         </div>
 

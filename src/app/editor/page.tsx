@@ -393,17 +393,17 @@ export default function EditorPage() {
             menu_book
           </span>
           <h1 className="page-title mt-2">
-            {projects.length === 0 ? "No ebooks yet" : "No ebook open"}
+            {projects.length === 0 ? "No books yet" : "No book open"}
           </h1>
           <p className="page-sub mx-auto max-w-md">
             {projects.length === 0
-              ? "Describe a book on the New ebook page and the agents will research, plan and draft it for you."
+              ? "Describe a book on the New Book page and the Agents will research, plan and draft it for you."
               : "Pick a project to carry on writing, or start a new one."}
           </p>
           <div className="flex items-center justify-center gap-2 mt-5">
             <Link href="/create" className="btn btn-primary btn-lg">
               <span className="material-symbols-outlined">auto_awesome</span>
-              New ebook
+              New Book
             </Link>
             {projects.length > 0 && (
               <Link href="/projects" className="btn btn-secondary btn-lg">

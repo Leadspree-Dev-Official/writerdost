@@ -4,7 +4,7 @@ export const LIMITS = {
   manuscriptChars: 4_000_000,
   chapters: 80,
   sectionsPerChapter: 30,
-  targetWords: 200_000,
+  targetWords: 300_000,
   researchSources: 20,
   uploadBytes: 10 * 1024 * 1024,
 } as const;

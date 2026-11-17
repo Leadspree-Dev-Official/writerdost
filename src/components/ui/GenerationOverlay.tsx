@@ -13,6 +13,15 @@ const clock = (seconds: number) =>
     .toString()
     .padStart(2, "0")}:${(seconds % 60).toString().padStart(2, "0")}`;
 
+/** Format agent name to guarantee each word starts with a capital letter */
+const formatAgentName = (agent?: string) => {
+  if (!agent) return "System";
+  return agent
+    .split(/\s+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
 /** An agent's icon. Falls back to the generic one for pipelines we don't name. */
 const agentIcon = (agent: string) => {
   if (agent.includes("Writing")) return "edit_note";
@@ -188,7 +197,7 @@ export function GenerationOverlay({
               } ${reduceMotion || isPaused ? "" : "animate-pulse"}`}
             />
             <p className="min-w-0 flex-1 truncate text-[0.8125rem] font-semibold text-on-surface">
-              {isPaused ? `Paused: ${currentTask || "Generation paused"}` : currentTask || activeAgent || "Working"}
+              {isPaused ? `Paused: ${currentTask || "Generation paused"}` : currentTask || formatAgentName(activeAgent) || "Working"}
             </p>
             <button
               type="button"
@@ -279,7 +288,7 @@ export function GenerationOverlay({
                     {agentIcon(activeAgent)}
                   </span>
                   <span className="truncate text-[0.8125rem] font-semibold text-on-surface">
-                    {activeAgent || "System"}
+                    {formatAgentName(activeAgent)}
                   </span>
                 </div>
                 <span className="shrink-0 text-[0.8125rem] font-semibold tabular-nums text-on-surface">
@@ -363,7 +372,7 @@ export function GenerationOverlay({
                         <span className="min-w-0 flex-1">
                           {isHandover && (
                             <span className="mb-0.5 block text-[0.75rem] font-semibold text-on-surface">
-                              {log.agent}
+                              {formatAgentName(log.agent)}
                             </span>
                           )}
                           <span
