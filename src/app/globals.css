@@ -502,7 +502,7 @@
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 18%, transparent);
   }
 
-  /* ---- Chips ----------------------------------------------------------- */
+  /* ---- Chips & Badges ------------------------------------------------- */
 
   .chip {
     display: inline-flex;
@@ -520,6 +520,115 @@
   .chip-neutral {
     background: color-mix(in srgb, var(--color-on-surface) 8%, transparent);
     color: var(--color-on-surface-variant);
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    height: 1.375rem;
+    padding-inline: 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.6875rem;
+    font-weight: 650;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    border: 1px solid transparent;
+  }
+
+  .badge-neutral {
+    background: color-mix(in srgb, var(--color-on-surface) 8%, transparent);
+    color: var(--color-on-surface-variant);
+    border-color: var(--hairline);
+  }
+
+  .badge-success {
+    background: color-mix(in srgb, #10b981 12%, transparent);
+    color: #047857;
+    border-color: color-mix(in srgb, #10b981 25%, transparent);
+  }
+  .dark .badge-success {
+    background: color-mix(in srgb, #10b981 18%, transparent);
+    color: #34d399;
+    border-color: color-mix(in srgb, #10b981 30%, transparent);
+  }
+
+  .badge-accent {
+    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+    color: var(--color-primary);
+    border-color: color-mix(in srgb, var(--color-primary) 25%, transparent);
+  }
+  .dark .badge-accent {
+    background: color-mix(in srgb, var(--color-primary) 22%, transparent);
+    color: var(--color-surface-tint);
+    border-color: color-mix(in srgb, var(--color-primary) 35%, transparent);
+  }
+
+  .badge-warning {
+    background: color-mix(in srgb, #f59e0b 12%, transparent);
+    color: #b45309;
+    border-color: color-mix(in srgb, #f59e0b 25%, transparent);
+  }
+  .dark .badge-warning {
+    background: color-mix(in srgb, #f59e0b 18%, transparent);
+    color: #fbbf24;
+    border-color: color-mix(in srgb, #f59e0b 30%, transparent);
+  }
+
+  .badge-error {
+    background: color-mix(in srgb, #ef4444 12%, transparent);
+    color: #b91c1c;
+    border-color: color-mix(in srgb, #ef4444 25%, transparent);
+  }
+  .dark .badge-error {
+    background: color-mix(in srgb, #ef4444 18%, transparent);
+    color: #f87171;
+    border-color: color-mix(in srgb, #ef4444 30%, transparent);
+  }
+
+  /* ---- Data tables ---------------------------------------------------- */
+
+  .table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 0.8125rem;
+  }
+
+  .table th {
+    padding: var(--sp-3) var(--sp-4);
+    font-size: 0.6875rem;
+    font-weight: 650;
+    letter-spacing: 0.02em;
+    color: var(--color-on-surface-variant);
+    border-bottom: 1px solid var(--hairline);
+    background: color-mix(in srgb, var(--color-on-surface) 2%, transparent);
+    white-space: nowrap;
+  }
+
+  .table td {
+    padding: var(--sp-3) var(--sp-4);
+    border-bottom: 1px solid var(--hairline);
+    color: var(--color-on-surface);
+    vertical-align: middle;
+  }
+
+  .table tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .table tbody tr {
+    transition: background-color 120ms ease;
+  }
+
+  .table tbody tr:hover {
+    background: color-mix(in srgb, var(--color-primary) 4%, transparent);
   }
 
   /* ---- Tabs ------------------------------------------------------------ */

@@ -328,7 +328,7 @@ export default function IdeaAndInput() {
           </div>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
             <button
-              className="btn btn-secondary btn-lg w-full sm:w-auto justify-center min-h-[44px] border-primary/40 hover:border-primary text-primary hover:bg-primary/5 flex items-center gap-1.5 cursor-pointer"
+              className="btn btn-secondary btn-lg w-full sm:w-auto justify-center min-h-[44px]"
               onClick={() => {
                 setSavedDossiers(getSavedDossiers());
                 setResearchSearchQuery("");
@@ -337,16 +337,16 @@ export default function IdeaAndInput() {
               disabled={isGenerating}
               type="button"
             >
-              <span className="material-symbols-outlined text-[20px]">travel_explore</span>
+              <span className="material-symbols-outlined">travel_explore</span>
               Import Research ({savedDossiers.length})
             </button>
             <button
-              className="btn btn-secondary btn-lg w-full sm:w-auto justify-center min-h-[44px] border-primary/40 hover:border-primary text-primary hover:bg-primary/5"
+              className="btn btn-secondary btn-lg w-full sm:w-auto justify-center min-h-[44px]"
               onClick={() => setTemplateModalOpen(true)}
               disabled={isGenerating}
               type="button"
             >
-              <span className="material-symbols-outlined text-[20px]">auto_stories</span>
+              <span className="material-symbols-outlined">auto_stories</span>
               FB Ad Micro-Ebook Templates
             </button>
             <button
@@ -418,46 +418,78 @@ export default function IdeaAndInput() {
               <p className="hint">The agents use this as the brief for research and chapter planning.</p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch">
-              <div className="panel panel-pad flex flex-col">
-                <label htmlFor="audience" className="label">
-                  Target audience
-                </label>
-                <input
-                  id="audience"
-                  className="input"
-                  placeholder="Early-stage founders, high-school teachers…"
-                  type="text"
-                  value={createDraft.audience}
-                  onChange={(event) => updateCreateDraft({ audience: event.target.value })}
-                />
-                <p className="hint mt-2 text-[11.5px] text-on-surface-variant leading-relaxed">
-                  Defines the reading level, industry context, and framing used across every chapter.
-                </p>
-                <div className="mt-auto pt-3 border-t border-[var(--hairline)] flex items-center gap-1.5 text-[11px] text-on-surface-variant">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-stretch">
+              <div className="panel p-3.5 sm:p-4 flex flex-col justify-between">
+                <div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex flex-col">
+                      <label htmlFor="audience" className="label !mb-1 text-[12px] font-medium">
+                        Target audience
+                      </label>
+                      <input
+                        id="audience"
+                        className="input !py-1.5 !px-2.5 text-xs"
+                        placeholder="Founders, teachers…"
+                        type="text"
+                        value={createDraft.audience}
+                        onChange={(event) => updateCreateDraft({ audience: event.target.value })}
+                      />
+                      <p className="hint !mt-1 text-[11px] text-on-surface-variant leading-snug">
+                        Defines reading level & framing.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col">
+                      <label htmlFor="language" className="label !mb-1 text-[12px] font-medium">
+                        Language
+                      </label>
+                      <select
+                        id="language"
+                        className="input !py-1.5 !px-2.5 text-xs w-full"
+                        value={createDraft.language || DEFAULT_LANGUAGE}
+                        onChange={(event) => updateCreateDraft({ language: event.target.value })}
+                      >
+                        {LANGUAGE_GROUPS.map((group) => (
+                          <optgroup key={group.label} label={group.label}>
+                            {group.options.map((language) => (
+                              <option key={language} value={language}>
+                                {language}
+                              </option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
+                      <p className="hint !mt-1 text-[11px] text-on-surface-variant leading-snug">
+                        Language for chapters & outline.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-auto pt-2.5 border-t border-[var(--hairline)] flex items-center gap-1.5 text-[11px] text-on-surface-variant">
                   <span className="material-symbols-outlined text-[15px] text-primary">psychology</span>
                   <span>Directs persona & tone calibration</span>
                 </div>
               </div>
 
-              <div className="panel panel-pad flex flex-col justify-between space-y-3">
+              <div className="panel p-3.5 sm:p-4 flex flex-col justify-between space-y-2.5">
                 {/* Header */}
                 <div className="flex items-center justify-between gap-2">
-                  <label htmlFor="length" className="label !mb-0 font-medium">
+                  <label htmlFor="length" className="label !mb-0 text-[12px] font-medium">
                     Target Length
                   </label>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[13px] font-bold text-on-surface num">
+                    <span className="text-[12.5px] font-bold text-on-surface num">
                       {createDraft.length.toLocaleString()} words
                     </span>
                     {isByokMode ? (
-                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[13px] text-emerald-500">key</span>
+                      <span className="text-[10.5px] font-semibold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[12px] text-emerald-500">key</span>
                         <span>Free with BYOK</span>
                       </span>
                     ) : (
-                      <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1.5">
-                        <CoinsIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                      <span className="text-[10.5px] font-medium px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1">
+                        <CoinsIcon className="w-3 h-3 text-amber-500 shrink-0" />
                         <span>~{getDisplayedCreditEstimate(createDraft.length).toLocaleString()} credits</span>
                       </span>
                     )}
@@ -465,12 +497,12 @@ export default function IdeaAndInput() {
                 </div>
 
                 {/* Inline Page Calculator Pill */}
-                <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-[var(--radius)] bg-surface-variant/30 border border-[var(--hairline)]">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="material-symbols-outlined text-[17px] text-primary shrink-0">menu_book</span>
-                    <span className="text-[12px] text-on-surface font-medium whitespace-nowrap">Equivalent Volume:</span>
+                <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-[var(--radius)] bg-surface-variant/30 border border-[var(--hairline)]">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="material-symbols-outlined text-[15px] text-primary shrink-0">menu_book</span>
+                    <span className="text-[11.5px] text-on-surface font-medium whitespace-nowrap">Equivalent Volume:</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1">
                     <div className="relative flex items-center">
                       <input
                         id="page-count-input"
@@ -484,18 +516,18 @@ export default function IdeaAndInput() {
                           const calculatedWords = Math.min(maxAllowed, Math.max(1000, pages * 250));
                           updateCreateDraft({ length: calculatedWords });
                         }}
-                        className="input !py-0.5 !px-1.5 text-xs w-16 text-center font-bold bg-surface"
+                        className="input !py-0.5 !px-1 text-xs w-14 text-center font-bold bg-surface"
                         placeholder="Pages"
                       />
                     </div>
-                    <span className="text-[11.5px] text-on-surface-variant font-medium whitespace-nowrap">
-                      pages <span className="opacity-60 text-[10.5px]">(250 w/p)</span>
+                    <span className="text-[11px] text-on-surface-variant font-medium whitespace-nowrap">
+                      pages <span className="opacity-60 text-[10px]">(250 w/p)</span>
                     </span>
                   </div>
                 </div>
 
                 {/* Slider */}
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <input
                     id="length"
                     className="w-full h-1.5 bg-on-surface/12 rounded-full appearance-none cursor-pointer accent-primary"
@@ -506,16 +538,16 @@ export default function IdeaAndInput() {
                     value={createDraft.length}
                     onChange={(event) => updateCreateDraft({ length: Number(event.target.value) })}
                   />
-                  <div className="flex justify-between items-center text-[10.5px] text-on-surface-variant">
+                  <div className="flex justify-between items-center text-[10px] text-on-surface-variant">
                     <span>1,000 words</span>
-                    <span className="text-[10px] text-slate-500">Pay-as-you-go • 0 with BYOK</span>
+                    <span className="text-[9.5px] text-slate-500">Pay-as-you-go • 0 with BYOK</span>
                     <span>{isExtendedOmnibus ? "200,000 words" : "100,000 words"}</span>
                   </div>
                 </div>
 
                 {/* Extended Omnibus Toggle Checkbox */}
-                <div className="pt-2.5 border-t border-[var(--hairline)]">
-                  <label className="flex items-start gap-2.5 cursor-pointer group select-none">
+                <div className="pt-2 border-t border-[var(--hairline)]">
+                  <label className="flex items-start gap-2 cursor-pointer group select-none">
                     <input
                       type="checkbox"
                       checked={isExtendedOmnibus}
@@ -528,43 +560,18 @@ export default function IdeaAndInput() {
                       }}
                       className="checkbox mt-0.5 accent-primary shrink-0"
                     />
-                    <div className="text-[12px] leading-tight">
+                    <div className="text-[11.5px] leading-tight">
                       <span className="font-semibold text-on-surface group-hover:text-primary transition-colors flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-[15px] text-amber-500">auto_stories</span>
+                        <span className="material-symbols-outlined text-[14px] text-amber-500">auto_stories</span>
                         Full-Length Omnibus (Unlock 2 Lakh Words)
                       </span>
-                      <p className="text-[11px] text-on-surface-variant mt-0.5 leading-snug">
+                      <p className="text-[10.5px] text-on-surface-variant mt-0.5 leading-snug">
                         Extends slider ceiling up to 200,000 words (~800 print pages).
                       </p>
                     </div>
                   </label>
                 </div>
               </div>
-            </div>
-
-            <div className="panel panel-pad">
-              <label htmlFor="language" className="label">
-                Language
-              </label>
-              <select
-                id="language"
-                className="input max-w-xs"
-                value={createDraft.language || DEFAULT_LANGUAGE}
-                onChange={(event) => updateCreateDraft({ language: event.target.value })}
-              >
-                {LANGUAGE_GROUPS.map((group) => (
-                  <optgroup key={group.label} label={group.label}>
-                    {group.options.map((language) => (
-                      <option key={language} value={language}>
-                        {language}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-              <p className="hint">
-                Every chapter, heading and outline is written in this language.
-              </p>
             </div>
 
             <div className="panel panel-pad">
