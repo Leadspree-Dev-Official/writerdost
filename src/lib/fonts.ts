@@ -993,7 +993,7 @@ export function loadGoogleFont(family: string): void {
     const link = document.createElement("link");
     link.id = elementId;
     link.rel = "stylesheet";
-    link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(cleanFamily).replace(/%20/g, "+")}&display=swap`;
+    link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(cleanFamily).replace(/%20/g, "+")}&display=fallback`;
     document.head.appendChild(link);
     loadedFontsSet.add(lower);
   } catch {

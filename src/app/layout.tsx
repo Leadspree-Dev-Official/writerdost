@@ -21,13 +21,13 @@ import "./globals.css";
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
-  display: "swap",
+  display: "fallback",
 });
 
 const lato = Lato({
   variable: "--font-lato",
   subsets: ["latin"],
-  display: "swap",
+  display: "fallback",
   preload: false,
   weight: ["400", "700"],
   style: ["normal", "italic"],
@@ -36,7 +36,7 @@ const lato = Lato({
 const sourceSans = Source_Sans_3({
   variable: "--font-source-sans",
   subsets: ["latin"],
-  display: "swap",
+  display: "fallback",
   preload: false,
   style: ["normal", "italic"],
 });
@@ -44,7 +44,7 @@ const sourceSans = Source_Sans_3({
 const lora = Lora({
   variable: "--font-lora",
   subsets: ["latin"],
-  display: "swap",
+  display: "fallback",
   preload: false,
   style: ["normal", "italic"],
 });
@@ -52,7 +52,7 @@ const lora = Lora({
 const merriweather = Merriweather({
   variable: "--font-merriweather",
   subsets: ["latin"],
-  display: "swap",
+  display: "fallback",
   preload: false,
   style: ["normal", "italic"],
 });
@@ -60,7 +60,7 @@ const merriweather = Merriweather({
 const ebGaramond = EB_Garamond({
   variable: "--font-eb-garamond",
   subsets: ["latin"],
-  display: "swap",
+  display: "fallback",
   preload: false,
   style: ["normal", "italic"],
 });
@@ -70,7 +70,7 @@ const ebGaramond = EB_Garamond({
 const libreBaskerville = Libre_Baskerville({
   variable: "--font-libre-baskerville",
   subsets: ["latin"],
-  display: "swap",
+  display: "fallback",
   preload: false,
   weight: ["400", "700"],
 });
@@ -78,7 +78,7 @@ const libreBaskerville = Libre_Baskerville({
 const playfair = Playfair_Display({
   variable: "--font-playfair",
   subsets: ["latin"],
-  display: "swap",
+  display: "fallback",
   preload: false,
   style: ["normal", "italic"],
 });
@@ -154,7 +154,7 @@ export default async function RootLayout({
             not apply. next/font cannot express this icon font's axis range. */}
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block"
           rel="stylesheet"
         />
       </head>
