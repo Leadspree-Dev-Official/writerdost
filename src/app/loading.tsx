@@ -1,5 +1,5 @@
-import WorkspaceSkeleton from "@/components/ui/WorkspaceSkeleton";
+import { PageContentSkeleton } from "@/components/ui/WorkspaceSkeleton";
 
 export default function RootLoading() {
-  return <WorkspaceSkeleton label="Loading workspace..." />;
+  return <PageContentSkeleton />;
 }

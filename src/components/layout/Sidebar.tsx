@@ -131,7 +131,7 @@ export default function Sidebar() {
           collapsed ? "justify-center px-0" : "justify-between pl-3 pr-2",
         )}
       >
-        <Link href="/dashboard" className="flex items-center gap-2 min-w-0">
+        <Link href="/dashboard" prefetch={true} className="flex items-center gap-2 min-w-0">
           <span className="w-[22px] h-[22px] rounded-[5px] bg-primary flex items-center justify-center shrink-0">
             <span
               className="material-symbols-outlined text-white text-[14px]"
@@ -175,6 +175,7 @@ export default function Sidebar() {
                   <Link
                     key={item.href}
                     href={item.href}
+                    prefetch={true}
                     title={collapsed ? item.name : undefined}
                     aria-current={active ? "page" : undefined}
                     className={clsx(

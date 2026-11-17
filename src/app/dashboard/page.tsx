@@ -55,7 +55,7 @@ export default function Dashboard() {
               : "Create your first project to get started."}
           </p>
         </div>
-        <Link href="/create" className="btn btn-primary btn-lg">
+        <Link href="/create" prefetch={true} className="btn btn-primary btn-lg">
           <span className="material-symbols-outlined">add</span>
           New ebook
         </Link>
@@ -161,7 +161,7 @@ export default function Dashboard() {
               </button>
             )}
             {QUICK_ACTIONS.map((action) => (
-              <Link key={action.href} href={action.href} className="row">
+              <Link key={action.href} href={action.href} prefetch={true} className="row">
                 <span className="material-symbols-outlined text-[17px] text-on-surface-variant shrink-0">
                   {action.icon}
                 </span>

@@ -238,6 +238,7 @@ export default function Header() {
 
         <Link
           href="/pricing#credit-packs"
+          prefetch={true}
           title="AI Generation Credits (Click to view packs)"
           className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 transition-all mr-1"
         >

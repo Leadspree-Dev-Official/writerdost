@@ -70,6 +70,7 @@ export default function BottomNavigation() {
                 <Link
                   key={item.label}
                   href={item.href}
+                  prefetch={true}
                   aria-label="Create new ebook"
                   className={clsx(
                     "flex flex-col items-center justify-center -translate-y-2.5 transition-transform active:scale-95 group",
@@ -143,6 +144,7 @@ export default function BottomNavigation() {
               <Link
                 key={item.label}
                 href={item.href!}
+                prefetch={true}
                 aria-current={active ? "page" : undefined}
                 className={clsx(
                   "flex flex-col items-center justify-center w-14 h-12 rounded-xl transition-colors active:scale-95",
@@ -239,6 +241,7 @@ export default function BottomNavigation() {
 
                 <Link
                   href="/research"
+                  prefetch={true}
                   onClick={() => setMoreOpen(false)}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-on-surface hover:bg-on-surface/[0.06] transition-colors"
                 >
@@ -250,6 +253,7 @@ export default function BottomNavigation() {
 
                 <Link
                   href="/blog-generator"
+                  prefetch={true}
                   onClick={() => setMoreOpen(false)}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-on-surface hover:bg-on-surface/[0.06] transition-colors"
                 >
@@ -261,6 +265,7 @@ export default function BottomNavigation() {
 
                 <Link
                   href="/automations"
+                  prefetch={true}
                   onClick={() => setMoreOpen(false)}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-on-surface hover:bg-on-surface/[0.06] transition-colors"
                 >
@@ -277,6 +282,7 @@ export default function BottomNavigation() {
 
                 <Link
                   href="/marketplace"
+                  prefetch={true}
                   onClick={() => setMoreOpen(false)}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-on-surface hover:bg-on-surface/[0.06] transition-colors"
                 >
@@ -299,6 +305,7 @@ export default function BottomNavigation() {
 
                 <Link
                   href="/settings"
+                  prefetch={true}
                   onClick={() => setMoreOpen(false)}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-on-surface hover:bg-on-surface/[0.06] transition-colors"
                 >
@@ -310,6 +317,7 @@ export default function BottomNavigation() {
 
                 <Link
                   href="/profile"
+                  prefetch={true}
                   onClick={() => setMoreOpen(false)}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-on-surface hover:bg-on-surface/[0.06] transition-colors"
                 >
@@ -322,6 +330,7 @@ export default function BottomNavigation() {
                 {currentUser?.role === "admin" && (
                   <Link
                     href="/admin"
+                    prefetch={true}
                     onClick={() => setMoreOpen(false)}
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-indigo-500 hover:bg-indigo-500/10 transition-colors"
                   >

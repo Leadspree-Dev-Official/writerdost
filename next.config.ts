@@ -32,8 +32,8 @@ const nextConfig: NextConfig = {
   // Client router cache staleTimes: prevents redundant RSC refetches on navigation
   experimental: {
     staleTimes: {
-      dynamic: 30,
-      static: 180,
+      dynamic: 300,
+      static: 300,
     },
   },
 
