@@ -34,6 +34,8 @@ export default function IdeaAndInput() {
   const removeResearchSource = useAppStore((state) => state.removeResearchSource);
   const checkQuota = useAppStore((state) => state.checkQuota);
   const recordMonthlyUsage = useAppStore((state) => state.recordMonthlyUsage);
+  const preferredEngine = useAppStore((state) => state.preferredEngine);
+  const isByokMode = preferredEngine === "byok" || Boolean(api.apiKey || api.provider === "ollama");
   
   const [linkInput, setLinkInput] = useState("");
   const [activeTab, setActiveTab] = useState<"file" | "link" | "youtube">("file");
@@ -241,7 +243,7 @@ export default function IdeaAndInput() {
               }
               if (event.agent === "Manuscript Agent") setGenerationProgress(98);
             } else if (event.type === "usage" && typeof event.tokens === "number") {
-              const usageRes = useAppStore.getState().recordUsage(event.tokens, api.provider, api.model);
+              const usageRes = useAppStore.getState().recordUsage(event.tokens, api.provider, api.model, engine === "byok");
               if (engine === "bizai" && !usageRes.allowed) {
                 controller.abort();
                 setActiveAgent("Wallet Guard");
@@ -273,6 +275,8 @@ export default function IdeaAndInput() {
                 outlineDuration,
                 draftDuration,
                 tokensUsed,
+                isByok: engine === "byok",
+                engine: engine,
               });
               // Small delay to let user see 100%
               setTimeout(() => {
@@ -446,10 +450,17 @@ export default function IdeaAndInput() {
                     <span className="text-[13px] font-bold text-on-surface num">
                       {createDraft.length.toLocaleString()} words
                     </span>
-                    <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1.5">
-                      <CoinsIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                      <span>~{getDisplayedCreditEstimate(createDraft.length).toLocaleString()} credits</span>
-                    </span>
+                    {isByokMode ? (
+                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[13px] text-emerald-500">key</span>
+                        <span>Free with BYOK</span>
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1.5">
+                        <CoinsIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                        <span>~{getDisplayedCreditEstimate(createDraft.length).toLocaleString()} credits</span>
+                      </span>
+                    )}
                   </div>
                 </div>
 

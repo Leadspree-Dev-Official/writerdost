@@ -1,3 +1,5 @@
+import type { GenerationEngine } from "./store-types";
+
 export type ResearchDepth = "quick" | "comprehensive" | "academic";
 
 export interface ResearchDossier {
@@ -21,6 +23,8 @@ export interface SavedDossier {
   dossier: ResearchDossier;
   tokensUsed?: number;
   creditsUsed?: number;
+  isByok?: boolean;
+  engine?: GenerationEngine;
 }
 
 const STORAGE_KEY = "writerdost_saved_dossiers";
@@ -29,7 +33,9 @@ export const SAMPLE_INITIAL_DOSSIER: SavedDossier = {
   id: "sample-deep-work",
   createdAt: "Sample Dossier",
   tokensUsed: 2950,
-  creditsUsed: 44,
+  creditsUsed: 0,
+  isByok: true,
+  engine: "byok",
   dossier: {
     topic: "The Neurobiology of Deep Work & Cognitive Endurance",
     targetAudience: "Knowledge workers, software engineers, and ambitious creators",
@@ -190,9 +196,14 @@ export function saveDossierToStorage(
   dossier: ResearchDossier,
   tokensUsed?: number,
   creditsUsed?: number,
+  engine?: GenerationEngine,
+  isByok?: boolean,
 ): SavedDossier {
   const current = getSavedDossiers();
-  const calculatedCredits = creditsUsed ?? (tokensUsed ? Number((tokensUsed * 0.015).toFixed(1)) : undefined);
+  const effectiveIsByok = isByok ?? (engine === "byok");
+  const calculatedCredits = effectiveIsByok
+    ? 0
+    : (creditsUsed ?? (tokensUsed ? Number((tokensUsed * 0.015).toFixed(1)) : undefined));
   const newEntry: SavedDossier = {
     id: `dossier-${Date.now()}`,
     createdAt: new Date().toLocaleDateString(undefined, {
@@ -203,6 +214,8 @@ export function saveDossierToStorage(
     dossier,
     tokensUsed,
     creditsUsed: calculatedCredits,
+    isByok: effectiveIsByok,
+    engine: engine ?? (effectiveIsByok ? "byok" : "bizai"),
   };
 
   const updated = [newEntry, ...current.filter((d) => d.id !== SAMPLE_INITIAL_DOSSIER.id || current.length === 1)];
@@ -342,7 +355,10 @@ export function buildMarkdownFromDossier(dossier: ResearchDossier): string {
  * based on the compiled dossier word count (~2 tokens/word * 0.015) or depth fallback.
  */
 export function calculateDossierCredits(entry: SavedDossier): number {
-  if (typeof entry.creditsUsed === "number" && entry.creditsUsed > 1) {
+  if (entry.isByok || entry.engine === "byok" || entry.creditsUsed === 0) {
+    return 0;
+  }
+  if (typeof entry.creditsUsed === "number" && entry.creditsUsed > 0) {
     return Math.round(entry.creditsUsed);
   }
   if (typeof entry.tokensUsed === "number" && entry.tokensUsed > 100) {

@@ -25,6 +25,9 @@ export function AiEngineSelectorModal({
   targetWords,
 }: AiEngineSelectorModalProps) {
   const api = useAppStore((state) => state.api);
+  const byokModels = useAppStore((state) => state.byokModels || []);
+  const activeByokModelId = useAppStore((state) => state.activeByokModelId);
+  const setDefaultByokModel = useAppStore((state) => state.setDefaultByokModel);
   const preferredEngine = useAppStore((state) => state.preferredEngine);
   const setPreferredEngine = useAppStore((state) => state.setPreferredEngine);
   const checkQuota = useAppStore((state) => state.checkQuota);
@@ -192,7 +195,7 @@ export function AiEngineSelectorModal({
                     </div>
                     <p className="text-xs text-on-surface-variant mt-0.5">
                       {hasByokConfigured
-                        ? `Using your configured key: ${api.provider.toUpperCase()} (${api.model || "Default Model"}).`
+                        ? `Using: ${api.provider.toUpperCase()} (${api.model || "Default Model"}).`
                         : "Bring your own OpenAI, Claude, DeepSeek, or Ollama API key."}
                     </p>
                   </div>
@@ -209,6 +212,37 @@ export function AiEngineSelectorModal({
                   </span>
                 </div>
               </div>
+
+              {/* If multiple BYOK models are added, give options to select which BYOK model to use */}
+              {selectedEngine === "byok" && byokModels.length > 1 && (
+                <div
+                  className="mt-2 pt-2 border-t border-outline-variant/20 space-y-1.5"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between text-xs">
+                    <label className="font-semibold text-on-surface flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[14px] text-emerald-400">smart_toy</span>
+                      Select Model for Generation:
+                    </label>
+                    <span className="text-[10px] text-on-surface-variant font-mono">
+                      {byokModels.length} models
+                    </span>
+                  </div>
+                  <select
+                    value={activeByokModelId || byokModels.find((m) => m.isDefault)?.id || byokModels[0].id}
+                    onChange={(e) => {
+                      setDefaultByokModel(e.target.value);
+                    }}
+                    className="select select-sm w-full text-xs font-medium bg-surface-container border-outline-variant/40"
+                  >
+                    {byokModels.map((m) => (
+                      <option key={m.id} value={m.id} className="text-black">
+                        {m.name} ({m.provider.toUpperCase()} - {m.model}) {m.isDefault ? "★ Default" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Status / Configuration Link */}
               <div className="pt-2 mt-1 border-t border-outline-variant/20 flex items-center justify-between text-xs">

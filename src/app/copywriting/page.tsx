@@ -860,16 +860,25 @@ export default function CopywritingStudioPage() {
               {/* Workbench Body */}
               <div className="flex-1 p-4 relative overflow-y-auto max-h-[510px]">
                 {isGenerating ? (
-                  <div className="h-full flex flex-col items-center justify-center py-16 text-center space-y-3">
-                    <div className="relative">
-                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary animate-pulse">
-                        <span className="material-symbols-outlined text-[28px]">auto_fix_high</span>
+                  <div className="h-full flex flex-col p-4 space-y-4 animate-pulse">
+                    <div className="flex items-center justify-between pb-3 border-b border-[var(--hairline)]">
+                      <div className="space-y-1">
+                        <div className="h-4 w-48 bg-primary/25 rounded"></div>
+                        <p className="text-[11px] text-primary font-medium">{generationStep || "Synthesizing framework..."}</p>
                       </div>
-                      <div className="absolute inset-0 rounded-xl border-2 border-primary border-t-transparent animate-spin"></div>
+                      <div className="h-3 w-16 bg-surface-variant/60 rounded"></div>
                     </div>
-                    <div>
-                      <h3 className="text-xs font-bold text-on-surface">Assembling Direct-Response Copy</h3>
-                      <p className="text-[11px] text-primary font-medium mt-0.5">{generationStep || "Synthesizing framework..."}</p>
+                    <div className="space-y-2.5 pt-2">
+                      <div className="h-5 w-3/4 bg-surface-variant/70 rounded"></div>
+                      <div className="h-3 w-full bg-surface-variant/40 rounded"></div>
+                      <div className="h-3 w-full bg-surface-variant/40 rounded"></div>
+                      <div className="h-3 w-5/6 bg-surface-variant/40 rounded"></div>
+                    </div>
+                    <div className="space-y-2 pt-3">
+                      <div className="h-4 w-1/2 bg-surface-variant/60 rounded"></div>
+                      <div className="h-3 w-full bg-surface-variant/40 rounded"></div>
+                      <div className="h-3 w-11/12 bg-surface-variant/40 rounded"></div>
+                      <div className="h-3 w-4/5 bg-surface-variant/40 rounded"></div>
                     </div>
                   </div>
                 ) : generatedOutput ? (

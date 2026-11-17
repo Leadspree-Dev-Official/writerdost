@@ -69,10 +69,13 @@ const RESEARCH_STEPS = [
 export default function ResearchPage() {
   const router = useRouter();
   const api = useAppStore((state) => state.api);
+  const preferredEngine = useAppStore((state) => state.preferredEngine);
   const updateCreateDraft = useAppStore((state) => state.updateCreateDraft);
   const updateRewrite = useAppStore((state) => state.updateRewrite);
   const startBlogFromResearch = useAppStore((state) => state.startBlogFromResearch);
   const recordUsage = useAppStore((state) => state.recordUsage);
+
+  const isByok = preferredEngine === "byok" || Boolean(api.apiKey || api.provider === "ollama");
 
   // Saved Dossiers State (Just like projects in ProjectsPage)
   const [savedDossiers, setSavedDossiers] = useState<SavedDossier[]>([]);
@@ -203,14 +206,21 @@ export default function ResearchPage() {
         throw new Error(data.error || "Failed to generate research dossier.");
       }
 
-      // Record credit consumption & save token metadata
+      // Record credit consumption & save token metadata (Zero credits for BYOK)
       const tokensConsumed = data.usage?.total_tokens || (depth === "academic" ? 4800 : depth === "quick" ? 1500 : 3200);
+      const isByokGeneration = preferredEngine === "byok" || Boolean(api.apiKey || api.provider === "ollama");
       if (data.usage?.total_tokens) {
-        recordUsage(data.usage.total_tokens, api.provider, api.model);
+        recordUsage(data.usage.total_tokens, api.provider, api.model, isByokGeneration);
       }
 
       // Automatically save to persistent dossiers list (just like Projects!)
-      const savedEntry = saveDossierToStorage(data.dossier, tokensConsumed);
+      const savedEntry = saveDossierToStorage(
+        data.dossier,
+        tokensConsumed,
+        isByokGeneration ? 0 : undefined,
+        isByokGeneration ? "byok" : "bizai",
+        isByokGeneration
+      );
       setSavedDossiers(getSavedDossiers());
       setSelectedDossier(savedEntry);
       setShowCreator(false);
@@ -381,10 +391,17 @@ export default function ResearchPage() {
                 Audience: <strong className="text-on-surface">{selectedDossier.dossier.targetAudience}</strong>
               </span>
               <span className="text-[12px] text-on-surface-variant">·</span>
-              <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
-                <CoinsIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                <span>~{calculateDossierCredits(selectedDossier)} credits used • Free with BYOK</span>
-              </span>
+              {isByok || selectedDossier.isByok || selectedDossier.engine === "byok" || calculateDossierCredits(selectedDossier) === 0 ? (
+                <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">
+                  <span className="material-symbols-outlined text-[13px] text-emerald-500">key</span>
+                  <span>Generated with BYOK • Free (0 credits deducted)</span>
+                </span>
+              ) : (
+                <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
+                  <CoinsIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span>~{calculateDossierCredits(selectedDossier)} credits used</span>
+                </span>
+              )}
             </div>
             <h1 className="text-[20px] sm:text-[24px] font-bold text-on-surface leading-tight">
               {selectedDossier.dossier.topic}
@@ -764,16 +781,25 @@ export default function ResearchPage() {
             <div className="overflow-x-auto">
               {/* Table Header Row */}
               <div className="hidden md:flex items-center gap-4 h-9 px-3.5 border-b border-[var(--hairline)] bg-on-surface/[0.02] text-[11px] font-semibold text-on-surface-variant min-w-[920px]">
-                <span className="w-64 lg:w-72 shrink-0">Topic & Synthesis</span>
-                <span className="w-24 shrink-0">Depth</span>
-                <span className="w-12 shrink-0 text-center">Theses</span>
-                <span className="w-12 shrink-0 text-center">Stats</span>
-                <span className="w-14 shrink-0 text-center">Chapters</span>
-                <span className="w-36 shrink-0 text-center flex items-center justify-center gap-1.5" title="Estimated credits deducted">
-                  <CoinsIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">Credits</span>
+                <span className="flex-1 min-w-0">Topic & Synthesis</span>
+                <span className="w-28 shrink-0">Depth</span>
+                <span className="w-14 shrink-0 text-center">Theses</span>
+                <span className="w-14 shrink-0 text-center">Stats</span>
+                <span className="w-16 shrink-0 text-center">Chapters</span>
+                <span className="w-32 shrink-0 text-center flex items-center justify-center gap-1.5" title={isByok ? "Generation Engine (0 credits)" : "Estimated credits deducted"}>
+                  {isByok ? (
+                    <>
+                      <span className="material-symbols-outlined text-[13px] text-emerald-500 shrink-0">key</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">Engine</span>
+                    </>
+                  ) : (
+                    <>
+                      <CoinsIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">Credits</span>
+                    </>
+                  )}
                 </span>
-                <span className="w-56 shrink-0 text-right pr-2">Actions</span>
+                <span className="w-48 shrink-0 text-right pr-2">Actions</span>
               </div>
 
             {visible.length === 0 ? (
@@ -797,6 +823,7 @@ export default function ResearchPage() {
             ) : (
               visible.map((entry) => {
                 const { id, createdAt, dossier: d } = entry;
+                const entryIsByok = isByok || entry.isByok || entry.engine === "byok" || entry.creditsUsed === 0;
                 return (
                   <div
                     key={id}
@@ -809,7 +836,7 @@ export default function ResearchPage() {
                         setSelectedDossier(entry);
                         setActiveViewerTab("overview");
                       }}
-                      className="w-64 lg:w-72 shrink-0 text-left cursor-pointer group py-1"
+                      className="flex-1 min-w-0 text-left cursor-pointer group py-1"
                     >
                       <div className="flex items-center gap-2">
                         <span className="row-title font-bold group-hover:text-primary transition-colors truncate">
@@ -830,36 +857,46 @@ export default function ResearchPage() {
                     </button>
 
                     {/* Depth Chip */}
-                    <span className="w-24 shrink-0 hidden md:flex items-center">
+                    <span className="w-28 shrink-0 hidden md:flex items-center">
                       <span className="chip chip-neutral text-[10px] uppercase font-bold">
                         {d.depth}
                       </span>
                     </span>
 
                     {/* Counts */}
-                    <span className="w-12 shrink-0 row-meta text-center hidden md:block font-mono">
+                    <span className="w-14 shrink-0 row-meta text-center hidden md:block font-mono">
                       {d.coreTheses?.length || 0}
                     </span>
-                    <span className="w-12 shrink-0 row-meta text-center hidden md:block font-mono">
+                    <span className="w-14 shrink-0 row-meta text-center hidden md:block font-mono">
                       {d.factsAndStats?.length || 0}
                     </span>
-                    <span className="w-14 shrink-0 row-meta text-center hidden md:block font-mono">
+                    <span className="w-16 shrink-0 row-meta text-center hidden md:block font-mono">
                       {d.chapterSeeds?.length || 0}
                     </span>
 
-                    {/* Credits */}
-                    <span className="w-36 shrink-0 row-meta text-center hidden md:flex items-center justify-center">
-                      <span
-                        className="text-amber-600 dark:text-amber-400 font-semibold inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 font-mono text-[11.5px] shadow-xs"
-                        title={`Dossier generation: ~${calculateDossierCredits(entry)} credits`}
-                      >
-                        <CoinsIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                        <span>~{calculateDossierCredits(entry)} credits</span>
-                      </span>
+                    {/* Credits / Engine */}
+                    <span className="w-32 shrink-0 row-meta text-center hidden md:flex items-center justify-center">
+                      {entryIsByok ? (
+                        <span
+                          className="text-emerald-700 dark:text-emerald-300 font-semibold inline-flex items-center justify-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-[11px] shadow-xs"
+                          title="BYOK generation: Zero platform credits deducted"
+                        >
+                          <span className="material-symbols-outlined text-[13px] text-emerald-500">key</span>
+                          <span>BYOK (Free)</span>
+                        </span>
+                      ) : (
+                        <span
+                          className="text-amber-600 dark:text-amber-400 font-semibold inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 font-mono text-[11.5px] shadow-xs"
+                          title={`Dossier generation: ~${calculateDossierCredits(entry)} credits`}
+                        >
+                          <CoinsIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                          <span>~{calculateDossierCredits(entry)} credits</span>
+                        </span>
+                      )}
                     </span>
 
                     {/* 1-Click Action Buttons */}
-                    <span className="w-56 shrink-0 flex items-center justify-end gap-1.5">
+                    <span className="w-48 shrink-0 flex items-center justify-end gap-1.5">
                       {/* Draft Book Button */}
                       <button
                         type="button"
@@ -1201,10 +1238,17 @@ export default function ResearchPage() {
 
                 {/* Footer Buttons */}
                 <div className="flex items-center justify-between pt-3 border-t border-[var(--hairline)]">
-                  <span className="text-[11.5px] text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
-                    <CoinsIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                    ~{getDisplayedResearchCreditEstimate(depth)} approx. credits • Free with BYOK
-                  </span>
+                  {isByok ? (
+                    <span className="text-[11.5px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-[15px] text-emerald-500">key</span>
+                      <span>100% Free with your BYOK model ({api.provider.toUpperCase()} · {api.model || "Custom"})</span>
+                    </span>
+                  ) : (
+                    <span className="text-[11.5px] text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
+                      <CoinsIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                      <span>~{getDisplayedResearchCreditEstimate(depth)} approx. credits</span>
+                    </span>
+                  )}
 
                   <div className="flex items-center gap-2">
                     <button

@@ -42,6 +42,8 @@ export default function RewritePage() {
   const projects = useAppStore((state) => state.projects);
   const setCurrentProject = useAppStore((state) => state.setCurrentProject);
   const updateRewrite = useAppStore((state) => state.updateRewrite);
+  const preferredEngine = useAppStore((state) => state.preferredEngine);
+  const isByok = preferredEngine === "byok" || Boolean(api.apiKey || api.provider === "ollama");
   
   const outlineGenerator = useAppStore((state) => state.outlineGenerator);
   const updateOutlineGenerator = useAppStore((state) => state.updateOutlineGenerator);
@@ -260,7 +262,7 @@ export default function RewritePage() {
 
             if (event.type === "active_agent") setActiveAgent(event.agent);
             else if (event.type === "usage" && event.tokens) {
-              useAppStore.getState().recordUsage(event.tokens, api.provider, api.model);
+              useAppStore.getState().recordUsage(event.tokens, api.provider, api.model, isByok);
               setMetrics(prev => ({ ...prev, tokens: prev.tokens + event.tokens }));
             }
             else if (event.type === "log") {
@@ -409,7 +411,7 @@ export default function RewritePage() {
           } else if (event.type === "active_agent") {
             setActiveAgent(event.agent);
           } else if (event.type === "usage" && event.tokens) {
-            useAppStore.getState().recordUsage(event.tokens, api.provider, api.model);
+            useAppStore.getState().recordUsage(event.tokens, api.provider, api.model, isByok);
             setMetrics(prev => ({ ...prev, tokens: prev.tokens + event.tokens }));
           } else if (event.type === "chapter_started") {
             outlineTotalChaptersRef.current = event.total;
@@ -569,7 +571,7 @@ export default function RewritePage() {
 
           if (event.type === "active_agent") setActiveAgent(event.agent);
           else if (event.type === "usage" && event.tokens) {
-            useAppStore.getState().recordUsage(event.tokens, api.provider, api.model);
+            useAppStore.getState().recordUsage(event.tokens, api.provider, api.model, isByok);
             setMetrics(prev => ({ ...prev, tokens: prev.tokens + event.tokens }));
           }
           else if (event.type === "log") {
@@ -1127,13 +1129,23 @@ export default function RewritePage() {
                       <dt>Drafting</dt>
                       <dd>{formatTime(metrics.draftingTime)}</dd>
                     </div>
-                    <div className="kv">
-                      <dt className="flex items-center gap-1">
-                        <CoinsIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                        <span>Est. Credits</span>
-                      </dt>
-                      <dd>~{Math.round(metrics.tokens * 0.015).toLocaleString()} credits</dd>
-                    </div>
+                    {isByok ? (
+                      <div className="kv">
+                        <dt className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                          <span className="material-symbols-outlined text-[14px]">key</span>
+                          <span>Engine</span>
+                        </dt>
+                        <dd className="text-emerald-600 dark:text-emerald-400 font-medium">Free with BYOK</dd>
+                      </div>
+                    ) : (
+                      <div className="kv">
+                        <dt className="flex items-center gap-1">
+                          <CoinsIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                          <span>Est. Credits</span>
+                        </dt>
+                        <dd>~{Math.round(metrics.tokens * 0.015).toLocaleString()} credits</dd>
+                      </div>
+                    )}
                   </dl>
                 </div>
               )}

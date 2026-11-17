@@ -6,6 +6,8 @@ export type ChatResponse = {
   text: string;
   usage: {
     total_tokens: number;
+    input_tokens?: number;
+    output_tokens?: number;
   };
 };
 
@@ -17,6 +19,8 @@ type ProviderPayload = {
     total_tokens?: number;
     input_tokens?: number;
     output_tokens?: number;
+    prompt_tokens?: number;
+    completion_tokens?: number;
   };
   error?: { message?: string; msg?: string };
 };
@@ -87,22 +91,38 @@ function buildBody(
 
 function readPayload(payload: ProviderPayload, isClaude: boolean): ChatResponse {
   if (isClaude && Array.isArray(payload.content)) {
+    const input = payload.usage?.input_tokens ?? payload.usage?.prompt_tokens ?? 0;
+    const output = payload.usage?.output_tokens ?? payload.usage?.completion_tokens ?? 0;
+    const total = payload.usage?.total_tokens ?? (input + output);
     return {
       text: payload.content
         .map((item) => item.text ?? "")
         .join("\n")
         .trim(),
       usage: {
-        total_tokens: (payload.usage?.input_tokens || 0) + (payload.usage?.output_tokens || 0),
+        total_tokens: total,
+        input_tokens: input,
+        output_tokens: output,
       },
     };
   }
 
+  const input = payload.usage?.prompt_tokens ?? payload.usage?.input_tokens ?? 0;
+  const output = payload.usage?.completion_tokens ?? payload.usage?.output_tokens ?? 0;
+  const total = payload.usage?.total_tokens ?? (input + output);
+
   return {
     text: (payload.choices?.[0]?.message?.content || "").trim(),
-    usage: { total_tokens: payload.usage?.total_tokens || 0 },
+    usage: {
+      total_tokens: total,
+      input_tokens: input,
+      output_tokens: output,
+    },
   };
 }
+
+/** Exported strictly for unit testing payload parsing logic. */
+export const readPayloadForTest = readPayload;
 
 /**
  * Calls the configured AI provider. The endpoint is validated by

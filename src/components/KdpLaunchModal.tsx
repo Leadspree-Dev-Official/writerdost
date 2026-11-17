@@ -246,14 +246,32 @@ ${launchKit.socialPosts.newsletterTeaser}
           )}
 
           {loading && (
-            <div className="py-16 flex flex-col items-center justify-center text-center">
-              <div className="w-12 h-12 rounded-full border-3 border-outline-variant/30 border-t-amber-500 animate-spin mb-4" />
-              <p className="text-sm font-semibold text-on-surface">
-                Synthesizing Amazon KDP Launch Kit...
-              </p>
-              <p className="text-xs text-on-surface-variant mt-1">
-                Optimizing search keywords, BISAC categories, and HTML copy
-              </p>
+            <div className="py-8 px-2 space-y-5 animate-pulse">
+              <div className="text-center space-y-1 mb-6">
+                <p className="text-sm font-semibold text-on-surface">
+                  Synthesizing Amazon KDP Launch Kit...
+                </p>
+                <p className="text-xs text-on-surface-variant">
+                  Optimizing search keywords, BISAC categories, and HTML copy
+                </p>
+              </div>
+              <div className="space-y-3 p-4 rounded-xl border border-[var(--hairline)] bg-surface dark:bg-white/[0.02]">
+                <div className="h-5 w-48 bg-primary/25 rounded"></div>
+                <div className="space-y-2">
+                  <div className="h-3 w-full bg-surface-variant/50 rounded"></div>
+                  <div className="h-3 w-5/6 bg-surface-variant/50 rounded"></div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="h-20 rounded-xl border border-[var(--hairline)] bg-surface dark:bg-white/[0.02] p-3 space-y-2">
+                  <div className="h-3 w-20 bg-surface-variant/60 rounded"></div>
+                  <div className="h-4 w-full bg-surface-variant/40 rounded"></div>
+                </div>
+                <div className="h-20 rounded-xl border border-[var(--hairline)] bg-surface dark:bg-white/[0.02] p-3 space-y-2">
+                  <div className="h-3 w-20 bg-surface-variant/60 rounded"></div>
+                  <div className="h-4 w-full bg-surface-variant/40 rounded"></div>
+                </div>
+              </div>
             </div>
           )}
 

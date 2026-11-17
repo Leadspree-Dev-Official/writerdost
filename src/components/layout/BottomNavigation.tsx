@@ -269,8 +269,8 @@ export default function BottomNavigation() {
                   </span>
                   <div className="flex items-center gap-2">
                     <span>BlogGen Automations</span>
-                    <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary">
-                      Beta
+                    <span className="rounded-full bg-amber-500/10 dark:bg-amber-500/20 px-1.5 py-0.5 text-[9px] font-semibold text-amber-600 dark:text-amber-400">
+                      Soon
                     </span>
                   </div>
                 </Link>
@@ -285,6 +285,9 @@ export default function BottomNavigation() {
                   </span>
                   <div className="flex items-center gap-2">
                     <span>BundleKart Marketplace</span>
+                    <span className="rounded-full bg-amber-500/10 dark:bg-amber-500/20 px-1.5 py-0.5 text-[9px] font-semibold text-amber-600 dark:text-amber-400">
+                      Soon
+                    </span>
                   </div>
                 </Link>
 

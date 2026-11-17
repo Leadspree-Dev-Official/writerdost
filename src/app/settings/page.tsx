@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { AiSettingsTab } from "./AiSettingsTab";
 import { ApiTab } from "./ApiTab";
 import { ApplicationTab } from "./ApplicationTab";
+import { SettingsSkeleton } from "@/components/ui/WorkspaceSkeleton";
 
 const TABS = [
   {
@@ -87,13 +88,7 @@ export default function SettingsPage() {
     <div className="page">
       {/* useSearchParams opts this subtree into client rendering, so the
           boundary keeps the shell prerenderable. */}
-      <Suspense
-        fallback={
-          <div className="page-head">
-            <h1 className="page-title">Settings</h1>
-          </div>
-        }
-      >
+      <Suspense fallback={<SettingsSkeleton />}>
         <SettingsTabs />
       </Suspense>
     </div>

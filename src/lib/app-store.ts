@@ -15,7 +15,7 @@ import { DEFAULT_LANGUAGE } from "@/lib/languages";
 import { buildCustomFont, loadGoogleFont, type FontOption } from "@/lib/fonts";
 import { fetchWorkspace, pushWorkspace } from "@/lib/workspace/client";
 import type { WorkspacePatch } from "@/lib/workspace/wire";
-import { providerDefaults } from "@/lib/ai-providers";
+import { providerDefaults, getModelDefaultRates, calculateModelCost } from "@/lib/ai-providers";
 import { MARKETPLACE, generateApiToken } from "@/lib/marketplace";
 import type {
   ApiScope,
@@ -23,6 +23,9 @@ import type {
   AutomationDestination,
   CampaignPost,
   ApiSettings,
+  ByokModelConfig,
+  SavedBlogPost,
+  BlogSource,
   ApiToken,
   GeneratedProjectPayload,
   PlatformApiSettings,
@@ -36,6 +39,7 @@ import type {
   SubscriptionOrder,
   GenerationEngine,
 } from "@/lib/store-types";
+export type { BlogSource, SavedBlogPost };
 import { CREDIT_PACKS, CREDIT_COSTS, TOKEN_CREDIT_MULTIPLIER } from "@/lib/store-types";
 import type { KdpLaunchKit } from "@/lib/kdp-types";
 import * as subApi from "@/lib/subscription-client-api";
@@ -227,6 +231,8 @@ export type Project = {
   outlineDuration?: number;
   draftDuration?: number;
   tokensUsed?: number;
+  isByok?: boolean;
+  engine?: GenerationEngine;
   designSettings?: ProjectDesignSettings;
   /** Marketplace listing state. Absent until the project is first published. */
   publish?: PublishState;
@@ -278,7 +284,6 @@ type OutlineGeneratorState = {
 
 /** How a blog draft was started. "none" means the writer has not chosen yet,
  *  which is what puts the picker on screen instead of a half-filled editor. */
-export type BlogSource = "none" | "blank" | "project" | "topic" | "template" | "research";
 
 type BlogComposer = {
   source: BlogSource;
@@ -350,7 +355,19 @@ type AppStore = {
   currentProjectId: string | null;
   activeChapterId: string | null;
   blog: BlogComposer;
+  savedBlogs: SavedBlogPost[];
+  saveBlogPost: (post: Omit<SavedBlogPost, "id" | "createdAt" | "updatedAt"> & { id?: string }) => string;
+  deleteBlogPost: (id: string) => void;
+  loadSavedBlog: (id: string) => void;
   api: ApiSettings;
+  byokModels: ByokModelConfig[];
+  activeByokModelId: string | null;
+  addByokModel: (config: Omit<ByokModelConfig, "id" | "createdAt" | "usage">) => string;
+  updateByokModel: (id: string, patch: Partial<ByokModelConfig>) => void;
+  removeByokModel: (id: string) => void;
+  setDefaultByokModel: (id: string) => void;
+  resetByokModelUsage: (id: string) => void;
+  resetAllByokUsage: () => void;
   platform: PlatformApiSettings;
   settings: SettingsState;
   profile: ProfileState;
@@ -435,8 +452,9 @@ type AppStore = {
   setCurrentTask: (task: string) => void;
   recordUsage: (
     tokens: number,
-    provider: string,
-    model: string,
+    provider?: string,
+    model?: string,
+    breakdownOrByok?: boolean | { inputTokens?: number; outputTokens?: number; byokModelId?: string; isByok?: boolean },
   ) => { allowed: boolean; remainingCredits: number; creditsDeducted: number };
   updateUsageRates: (inputRate: number, outputRate: number) => void;
   resetUsage: () => void;
@@ -610,6 +628,29 @@ const defaultApiSettings: ApiSettings = {
   siteUrl: "", // Initialize empty, will be set on client to avoid hydration/port mismatch
 };
 
+const defaultRates = getModelDefaultRates(defaultApiSettings.provider, defaultApiSettings.model);
+const defaultByokModels: ByokModelConfig[] = [
+  {
+    id: "byok_default_primary",
+    name: "OpenAI (GPT-4o Mini)",
+    provider: defaultApiSettings.provider,
+    model: defaultApiSettings.model,
+    apiKey: defaultApiSettings.apiKey,
+    baseUrl: defaultApiSettings.baseUrl,
+    inputTokenRate: defaultRates.inputRate,
+    outputTokenRate: defaultRates.outputRate,
+    isDefault: true,
+    createdAt: 1700000000000,
+    usage: {
+      inputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
+      totalRequests: 0,
+      totalCost: 0,
+    },
+  },
+];
+
 const defaultPlatformApi: PlatformApiSettings = {
   marketplaceEnabled: false,
   marketplaceBaseUrl: MARKETPLACE.defaultBaseUrl,
@@ -719,6 +760,9 @@ function blankWorkspace() {
     profile: defaultProfile,
     settings: defaultSettings,
     api: defaultApiSettings,
+    byokModels: defaultByokModels,
+    activeByokModelId: "byok_default_primary",
+    savedBlogs: [] as SavedBlogPost[],
     platform: defaultPlatformApi,
     usage: defaultUsage,
     customFonts: [] as FontOption[],
@@ -795,6 +839,9 @@ const SETTINGS_KEYS = [
   "profile",
   "settings",
   "api",
+  "byokModels",
+  "activeByokModelId",
+  "savedBlogs",
   "platform",
   "usage",
   "customFonts",
@@ -1041,6 +1088,60 @@ async function openWorkspace(userId: string | null): Promise<void> {
       }
     }
 
+    let byokModels = saved.byokModels as ByokModelConfig[] | undefined;
+    if (!byokModels || byokModels.length === 0) {
+      const apiSettings = saved.api || defaultApiSettings;
+      const rates = getModelDefaultRates(apiSettings.provider, apiSettings.model);
+      byokModels = [
+        {
+          id: "byok_default_primary",
+          name: `${apiSettings.provider.toUpperCase()} (${apiSettings.model || "Default"})`,
+          provider: apiSettings.provider,
+          model: apiSettings.model,
+          apiKey: apiSettings.apiKey || "",
+          baseUrl: apiSettings.baseUrl || "",
+          inputTokenRate: rates.inputRate,
+          outputTokenRate: rates.outputRate,
+          isDefault: true,
+          createdAt: Date.now(),
+          usage: {
+            inputTokens: 0,
+            outputTokens: 0,
+            totalTokens: 0,
+            totalRequests: 0,
+            totalCost: 0,
+          },
+        },
+      ];
+      saved.byokModels = byokModels;
+      saved.activeByokModelId = byokModels[0].id;
+    }
+
+    let savedBlogs = saved.savedBlogs as SavedBlogPost[] | undefined;
+    if (!savedBlogs || savedBlogs.length === 0) {
+      const existingProjectBlogs: SavedBlogPost[] = (snapshot.projects as Project[])
+        .filter((p) => p.blogTitle && p.blogDraft)
+        .map((p) => {
+          const text = (p.blogDraft || "").replace(/<[^>]*>/g, " ");
+          const words = text.trim().split(/\s+/).filter(Boolean).length;
+          return {
+            id: `blog_from_proj_${p.id}`,
+            title: p.blogTitle,
+            draft: p.blogDraft,
+            metaDescription: p.metaDescription,
+            keywords: p.seoKeywords,
+            source: "project" as const,
+            sourceName: p.title,
+            projectId: p.id,
+            wordCount: words,
+            createdAt: Date.now() - 3600000,
+            updatedAt: Date.now() - 3600000,
+          };
+        });
+      savedBlogs = existingProjectBlogs;
+      saved.savedBlogs = savedBlogs;
+    }
+
     // Defaults first, then whatever was saved: a workspace written by an older
     // build simply has fewer keys, and the missing ones keep their defaults.
     useAppStore.setState({
@@ -1085,6 +1186,9 @@ export const useAppStore = create<AppStore>()((set, get) => ({
     profile: defaultProfile,
     settings: defaultSettings,
     api: defaultApiSettings,
+    byokModels: defaultByokModels,
+    activeByokModelId: "byok_default_primary",
+    savedBlogs: [] as SavedBlogPost[],
     platform: defaultPlatformApi,
     generationStatus: defaultGenerationStatus,
     usage: defaultUsage,
@@ -1279,6 +1383,8 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         outlineDuration: payload.outlineDuration,
         draftDuration: payload.draftDuration,
         tokensUsed: payload.tokensUsed,
+        isByok: payload.isByok ?? (payload.engine === "byok" || get().preferredEngine === "byok"),
+        engine: payload.engine ?? (payload.isByok ? "byok" : get().preferredEngine),
       };
 
       set({
@@ -1769,6 +1875,70 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           lastSavedLabel: "just now",
         },
       })),
+    saveBlogPost: (post) => {
+      let targetId = post.id;
+      const now = Date.now();
+      const text = (post.draft || "").replace(/<[^>]*>/g, " ");
+      const calculatedWords = post.wordCount ?? text.trim().split(/\s+/).filter(Boolean).length;
+
+      set((state) => {
+        if (targetId && state.savedBlogs.some((b) => b.id === targetId)) {
+          return {
+            savedBlogs: state.savedBlogs.map((b) =>
+              b.id === targetId
+                ? {
+                    ...b,
+                    ...post,
+                    wordCount: calculatedWords,
+                    updatedAt: now,
+                  }
+                : b
+            ),
+          };
+        }
+
+        const newId = `blog_${now}_${Math.random().toString(36).slice(2, 7)}`;
+        targetId = newId;
+        const newPost: SavedBlogPost = {
+          ...post,
+          id: newId,
+          wordCount: calculatedWords,
+          createdAt: now,
+          updatedAt: now,
+        };
+
+        return {
+          savedBlogs: [newPost, ...state.savedBlogs],
+        };
+      });
+
+      return targetId || "";
+    },
+    deleteBlogPost: (id) =>
+      set((state) => ({
+        savedBlogs: state.savedBlogs.filter((b) => b.id !== id),
+      })),
+    loadSavedBlog: (id) => {
+      const found = get().savedBlogs.find((b) => b.id === id);
+      if (!found) return;
+
+      set({
+        blog: {
+          source: found.source || "blank",
+          projectId: found.projectId || "",
+          researchId: found.researchId || "",
+          templateId: found.templateId || "",
+          topic: found.sourceName || "",
+          title: found.title,
+          draft: found.draft,
+          metaDescription: found.metaDescription || "",
+          keywords: found.keywords || [],
+          suggestions: [],
+          targetWords: found.targetWords || 1000,
+          lastSavedLabel: "just now",
+        },
+      });
+    },
     updateChapterContent: (content) => {
       const { currentProjectId, activeChapterId, projects } = get();
       set({
@@ -2554,44 +2724,279 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           currentTask: task,
         },
       })),
-    recordUsage: (tokens, provider, model) => {
+    addByokModel: (config) => {
+      const id = `byok_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+      const rates =
+        config.inputTokenRate !== undefined && config.outputTokenRate !== undefined
+          ? { inputRate: config.inputTokenRate, outputRate: config.outputTokenRate }
+          : getModelDefaultRates(config.provider, config.model);
+
+      const isFirst = get().byokModels.length === 0;
+      const isDefault = config.isDefault ?? isFirst;
+
+      const newModel: ByokModelConfig = {
+        ...config,
+        id,
+        inputTokenRate: rates.inputRate,
+        outputTokenRate: rates.outputRate,
+        isDefault,
+        createdAt: Date.now(),
+        usage: {
+          inputTokens: 0,
+          outputTokens: 0,
+          totalTokens: 0,
+          totalRequests: 0,
+          totalCost: 0,
+        },
+      };
+
+      set((state) => {
+        const updatedModels = isDefault
+          ? state.byokModels.map((m) => ({ ...m, isDefault: false }))
+          : [...state.byokModels];
+
+        return {
+          byokModels: [...updatedModels, newModel],
+          activeByokModelId: isDefault ? id : state.activeByokModelId || id,
+          api: isDefault
+            ? {
+                ...state.api,
+                provider: newModel.provider,
+                model: newModel.model,
+                apiKey: newModel.apiKey,
+                baseUrl: newModel.baseUrl,
+              }
+            : state.api,
+        };
+      });
+
+      return id;
+    },
+
+    updateByokModel: (id, patch) => {
+      set((state) => {
+        const updatedModels = state.byokModels.map((m) => {
+          if (m.id === id) {
+            const next = { ...m, ...patch };
+            // If provider/model changed but rates weren't explicitly passed, recalculate rates
+            if ((patch.provider || patch.model) && patch.inputTokenRate === undefined && patch.outputTokenRate === undefined) {
+              const rates = getModelDefaultRates(next.provider, next.model);
+              next.inputTokenRate = rates.inputRate;
+              next.outputTokenRate = rates.outputRate;
+            }
+            return next;
+          }
+          return m;
+        });
+
+        const current = updatedModels.find((m) => m.id === id);
+        const syncApi = current && (current.isDefault || state.activeByokModelId === id);
+
+        return {
+          byokModels: updatedModels,
+          api: syncApi && current
+            ? {
+                ...state.api,
+                provider: current.provider,
+                model: current.model,
+                apiKey: current.apiKey,
+                baseUrl: current.baseUrl,
+              }
+            : state.api,
+        };
+      });
+    },
+
+    removeByokModel: (id) => {
+      set((state) => {
+        const filtered = state.byokModels.filter((m) => m.id !== id);
+        let nextActiveId = state.activeByokModelId;
+        let nextApi = state.api;
+
+        if (state.activeByokModelId === id || !filtered.some((m) => m.id === nextActiveId)) {
+          if (filtered.length > 0) {
+            filtered[0] = { ...filtered[0], isDefault: true };
+            nextActiveId = filtered[0].id;
+            nextApi = {
+              ...state.api,
+              provider: filtered[0].provider,
+              model: filtered[0].model,
+              apiKey: filtered[0].apiKey,
+              baseUrl: filtered[0].baseUrl,
+            };
+          } else {
+            nextActiveId = null;
+          }
+        }
+
+        return {
+          byokModels: filtered,
+          activeByokModelId: nextActiveId,
+          api: nextApi,
+        };
+      });
+    },
+
+    setDefaultByokModel: (id) => {
+      set((state) => {
+        const target = state.byokModels.find((m) => m.id === id);
+        if (!target) return state;
+
+        const updated = state.byokModels.map((m) => ({
+          ...m,
+          isDefault: m.id === id,
+        }));
+
+        return {
+          byokModels: updated,
+          activeByokModelId: id,
+          api: {
+            ...state.api,
+            provider: target.provider,
+            model: target.model,
+            apiKey: target.apiKey,
+            baseUrl: target.baseUrl,
+          },
+        };
+      });
+    },
+
+    resetByokModelUsage: (id) => {
+      set((state) => ({
+        byokModels: state.byokModels.map((m) =>
+          m.id === id
+            ? {
+                ...m,
+                usage: {
+                  inputTokens: 0,
+                  outputTokens: 0,
+                  totalTokens: 0,
+                  totalRequests: 0,
+                  totalCost: 0,
+                },
+              }
+            : m
+        ),
+      }));
+    },
+
+    resetAllByokUsage: () => {
+      set((state) => ({
+        byokModels: state.byokModels.map((m) => ({
+          ...m,
+          usage: {
+            inputTokens: 0,
+            outputTokens: 0,
+            totalTokens: 0,
+            totalRequests: 0,
+            totalCost: 0,
+          },
+        })),
+        usage: {
+          ...defaultUsage,
+          timingHistory: [],
+        },
+      }));
+    },
+
+    recordUsage: (tokens, provider = "openai", model = "gpt-4o-mini", breakdownOrByok) => {
       let allowed = true;
       let remainingCredits = get().currentUser?.credits ?? get().userCredits ?? 500;
       let creditsDeducted = 0;
 
+      const breakdown =
+        typeof breakdownOrByok === "object" && breakdownOrByok !== null ? breakdownOrByok : undefined;
+      const isByokExplicit =
+        typeof breakdownOrByok === "boolean" ? breakdownOrByok : breakdown?.isByok;
+
+      // Extract or estimate input and output tokens
+      let inputTokens = breakdown?.inputTokens;
+      let outputTokens = breakdown?.outputTokens;
+      if (inputTokens === undefined && outputTokens === undefined) {
+        inputTokens = Math.round(tokens * 0.4);
+        outputTokens = Math.max(0, tokens - inputTokens);
+      } else if (inputTokens !== undefined && outputTokens === undefined) {
+        outputTokens = Math.max(0, tokens - inputTokens);
+      } else if (outputTokens !== undefined && inputTokens === undefined) {
+        inputTokens = Math.max(0, tokens - outputTokens);
+      } else {
+        inputTokens = inputTokens ?? 0;
+        outputTokens = outputTokens ?? 0;
+      }
+
       set((state) => {
-        // Estimated cost per 1M tokens
-        const rates: Record<string, number> = {
-          "gpt-4o": 5.0,
-          "gpt-4o-mini": 0.15,
-          "gpt-4-turbo": 10.0,
-          "claude-haiku-5.5": 0.30,
-          "claude-3-5-sonnet": 3.0,
-          "claude-3-opus": 15.0,
-          "claude-3-haiku": 0.25,
-          "gemini-1.5-flash": 0.075,
-          "gemini-1.5-pro": 1.25,
-          "gemini-2.0-flash": 0.1,
-          "deepseek-chat": 0.14,
-          "deepseek-reasoner": 0.14,
-          "gpt-oss": 0,
-        };
+        // Find the target BYOK model if applicable
+        const targetModelId = breakdown?.byokModelId;
+        const targetModel =
+          (targetModelId ? state.byokModels.find((m) => m.id === targetModelId) : null) ||
+          (state.activeByokModelId
+            ? state.byokModels.find(
+                (m) =>
+                  m.id === state.activeByokModelId &&
+                  (!provider || m.provider === provider) &&
+                  (!model || m.model.toLowerCase() === model.toLowerCase())
+              )
+            : null) ||
+          state.byokModels.find(
+            (m) =>
+              (!provider || m.provider === provider) &&
+              (!model || m.model.toLowerCase() === model.toLowerCase())
+          ) ||
+          state.byokModels.find((m) => m.isDefault) ||
+          state.byokModels[0];
 
-        // Sort candidates longest-first so a specific match (e.g. "gpt-4o-mini")
-        // wins over a shorter prefix that's also a substring (e.g. "gpt-4o").
-        const modelKey =
-          Object.keys(rates)
-            .sort((a, b) => b.length - a.length)
-            .find((k) => model.toLowerCase().includes(k)) || "default";
-        const ratePerMillion = rates[modelKey] || (provider === "ollama" || provider === "ollama_cloud" ? 0 : 0.75);
-        const cost = (tokens / 1_000_000) * ratePerMillion;
+        // Calculate cost: if target model exists, use its inputTokenRate and outputTokenRate
+        let cost = 0;
+        if (targetModel) {
+          cost = calculateModelCost(
+            inputTokens,
+            outputTokens,
+            targetModel.inputTokenRate,
+            targetModel.outputTokenRate
+          );
+        } else {
+          // Estimated cost per 1M tokens fallback
+          const rates: Record<string, number> = {
+            "gpt-4o": 5.0,
+            "gpt-4o-mini": 0.15,
+            "gpt-4-turbo": 10.0,
+            "claude-haiku-5.5": 0.30,
+            "claude-3-5-sonnet": 3.0,
+            "claude-3-opus": 15.0,
+            "claude-3-haiku": 0.25,
+            "gemini-1.5-flash": 0.075,
+            "gemini-1.5-pro": 1.25,
+            "gemini-2.0-flash": 0.1,
+            "deepseek-chat": 0.14,
+            "deepseek-reasoner": 0.14,
+            "gpt-oss": 0,
+          };
+          const modelKey =
+            Object.keys(rates)
+              .sort((a, b) => b.length - a.length)
+              .find((k) => (model || "").toLowerCase().includes(k)) || "default";
+          const ratePerMillion =
+            rates[modelKey] || (provider === "ollama" || provider === "ollama_cloud" ? 0 : 0.75);
+          cost = (tokens / 1_000_000) * ratePerMillion;
+        }
 
-        // Auto-deduct credits at 0.015 credits per token if using BizAI gateway (100 tokens = 1.5 credits)
+        // Determine whether this request is BYOK
+        const effectiveIsByok = Boolean(
+          isByokExplicit ||
+            state.preferredEngine === "byok" ||
+            (Boolean(state.api.apiKey || state.api.provider === "ollama") &&
+              state.preferredEngine !== "bizai")
+        );
+
+        // Auto-deduct credits ONLY for BizAI managed gateway (zero credits for BYOK)
         let updatedCredits = state.userCredits;
         let updatedCurrentUser = state.currentUser;
-        if (state.preferredEngine === "bizai" && tokens > 0) {
+        if (!effectiveIsByok && state.preferredEngine === "bizai" && tokens > 0) {
           creditsDeducted = Number((tokens * TOKEN_CREDIT_MULTIPLIER).toFixed(2));
-          updatedCredits = Math.max(0, Number(((state.userCredits || 0) - creditsDeducted).toFixed(2)));
+          updatedCredits = Math.max(
+            0,
+            Number(((state.userCredits || 0) - creditsDeducted).toFixed(2))
+          );
           if (updatedCurrentUser) {
             updatedCurrentUser = { ...updatedCurrentUser, credits: updatedCredits };
           }
@@ -2601,9 +3006,38 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         }
         remainingCredits = updatedCredits;
 
+        // Update target model usage if matched
+        let updatedByokModels = state.byokModels;
+        if (targetModel) {
+          updatedByokModels = state.byokModels.map((m) => {
+            if (m.id === targetModel.id) {
+              const currentUsage = m.usage || {
+                inputTokens: 0,
+                outputTokens: 0,
+                totalTokens: 0,
+                totalRequests: 0,
+                totalCost: 0,
+              };
+              return {
+                ...m,
+                usage: {
+                  inputTokens: currentUsage.inputTokens + inputTokens,
+                  outputTokens: currentUsage.outputTokens + outputTokens,
+                  totalTokens: currentUsage.totalTokens + tokens,
+                  totalRequests: currentUsage.totalRequests + 1,
+                  totalCost: Number((currentUsage.totalCost + cost).toFixed(6)),
+                  lastUsedAt: Date.now(),
+                },
+              };
+            }
+            return m;
+          });
+        }
+
         return {
           userCredits: updatedCredits,
           currentUser: updatedCurrentUser,
+          byokModels: updatedByokModels,
           usage: {
             ...state.usage,
             totalTokens: state.usage.totalTokens + tokens,
@@ -2613,7 +3047,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           generationStatus: {
             ...state.generationStatus,
             sessionTokens: (state.generationStatus.sessionTokens || 0) + tokens,
-          }
+          },
         };
       });
 

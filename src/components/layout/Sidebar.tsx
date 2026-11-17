@@ -19,6 +19,7 @@ const NAV_GROUPS: Array<{
     feature?: FeatureKey;
     beta?: boolean;
     badge?: string;
+    badgeColor?: string;
   }>;
 }> = [
   {
@@ -36,7 +37,7 @@ const NAV_GROUPS: Array<{
       { name: "Outline & Rewrite", href: "/rewrite", icon: "auto_awesome_motion", feature: "rewriteEbook" },
       { name: "Copywriting", href: "/copywriting", icon: "campaign" },
       { name: "Blog draft", href: "/blog-generator", icon: "edit_note", feature: "blogGenerator" },
-      { name: "BlogGen", href: "/automations", icon: "schedule_send", feature: "blogGenerator", beta: true },
+      { name: "BlogGen", href: "/automations", icon: "schedule_send", feature: "blogGenerator", badge: "Soon" },
     ],
   },
   {
@@ -46,7 +47,7 @@ const NAV_GROUPS: Array<{
         name: "BundleKart Marketplace",
         href: "/marketplace",
         icon: "storefront",
-        badge: "Marketplace",
+        badge: "Soon",
       },
     ],
   },
@@ -192,7 +193,16 @@ export default function Sidebar() {
                       </span>
                     )}
                     {item.badge && !collapsed && (
-                      <span className="shrink-0 rounded-full bg-emerald-500/10 dark:bg-emerald-500/20 px-1.5 py-px text-[9.5px] font-semibold tracking-[0.02em] text-emerald-600 dark:text-emerald-400">
+                      <span
+                        className={clsx(
+                          "shrink-0 rounded-full px-1.5 py-px text-[9.5px] font-semibold tracking-[0.02em]",
+                          item.badgeColor
+                            ? item.badgeColor
+                            : item.badge.toLowerCase() === "soon"
+                            ? "bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400"
+                            : "bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400",
+                        )}
+                      >
                         {item.badge}
                       </span>
                     )}

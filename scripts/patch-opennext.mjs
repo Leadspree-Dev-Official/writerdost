@@ -18,19 +18,34 @@ const _fetch = (input, init) => {
 
 class Agent {
   constructor(_opts) {}
+  async close() {}
+  destroy() {}
 }
 
 class Client {
   constructor(_opts) {}
+  async close() {}
+  destroy() {}
 }
 
 class Pool {
   constructor(_opts) {}
+  async close() {}
+  destroy() {}
 }
 
 class Dispatcher {
   constructor(_opts) {}
+  async close() {}
+  destroy() {}
 }
+
+class DecoratorHandler {
+  constructor(_opts) {}
+}
+
+const getGlobalDispatcher = () => new Dispatcher();
+const setGlobalDispatcher = (..._args) => {};
 
 const File = globalThis.File;
 const FormData = globalThis.FormData;
@@ -44,6 +59,9 @@ module.exports = {
   Client,
   Pool,
   Dispatcher,
+  DecoratorHandler,
+  getGlobalDispatcher,
+  setGlobalDispatcher,
   File,
   FormData,
   Headers,
@@ -55,6 +73,9 @@ module.exports = {
     Client,
     Pool,
     Dispatcher,
+    DecoratorHandler,
+    getGlobalDispatcher,
+    setGlobalDispatcher,
     File,
     FormData,
     Headers,

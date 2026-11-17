@@ -98,6 +98,11 @@ export async function resolveUpstream(api: ApiSettings): Promise<ApiSettings> {
     deny("The AI base URL must use http or https.");
   }
 
+  // Normalize OpenAI-compatible base URLs ending with /v1 or /v1/ to chat/completions
+  if (url.pathname.endsWith("/v1") || url.pathname.endsWith("/v1/")) {
+    url.pathname = url.pathname.replace(/\/+$/, "") + "/chat/completions";
+  }
+
   const host = url.hostname.toLowerCase();
   const explicitlyAllowed = envAllowedHosts.includes(host);
 

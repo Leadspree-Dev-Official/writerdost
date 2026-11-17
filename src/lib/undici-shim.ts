@@ -22,6 +22,8 @@ const _fetch = (input: RequestInfo | URL, init?: RequestInit) => {
 class Agent {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   constructor(..._args: unknown[]) {}
+  async close(): Promise<void> {}
+  destroy(): void {}
 }
 
 class DecoratorHandler {
@@ -29,9 +31,25 @@ class DecoratorHandler {
   constructor(..._args: unknown[]) {}
 }
 
+class Client {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  constructor(..._args: unknown[]) {}
+  async close(): Promise<void> {}
+  destroy(): void {}
+}
+
+class Pool {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  constructor(..._args: unknown[]) {}
+  async close(): Promise<void> {}
+  destroy(): void {}
+}
+
 class Dispatcher {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   constructor(..._args: unknown[]) {}
+  async close(): Promise<void> {}
+  destroy(): void {}
 }
 
 const getGlobalDispatcher = () => new Dispatcher();
@@ -47,6 +65,8 @@ const _Response = globalThis.Response;
 export {
   _fetch as fetch,
   Agent,
+  Client,
+  Pool,
   DecoratorHandler,
   Dispatcher,
   getGlobalDispatcher,
@@ -61,6 +81,8 @@ export {
 const undiciShim = {
   fetch: _fetch,
   Agent,
+  Client,
+  Pool,
   DecoratorHandler,
   Dispatcher,
   getGlobalDispatcher,

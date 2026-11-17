@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useAppStore } from "@/lib/app-store";
+import WorkspaceSkeleton from "@/components/ui/WorkspaceSkeleton";
 
 const PUBLIC_PATHS = new Set([
   "/",
@@ -51,69 +52,20 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const isPublicPage = PUBLIC_PATHS.has(pathname);
 
   if (!isReady && !isPublicPage) {
-    return (
-      <div className="min-h-screen bg-[#0c0c14] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          {/* Glowing Spinner with LeadSpree Color Scheme */}
-          <div className="relative w-14 h-14">
-            <div className="absolute inset-0 rounded-full border-4 border-slate-800" />
-            <div className="absolute inset-0 rounded-full border-4 border-indigo-600 border-t-amber-500 animate-spin" />
-          </div>
-          <p className="text-slate-400 font-bold text-xs tracking-[0.2em] uppercase animate-pulse">
-            Connecting Workspace...
-          </p>
-        </div>
-      </div>
-    );
+    return <WorkspaceSkeleton label="Connecting Workspace..." />;
   }
 
   // If not logged in and on a protected route, or logged in as standard user on admin route,
   // render a seamless dark loader during transition to avoid white screen flashing
   const isAuthPage = pathname === "/login" || pathname === "/signup";
   if (!currentUser && !isPublicPage) {
-    return (
-      <div className="min-h-screen bg-[#0c0c14] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="relative w-12 h-12">
-            <div className="absolute inset-0 rounded-full border-3 border-slate-800" />
-            <div className="absolute inset-0 rounded-full border-3 border-indigo-600 border-t-transparent animate-spin" />
-          </div>
-          <p className="text-slate-400 font-bold text-xs tracking-[0.2em] uppercase animate-pulse">
-            Redirecting to sign in...
-          </p>
-        </div>
-      </div>
-    );
+    return <WorkspaceSkeleton label="Redirecting to sign in..." />;
   }
   if (currentUser && isAuthPage) {
-    return (
-      <div className="min-h-screen bg-[#0c0c14] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="relative w-12 h-12">
-            <div className="absolute inset-0 rounded-full border-3 border-slate-800" />
-            <div className="absolute inset-0 rounded-full border-3 border-indigo-600 border-t-transparent animate-spin" />
-          </div>
-          <p className="text-slate-400 font-bold text-xs tracking-[0.2em] uppercase animate-pulse">
-            Entering Workspace...
-          </p>
-        </div>
-      </div>
-    );
+    return <WorkspaceSkeleton label="Entering Workspace..." />;
   }
   if (currentUser && pathname.startsWith("/admin") && currentUser.role !== "admin") {
-    return (
-      <div className="min-h-screen bg-[#0c0c14] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="relative w-12 h-12">
-            <div className="absolute inset-0 rounded-full border-3 border-slate-800" />
-            <div className="absolute inset-0 rounded-full border-3 border-indigo-600 border-t-transparent animate-spin" />
-          </div>
-          <p className="text-slate-400 font-bold text-xs tracking-[0.2em] uppercase animate-pulse">
-            Redirecting...
-          </p>
-        </div>
-      </div>
-    );
+    return <WorkspaceSkeleton label="Redirecting..." />;
   }
 
   // Intercept locked features for standard users

@@ -80,7 +80,7 @@ function writePath(target: Record<string, unknown>, path: string[], value: strin
 type Split = { plain: WorkspaceSettings; secrets: Record<string, string>; dropped: boolean };
 
 /** Lifts the credentials out of the blob so they are never stored in the clear. */
-function stripSecrets(settings: WorkspaceSettings): Split {
+export function stripSecrets(settings: WorkspaceSettings): Split {
   // A structured clone: the caller's object must not be mutated, and the blob
   // is plain JSON by construction.
   const plain = JSON.parse(JSON.stringify(settings ?? {})) as Record<string, unknown>;
@@ -95,6 +95,21 @@ function stripSecrets(settings: WorkspaceSettings): Split {
     writePath(plain, path, "");
     if (canEncrypt) secrets[path.join(".")] = encryptSecret(value);
     else dropped = true;
+  }
+
+  // Strip each BYOK model API key in byokModels array
+  if (Array.isArray(plain.byokModels)) {
+    plain.byokModels = (plain.byokModels as Record<string, unknown>[]).map((item, idx) => {
+      const key = typeof item.apiKey === "string" ? item.apiKey : "";
+      if (!key) return item;
+      const secretPath = `byokModels.${idx}.apiKey`;
+      if (canEncrypt) {
+        secrets[secretPath] = encryptSecret(key);
+      } else {
+        dropped = true;
+      }
+      return { ...item, apiKey: "" };
+    });
   }
 
   // API tokens are shown once and then only ever compared, so the stored copy
@@ -117,7 +132,7 @@ function stripSecrets(settings: WorkspaceSettings): Split {
 }
 
 /** Puts the decrypted credentials back for the account that owns them. */
-function restoreSecrets(plain: WorkspaceSettings, secrets: Record<string, string>): WorkspaceSettings {
+export function restoreSecrets(plain: WorkspaceSettings, secrets: Record<string, string>): WorkspaceSettings {
   const restored = JSON.parse(JSON.stringify(plain ?? {})) as Record<string, unknown>;
 
   for (const path of SECRET_PATHS) {
@@ -129,6 +144,20 @@ function restoreSecrets(plain: WorkspaceSettings, secrets: Record<string, string
       // A key rotation makes old ciphertext unreadable. The user re-enters it.
       writePath(restored, path, "");
     }
+  }
+
+  // Restore each BYOK model API key in byokModels array
+  if (Array.isArray(restored.byokModels)) {
+    restored.byokModels = (restored.byokModels as Record<string, unknown>[]).map((item, idx) => {
+      const secretPath = `byokModels.${idx}.apiKey`;
+      const cipher = secrets[secretPath];
+      if (!cipher) return item;
+      try {
+        return { ...item, apiKey: decryptSecret(cipher) };
+      } catch {
+        return { ...item, apiKey: "" };
+      }
+    });
   }
 
   const platform = restored.platform as Record<string, unknown> | undefined;

@@ -33,7 +33,7 @@ export async function generateAiText({
 
   const payload = (await response.json()) as { 
     text?: string; 
-    usage?: { total_tokens: number };
+    usage?: { total_tokens: number; input_tokens?: number; output_tokens?: number };
     error?: string;
   };
 
@@ -43,7 +43,10 @@ export async function generateAiText({
 
   // Record real-time usage
   const recordUsage = useAppStore.getState().recordUsage;
-  recordUsage(payload.usage?.total_tokens || 0, api.provider, api.model);
+  recordUsage(payload.usage?.total_tokens || 0, api.provider, api.model, {
+    inputTokens: payload.usage?.input_tokens,
+    outputTokens: payload.usage?.output_tokens,
+  });
 
   return payload.text;
 }

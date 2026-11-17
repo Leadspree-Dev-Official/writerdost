@@ -20,6 +20,9 @@ export default function ProjectsPage() {
   const projects = useAppStore((state) => state.projects);
   const setCurrentProject = useAppStore((state) => state.setCurrentProject);
   const deleteProject = useAppStore((state) => state.deleteProject);
+  const preferredEngine = useAppStore((state) => state.preferredEngine);
+  const api = useAppStore((state) => state.api);
+  const isByokMode = preferredEngine === "byok" || Boolean(api.apiKey || api.provider === "ollama");
 
   const platform = useAppStore((state) => state.platform);
 
@@ -125,8 +128,12 @@ export default function ProjectsPage() {
           <span className="w-20">Status</span>
           <span className="w-20">Listing</span>
           <span className="w-20 text-right">Words</span>
-          <span className="w-16 text-right flex items-center justify-end" title="Credits deducted via BizAI">
-            <CoinsIcon className="w-3.5 h-3.5 text-amber-500" />
+          <span className="w-16 text-right flex items-center justify-end" title={isByokMode ? "BYOK Engine (0 credits)" : "Credits deducted via BizAI"}>
+            {isByokMode ? (
+              <span className="material-symbols-outlined text-[15px] text-emerald-500" title="BYOK Unlimited">key</span>
+            ) : (
+              <CoinsIcon className="w-3.5 h-3.5 text-amber-500" />
+            )}
           </span>
           <span className="w-16 text-right">Outline</span>
           <span className="w-16 text-right">Draft</span>
@@ -165,7 +172,11 @@ export default function ProjectsPage() {
                 <span className="block row-meta truncate mt-1">
                   <span className="md:hidden text-on-surface-variant font-medium">
                     {calculateProjectWords(project).toLocaleString()} words ·{" "}
-                    {project.tokensUsed ? `~${Math.round(project.tokensUsed * 0.015).toLocaleString()} credits · ` : ""}
+                    {project.isByok || isByokMode
+                      ? "Free with BYOK · "
+                      : project.tokensUsed
+                        ? `~${Math.round(project.tokensUsed * 0.015).toLocaleString()} credits · `
+                        : ""}
                   </span>
                   {project.tone} · {project.audience} · {project.updatedLabel}
                 </span>
@@ -188,7 +199,11 @@ export default function ProjectsPage() {
                 {calculateProjectWords(project).toLocaleString()}
               </span>
               <span className="w-16 shrink-0 row-meta text-right hidden md:block">
-                {project.tokensUsed ? (
+                {project.isByok || isByokMode ? (
+                  <span className="text-emerald-600 dark:text-emerald-400 font-medium text-[11px]" title="Generated with BYOK: 0 credits deducted">
+                    Free
+                  </span>
+                ) : project.tokensUsed ? (
                   <span title={`Estimated credits: ~${(project.tokensUsed * 0.015).toFixed(1)} credits`}>
                     <span className="text-amber-600 dark:text-amber-400 font-medium flex items-center justify-end gap-1">
                       <CoinsIcon className="w-3 h-3 text-amber-500 shrink-0" />

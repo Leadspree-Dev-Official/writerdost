@@ -211,7 +211,7 @@ export async function safeFetch(
 
         return { url: current.toString(), status: response.status, contentType, body };
       } finally {
-        await dispatcher.close();
+        await (dispatcher as unknown as { close?: () => Promise<void> | void })?.close?.();
       }
     }
 

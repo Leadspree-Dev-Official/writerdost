@@ -5,11 +5,39 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { generateAiText } from "@/lib/ai-client";
 import { useAppStore } from "@/lib/app-store";
-import { GenerationEngine } from "@/lib/store-types";
+import { GenerationEngine, SavedBlogPost } from "@/lib/store-types";
 import Editor from "@/components/ui/Editor";
 import { mdToHtml } from "@/lib/markdown-utils";
 import { AiEngineSelectorModal } from "@/components/AiEngineSelectorModal";
 import { getSavedDossiers, SavedDossier } from "@/lib/research-store";
+
+const sourceMeta: Record<string, { label: string; icon: string; chipClass: string }> = {
+  topic: {
+    label: "Topic",
+    icon: "lightbulb",
+    chipClass: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20",
+  },
+  project: {
+    label: "Project",
+    icon: "menu_book",
+    chipClass: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20",
+  },
+  research: {
+    label: "Research",
+    icon: "travel_explore",
+    chipClass: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20",
+  },
+  blank: {
+    label: "Blank",
+    icon: "edit_note",
+    chipClass: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20",
+  },
+  none: {
+    label: "Draft",
+    icon: "article",
+    chipClass: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20",
+  },
+};
 
 export default function BlogGeneratorPage() {
   const router = useRouter();
@@ -28,6 +56,11 @@ export default function BlogGeneratorPage() {
   const checkQuota = useAppStore((state) => state.checkQuota);
   const spendCredits = useAppStore((state) => state.spendCredits);
   const recordMonthlyUsage = useAppStore((state) => state.recordMonthlyUsage);
+  const savedBlogs = useAppStore((state) => state.savedBlogs || []);
+  const saveBlogPost = useAppStore((state) => state.saveBlogPost);
+  const deleteBlogPost = useAppStore((state) => state.deleteBlogPost);
+  const loadSavedBlog = useAppStore((state) => state.loadSavedBlog);
+
   const [message, setMessage] = useState("");
   const [engineModalOpen, setEngineModalOpen] = useState(false);
   const [generatingSuggestions, setGeneratingSuggestions] = useState(false);
@@ -36,6 +69,9 @@ export default function BlogGeneratorPage() {
   const [blogTokens, setBlogTokens] = useState<number>(0);
   const [pickerProjectId, setPickerProjectId] = useState(projects[0]?.id ?? "");
   const [pickerTopic, setPickerTopic] = useState("");
+  const [blogQuery, setBlogQuery] = useState("");
+  const [sourceFilter, setSourceFilter] = useState<string>("all");
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [dossiers, setDossiers] = useState<SavedDossier[]>(() =>
     typeof window !== "undefined" ? getSavedDossiers() : []
   );
@@ -56,11 +92,7 @@ export default function BlogGeneratorPage() {
     return () => window.removeEventListener("writerdost_dossiers_updated", updateDossiers);
   }, [pickerDossierId]);
 
-  useEffect(() => {
-    if (!pickerProjectId && projects.length > 0) {
-      setPickerProjectId(projects[0].id);
-    }
-  }, [projects, pickerProjectId]);
+  const activePickerProjectId = pickerProjectId || projects[0]?.id || "";
 
   // No fallback to projects[0]: a draft only has a source project when the
   // writer chose one, otherwise the composer runs on its own subject.
@@ -110,10 +142,32 @@ export default function BlogGeneratorPage() {
       const duration = Math.floor((Date.now() - startTime) / 1000);
       const wordCount = text.split(/\s+/).length;
       const estimatedTokens = Math.floor(wordCount * 1.35);
+      const html = mdToHtml(text);
 
-      updateBlog({ draft: mdToHtml(text) });
+      updateBlog({ draft: html, lastSavedLabel: "just now" });
       setBlogDraftTime(duration);
       setBlogTokens(estimatedTokens);
+
+      const postTitle =
+        blog.title?.trim() ||
+        (selectedProject?.title
+          ? `Blog: ${selectedProject.title}`
+          : selectedDossier?.topic
+          ? `Blog: ${selectedDossier.topic}`
+          : blog.topic || "Generated Blog Post");
+
+      saveBlogPost({
+        title: postTitle,
+        draft: html,
+        source: blog.source,
+        projectId: blog.projectId,
+        researchId: blog.researchId,
+        topic: blog.topic,
+        keywords: blog.keywords,
+        metaDescription: blog.metaDescription,
+        targetWords: blog.targetWords,
+        lastEngine: engine,
+      });
       
       if (engine === "bizai") {
         if (quota.source === "credits") {
@@ -146,6 +200,67 @@ export default function BlogGeneratorPage() {
     const s = seconds % 60;
     return `${m}m ${s}s`;
   };
+
+  const handleCopyPost = async (post: SavedBlogPost) => {
+    if (typeof window === "undefined" || !navigator.clipboard) return;
+    const plain = `${post.title}\n\n${post.draft.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()}`;
+    try {
+      await navigator.clipboard.writeText(plain);
+      setCopiedId(post.id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch {
+      setMessage("Failed to copy blog to clipboard.");
+    }
+  };
+
+  const handleExportPost = (post: SavedBlogPost) => {
+    if (typeof window === "undefined") return;
+    const plain = `${post.title}\n\n${post.draft.replace(/<[^>]+>/g, "\n").trim()}`;
+    const blob = new Blob([plain], { type: "text/markdown;charset=utf-8" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${(post.title || "blog-post").toLowerCase().replace(/[^a-z0-9]+/g, "-")}.md`;
+    link.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handleManualSave = () => {
+    const postTitle =
+      blog.title?.trim() ||
+      (selectedProject?.title
+        ? `Blog: ${selectedProject.title}`
+        : selectedDossier?.topic
+        ? `Blog: ${selectedDossier.topic}`
+        : blog.topic || "Untitled post");
+    saveBlogPost({
+      title: postTitle,
+      draft: blog.draft || "",
+      source: blog.source,
+      projectId: blog.projectId,
+      researchId: blog.researchId,
+      topic: blog.topic,
+      keywords: blog.keywords,
+      metaDescription: blog.metaDescription,
+      targetWords: blog.targetWords,
+    });
+    updateBlog({ lastSavedLabel: "just now" });
+    setMessage("Blog post saved to your generated blogs shelf.");
+  };
+
+  const visibleBlogs = savedBlogs.filter((post) => {
+    const q = blogQuery.trim().toLowerCase();
+    const matchesQuery =
+      !q ||
+      post.title.toLowerCase().includes(q) ||
+      (post.topic && post.topic.toLowerCase().includes(q)) ||
+      (post.keywords && post.keywords.some((k) => k.toLowerCase().includes(q))) ||
+      post.draft.toLowerCase().includes(q);
+    const matchesSource = sourceFilter === "all" || post.source === sourceFilter;
+    return matchesQuery && matchesSource;
+  });
+
+  const totalSavedWords = savedBlogs.reduce((sum, b) => sum + (b.wordCount || 0), 0);
 
   if (!blog || !projects) return null;
 
@@ -203,7 +318,7 @@ export default function BlogGeneratorPage() {
             {projects.length > 1 ? (
               <select
                 className="select"
-                value={pickerProjectId}
+                value={activePickerProjectId}
                 onChange={(event) => setPickerProjectId(event.target.value)}
                 aria-label="Project to write from"
               >
@@ -220,8 +335,8 @@ export default function BlogGeneratorPage() {
             )}
             <button
               className="btn btn-primary btn-sm w-full mt-auto"
-              onClick={() => pickerProjectId && loadBlogFromProject(pickerProjectId)}
-              disabled={!pickerProjectId || projects.length === 0}
+              onClick={() => activePickerProjectId && loadBlogFromProject(activePickerProjectId)}
+              disabled={!activePickerProjectId || projects.length === 0}
               type="button"
             >
               {projects.length === 0 ? "No projects yet" : "Use this project"}
@@ -282,6 +397,173 @@ export default function BlogGeneratorPage() {
             </button>
           </div>
         </div>
+
+        {/* Generated Blogs Shelf */}
+        <section className="mt-8 flex flex-col gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-[17px] font-semibold text-on-surface">Generated Blogs</h2>
+              <p className="page-sub !text-[12px]">
+                {savedBlogs.length} post{savedBlogs.length === 1 ? "" : "s"} · {totalSavedWords.toLocaleString()} words total
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="relative flex-1 min-w-[12rem] max-w-xs">
+                <span className="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-[16px] text-on-surface-variant pointer-events-none">
+                  search
+                </span>
+                <input
+                  type="search"
+                  value={blogQuery}
+                  onChange={(e) => setBlogQuery(e.target.value)}
+                  placeholder="Search generated blogs"
+                  aria-label="Search generated blogs"
+                  className="input pl-7"
+                />
+              </div>
+
+              <select
+                value={sourceFilter}
+                onChange={(e) => setSourceFilter(e.target.value)}
+                aria-label="Filter by source"
+                className="select w-auto min-w-[8rem]"
+              >
+                <option value="all">All sources</option>
+                <option value="topic">From topic</option>
+                <option value="project">From project</option>
+                <option value="research">From research</option>
+                <option value="blank">Blank post</option>
+              </select>
+
+              {(blogQuery || sourceFilter !== "all") && (
+                <span className="row-meta">
+                  {visibleBlogs.length} of {savedBlogs.length}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="panel overflow-hidden">
+            <div className="hidden md:flex items-center gap-4 h-8 px-3 border-b border-[var(--hairline)] bg-on-surface/[0.02] text-[11px] font-semibold text-on-surface-variant">
+              <span className="flex-1 min-w-0">Post</span>
+              <span className="w-28">Source</span>
+              <span className="w-20 text-right">Words</span>
+              <span className="w-28 text-right">Date</span>
+              <span className="w-44 text-right">Actions</span>
+            </div>
+
+            {visibleBlogs.length === 0 ? (
+              <p className="empty">
+                {savedBlogs.length === 0
+                  ? "No generated blogs yet. Choose an option above to draft or write your first post."
+                  : "No generated blogs match your filter."}
+              </p>
+            ) : (
+              visibleBlogs.map((post) => {
+                const meta = sourceMeta[post.source] || sourceMeta.blank;
+                const snippet = post.draft
+                  ? post.draft.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 110)
+                  : "";
+                const dateStr = post.updatedAt
+                  ? new Date(post.updatedAt).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })
+                  : "—";
+
+                return (
+                  <div key={post.id} className="row px-3 gap-4 items-center">
+                    <button
+                      type="button"
+                      onClick={() => loadSavedBlog(post.id)}
+                      className="flex-1 min-w-0 text-left cursor-pointer py-1.5 group"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="row-title group-hover:text-primary transition-colors truncate">
+                          {post.title || "(Untitled post)"}
+                        </span>
+                        <span className={`chip ${meta.chipClass} md:hidden text-[10px] py-0 px-1.5`}>
+                          {meta.label}
+                        </span>
+                      </div>
+                      {snippet ? (
+                        <p className="row-meta truncate mt-0.5 text-on-surface-variant">
+                          {snippet}
+                        </p>
+                      ) : null}
+                    </button>
+
+                    <span className="w-28 shrink-0 hidden md:flex items-center">
+                      <span className={`chip ${meta.chipClass} flex items-center gap-1`}>
+                        <span className="material-symbols-outlined text-[13px]">{meta.icon}</span>
+                        {meta.label}
+                      </span>
+                    </span>
+
+                    <span className="w-20 shrink-0 row-meta text-right hidden md:block num">
+                      {(post.wordCount ?? 0).toLocaleString()}
+                    </span>
+
+                    <span className="w-28 shrink-0 row-meta text-right hidden md:block">
+                      {dateStr}
+                    </span>
+
+                    <div className="w-44 shrink-0 flex items-center justify-end gap-1">
+                      <button
+                        type="button"
+                        onClick={() => loadSavedBlog(post.id)}
+                        className="btn btn-ghost btn-xs text-primary"
+                        title="Open in editor"
+                        aria-label="Open post"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">edit</span>
+                        <span className="hidden sm:inline">Open</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleCopyPost(post)}
+                        className="btn btn-ghost btn-xs"
+                        title="Copy text to clipboard"
+                        aria-label="Copy draft"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">
+                          {copiedId === post.id ? "check" : "content_copy"}
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleExportPost(post)}
+                        className="btn btn-ghost btn-xs"
+                        title="Export as markdown"
+                        aria-label="Export post"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">download</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (window.confirm(`Delete "${post.title || "this post"}"?`)) {
+                            deleteBlogPost(post.id);
+                          }
+                        }}
+                        className="btn btn-ghost btn-xs text-rose-500 hover:text-rose-600"
+                        title="Delete saved blog"
+                        aria-label="Delete post"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">delete</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </section>
       </div>
     );
   }
@@ -369,6 +651,15 @@ export default function BlogGeneratorPage() {
                   {generatingDraft ? "progress_activity" : "auto_awesome"}
                 </span>
                 {generatingDraft ? "Drafting…" : "Draft With AI"}
+              </button>
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={handleManualSave}
+                type="button"
+                title="Save this blog post to the generated shelf"
+              >
+                <span className="material-symbols-outlined">save</span>
+                Save Post
               </button>
               <button
                 className="btn btn-secondary btn-sm"

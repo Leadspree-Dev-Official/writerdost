@@ -9,6 +9,50 @@ export type ApiSettings = {
   siteUrl: string;
 };
 
+export type ByokModelUsage = {
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  totalRequests: number;
+  totalCost: number;
+  lastUsedAt?: number;
+};
+
+export type ByokModelConfig = {
+  id: string;
+  name: string;
+  provider: ApiProvider;
+  model: string;
+  apiKey: string;
+  baseUrl: string;
+  inputTokenRate: number; // USD per 1M tokens
+  outputTokenRate: number; // USD per 1M tokens
+  isDefault?: boolean;
+  createdAt: number;
+  usage: ByokModelUsage;
+};
+
+export type BlogSource = "none" | "blank" | "project" | "topic" | "template" | "research";
+
+export type SavedBlogPost = {
+  id: string;
+  title: string;
+  draft: string;
+  metaDescription?: string;
+  keywords?: string[];
+  source: BlogSource;
+  sourceName?: string;
+  topic?: string;
+  projectId?: string;
+  researchId?: string;
+  templateId?: string;
+  targetWords?: number;
+  wordCount?: number;
+  createdAt: number;
+  updatedAt: number;
+  lastEngine?: GenerationEngine;
+};
+
 export type OutlinePoint = string | { point: string; subpoints: string[] };
 
 export type GeneratedChapter = {
@@ -39,6 +83,8 @@ export type GeneratedProjectPayload = {
   outlineDuration?: number;
   draftDuration?: number;
   tokensUsed?: number;
+  isByok?: boolean;
+  engine?: GenerationEngine;
 };
 
 export type UserPlan = 'Free' | 'Basic' | 'Pro' | 'Enterprise' | 'Custom';
