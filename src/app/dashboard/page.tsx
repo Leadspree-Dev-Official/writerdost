@@ -6,7 +6,8 @@ import { useAppStore } from "@/lib/app-store";
 import { statusChipClasses, calculateProjectWords } from "@/lib/app-utils";
 
 const QUICK_ACTIONS = [
-  { label: "New ebook", icon: "auto_awesome", href: "/create" },
+  { label: "New Ebook", icon: "auto_stories", href: "/create" },
+  { label: "New Book (300k)", icon: "menu_book", href: "/book" },
   { label: "Rewrite a manuscript", icon: "book_5", href: "/rewrite" },
   { label: "Blog draft", icon: "edit_note", href: "/blog-generator" },
 ];
@@ -55,10 +56,16 @@ export default function Dashboard() {
               : "Create your first project to get started."}
           </p>
         </div>
-        <Link href="/create" prefetch={true} className="btn btn-primary btn-lg">
-          <span className="material-symbols-outlined">add</span>
-          New ebook
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/create" prefetch={true} className="btn btn-secondary btn-lg">
+            <span className="material-symbols-outlined">auto_stories</span>
+            New Ebook
+          </Link>
+          <Link href="/book" prefetch={true} className="btn btn-primary btn-lg">
+            <span className="material-symbols-outlined">menu_book</span>
+            New Book
+          </Link>
+        </div>
       </div>
 
       <div className="metrics">

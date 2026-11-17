@@ -11,13 +11,14 @@ const WRITERDOST_CONTEXT = `
 Writerdost AI is a premium writing workspace for authors and content creators. 
 Key Features:
 1. Dashboard: Overview of projects, total words managed, tokens used, and generation stats.
-2. Create Book: A structured pipeline to generate books. You provide a vision, audience, and tone. AI Agents collaborate to generate a blueprint and then the chapters.
-3. Manuscript Editor: A powerful editor with AI slash commands (type '/') and contextual bubble menus for rephrasing or expanding text. Supports chapter management and status tracking.
-4. Rewrite Ebook: Allows uploading (PDF/DOCX/EPUB) or pasting existing drafts to humanize, deep-rewrite, or translate them.
-5. Blog Generator: Turns ebook projects into SEO-optimized blog posts, complete with meta descriptions and social snippets.
-6. Author Profile: Set your pen name, professional tagline, and bio. These settings act as a style guide for the AI.
-7. Settings: Configure AI providers (OpenAI, Anthropic, Ollama), models, and creative parameters like temperature.
-8. Exporting: Work can be downloaded as PDF, DOCX, or TXT.
+2. Create Ebook: Rapid generation pipeline tailored for digital ebooks, guides, and commercial lead magnets up to 200,000 words.
+3. Create Book: Dedicated long-form publishing studio for trade books, memoirs, textbooks, and epic novels up to 300,000 words.
+4. Manuscript Editor: A powerful editor with AI slash commands (type '/') and contextual bubble menus for rephrasing or expanding text. Supports chapter management and status tracking.
+5. Rewrite Ebook: Allows uploading (PDF/DOCX/EPUB) or pasting existing drafts to humanize, deep-rewrite, or translate them.
+6. Blog Generator: Turns ebook projects into SEO-optimized blog posts, complete with meta descriptions and social snippets.
+7. Author Profile: Set your pen name, professional tagline, and bio. These settings act as a style guide for the AI.
+8. Settings: Configure AI providers (OpenAI, Anthropic, Ollama), models, and creative parameters like temperature.
+9. Exporting: Work can be downloaded as PDF, DOCX, or TXT.
 The app uses a 'Midnight' dark theme by default, focusing on an elegant, distraction-free writing experience.
 `;
 
@@ -29,7 +30,7 @@ const categories = [
     color: "text-emerald-500",
     bg: "bg-emerald-500/10",
     articles: [
-      { id: "g1", title: "Creating your first Book", content: "To start a new project, click 'Create New Book' on the dashboard. You'll need to provide a vision, target audience, and preferred tone. Our AI Agents will then generate a comprehensive outline and chapter structure for you." },
+      { id: "g1", title: "Creating an Ebook or Full Book", content: "To start a new project, click 'New Ebook' (up to 200k words) or 'New Book' (up to 300k words) on the sidebar. You'll need to provide a vision, target audience, and preferred tone. Our specialized AI Agents will then generate a comprehensive outline and chapter structure for you." },
       { id: "g2", title: "Setting up your Author Profile", content: "Go to the Profile section to set your pen name, bio, and writing preferences. These settings act as a 'Style Guide' for the AI, ensuring every chapter it writes matches your unique voice." },
       { id: "g3", title: "Connecting your API Keys", content: "Writerdost requires an LLM provider (like OpenAI, Anthropic, or local Ollama). Go to Settings > API Settings to enter your keys. We support custom base URLs for proxy services as well." },
     ]

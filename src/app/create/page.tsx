@@ -320,10 +320,10 @@ export default function IdeaAndInput() {
       <div className="page">
         <div className="page-head">
           <div>
-            <h1 className="page-title">New Book</h1>
+            <h1 className="page-title">New Ebook</h1>
             <p className="page-sub">
-              Describe the book once. Quick draft creates the project immediately; the AI Agents research,
-              plan and write the chapters for you (up to 300,000 words).
+              Describe the ebook once. Quick draft creates the project immediately; the AI Agents research,
+              plan and write the chapters for you (up to 200,000 words).
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
@@ -492,11 +492,11 @@ export default function IdeaAndInput() {
                         id="page-count-input"
                         type="number"
                         min="4"
-                        max={isExtendedOmnibus ? 1200 : 400}
+                        max={isExtendedOmnibus ? 800 : 400}
                         value={Math.round(createDraft.length / 250)}
                         onChange={(e) => {
                           const pages = Math.max(1, parseInt(e.target.value) || 1);
-                          const maxAllowed = isExtendedOmnibus ? 300000 : 100000;
+                          const maxAllowed = isExtendedOmnibus ? 200000 : 100000;
                           const calculatedWords = Math.min(maxAllowed, Math.max(1000, pages * 250));
                           updateCreateDraft({ length: calculatedWords });
                         }}
@@ -515,7 +515,7 @@ export default function IdeaAndInput() {
                   <input
                     id="length"
                     className="w-full h-1.5 bg-on-surface/12 rounded-full appearance-none cursor-pointer accent-primary"
-                    max={isExtendedOmnibus ? "300000" : "100000"}
+                    max={isExtendedOmnibus ? "200000" : "100000"}
                     min="1000"
                     step="1000"
                     type="range"
@@ -525,7 +525,7 @@ export default function IdeaAndInput() {
                   <div className="flex justify-between items-center text-[10px] text-on-surface-variant">
                     <span>1,000 words</span>
                     <span className="text-[10px] text-on-surface-variant font-medium">Pay-as-you-go • 0 with BYOK</span>
-                    <span>{isExtendedOmnibus ? "300,000 words" : "100,000 words"}</span>
+                    <span>{isExtendedOmnibus ? "200,000 words" : "100,000 words"}</span>
                   </div>
                 </div>
 
@@ -547,10 +547,10 @@ export default function IdeaAndInput() {
                     <div className="text-[11.5px] leading-tight">
                       <span className="font-semibold text-on-surface group-hover:text-primary transition-colors flex items-center gap-1.5">
                         <span className="material-symbols-outlined text-[14px] text-amber-500">auto_stories</span>
-                        Full-Length Omnibus (Unlock 3 Lakh Words)
+                        Full-Length Omnibus (Unlock 2 Lakh Words)
                       </span>
                       <p className="text-[10.5px] text-on-surface-variant mt-0.5 leading-snug">
-                        Extends slider ceiling up to 300,000 words (~1,200 print pages).
+                        Extends slider ceiling up to 200,000 words (~800 print pages).
                       </p>
                     </div>
                   </label>

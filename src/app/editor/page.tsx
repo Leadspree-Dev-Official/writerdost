@@ -397,12 +397,16 @@ export default function EditorPage() {
           </h1>
           <p className="page-sub mx-auto max-w-md">
             {projects.length === 0
-              ? "Describe a book on the New Book page and the Agents will research, plan and draft it for you."
+              ? "Describe your manuscript on the New Ebook or New Book page and our specialized AI Agents will research, outline and draft it for you."
               : "Pick a project to carry on writing, or start a new one."}
           </p>
           <div className="flex items-center justify-center gap-2 mt-5">
-            <Link href="/create" className="btn btn-primary btn-lg">
-              <span className="material-symbols-outlined">auto_awesome</span>
+            <Link href="/create" className="btn btn-secondary btn-lg">
+              <span className="material-symbols-outlined">auto_stories</span>
+              New Ebook
+            </Link>
+            <Link href="/book" className="btn btn-primary btn-lg">
+              <span className="material-symbols-outlined">menu_book</span>
               New Book
             </Link>
             {projects.length > 0 && (
