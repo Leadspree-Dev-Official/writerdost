@@ -780,13 +780,13 @@ export default function ResearchPage() {
           <div className="panel overflow-hidden">
             <div className="overflow-x-auto">
               {/* Table Header Row */}
-              <div className="hidden md:flex items-center gap-4 h-9 px-3.5 border-b border-[var(--hairline)] bg-on-surface/[0.02] text-[11px] font-semibold text-on-surface-variant min-w-[920px]">
+              <div className="hidden md:flex items-center gap-2.5 h-9 px-3 border-b border-[var(--hairline)] bg-on-surface/[0.02] text-[11px] font-semibold text-on-surface-variant min-w-[860px]">
                 <span className="flex-1 min-w-0">Topic & Synthesis</span>
-                <span className="w-28 shrink-0">Depth</span>
-                <span className="w-14 shrink-0 text-center">Theses</span>
-                <span className="w-14 shrink-0 text-center">Stats</span>
-                <span className="w-16 shrink-0 text-center">Chapters</span>
-                <span className="w-32 shrink-0 text-center flex items-center justify-center gap-1.5" title={isByok ? "Generation Engine (0 credits)" : "Estimated credits deducted"}>
+                <span className="w-24 shrink-0">Depth</span>
+                <span className="w-12 shrink-0 text-center">Theses</span>
+                <span className="w-12 shrink-0 text-center">Stats</span>
+                <span className="w-14 shrink-0 text-center">Chapters</span>
+                <span className="w-28 shrink-0 text-center flex items-center justify-center gap-1.5" title={isByok ? "Generation Engine (0 credits)" : "Estimated credits deducted"}>
                   {isByok ? (
                     <>
                       <span className="material-symbols-outlined text-[13px] text-emerald-500 shrink-0">key</span>
@@ -799,7 +799,7 @@ export default function ResearchPage() {
                     </>
                   )}
                 </span>
-                <span className="w-48 shrink-0 text-right pr-2">Actions</span>
+                <span className="w-52 shrink-0 text-right pr-1">Actions</span>
               </div>
 
             {visible.length === 0 ? (
@@ -827,7 +827,7 @@ export default function ResearchPage() {
                 return (
                   <div
                     key={id}
-                    className="row px-3.5 py-3 gap-4 border-b border-[var(--hairline)] last:border-0 hover:bg-surface-variant/20 transition-colors min-w-[920px]"
+                    className="row px-3 py-2.5 gap-2.5 border-b border-[var(--hairline)] last:border-0 hover:bg-surface-variant/20 transition-colors min-w-[860px]"
                   >
                     {/* Title & Preview (Clickable to open viewer) */}
                     <button
@@ -836,7 +836,7 @@ export default function ResearchPage() {
                         setSelectedDossier(entry);
                         setActiveViewerTab("overview");
                       }}
-                      className="flex-1 min-w-0 text-left cursor-pointer group py-1"
+                      className="flex-1 min-w-0 text-left cursor-pointer group py-0.5"
                     >
                       <div className="flex items-center gap-2">
                         <span className="row-title font-bold group-hover:text-primary transition-colors truncate">
@@ -849,7 +849,7 @@ export default function ResearchPage() {
                       <p className="text-[12px] text-on-surface-variant line-clamp-1 mt-0.5">
                         {d.executiveSummary}
                       </p>
-                      <div className="row-meta text-[11px] mt-1 flex items-center gap-2 flex-wrap">
+                      <div className="row-meta text-[11px] mt-0.5 flex items-center gap-2 flex-wrap">
                         <span>Audience: {d.targetAudience}</span>
                         <span>·</span>
                         <span>{createdAt}</span>
@@ -857,54 +857,54 @@ export default function ResearchPage() {
                     </button>
 
                     {/* Depth Chip */}
-                    <span className="w-28 shrink-0 hidden md:flex items-center">
-                      <span className="chip chip-neutral text-[10px] uppercase font-bold">
+                    <span className="w-24 shrink-0 hidden md:flex items-center">
+                      <span className="chip chip-neutral text-[9.5px] uppercase font-bold tracking-wider px-2 py-0.5">
                         {d.depth}
                       </span>
                     </span>
 
                     {/* Counts */}
-                    <span className="w-14 shrink-0 row-meta text-center hidden md:block font-mono">
+                    <span className="w-12 shrink-0 row-meta text-center hidden md:block font-mono text-[12px]">
                       {d.coreTheses?.length || 0}
                     </span>
-                    <span className="w-14 shrink-0 row-meta text-center hidden md:block font-mono">
+                    <span className="w-12 shrink-0 row-meta text-center hidden md:block font-mono text-[12px]">
                       {d.factsAndStats?.length || 0}
                     </span>
-                    <span className="w-16 shrink-0 row-meta text-center hidden md:block font-mono">
+                    <span className="w-14 shrink-0 row-meta text-center hidden md:block font-mono text-[12px]">
                       {d.chapterSeeds?.length || 0}
                     </span>
 
                     {/* Credits / Engine */}
-                    <span className="w-32 shrink-0 row-meta text-center hidden md:flex items-center justify-center">
+                    <span className="w-28 shrink-0 row-meta text-center hidden md:flex items-center justify-center">
                       {entryIsByok ? (
                         <span
-                          className="text-emerald-700 dark:text-emerald-300 font-semibold inline-flex items-center justify-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-[11px] shadow-xs"
+                          className="text-emerald-700 dark:text-emerald-300 font-semibold inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-[10.5px] whitespace-nowrap shadow-xs"
                           title="BYOK generation: Zero platform credits deducted"
                         >
-                          <span className="material-symbols-outlined text-[13px] text-emerald-500">key</span>
+                          <span className="material-symbols-outlined text-[12px] text-emerald-500">key</span>
                           <span>BYOK (Free)</span>
                         </span>
                       ) : (
                         <span
-                          className="text-amber-600 dark:text-amber-400 font-semibold inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 font-mono text-[11.5px] shadow-xs"
+                          className="text-amber-600 dark:text-amber-400 font-semibold inline-flex items-center justify-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/25 font-mono text-[11px] whitespace-nowrap shadow-xs"
                           title={`Dossier generation: ~${calculateDossierCredits(entry)} credits`}
                         >
                           <CoinsIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                          <span>~{calculateDossierCredits(entry)} credits</span>
+                          <span>~{calculateDossierCredits(entry)}</span>
                         </span>
                       )}
                     </span>
 
                     {/* 1-Click Action Buttons */}
-                    <span className="w-48 shrink-0 flex items-center justify-end gap-1.5">
+                    <span className="w-52 shrink-0 flex items-center justify-end gap-1">
                       {/* Draft Book Button */}
                       <button
                         type="button"
                         onClick={() => handleDraftBook(d)}
-                        className="btn btn-primary btn-sm !px-2.5 !py-1 text-[11px] flex items-center gap-1 cursor-pointer shrink-0 shadow-sm"
+                        className="btn btn-primary btn-sm !px-2 !py-0.5 text-[11px] flex items-center gap-1 cursor-pointer shrink-0 shadow-xs"
                         title="Draft Book from this Research: populates New Ebook with this dossier and navigates to /create"
                       >
-                        <span className="material-symbols-outlined text-[15px]">menu_book</span>
+                        <span className="material-symbols-outlined text-[14px]">menu_book</span>
                         <span className="hidden xl:inline">Draft</span>
                       </button>
 
@@ -915,7 +915,7 @@ export default function ResearchPage() {
                         className="btn btn-secondary btn-icon btn-sm cursor-pointer shrink-0"
                         title="Use in Rewrite Studio: transfers chapter seeds to /rewrite"
                       >
-                        <span className="material-symbols-outlined text-[17px]">edit_note</span>
+                        <span className="material-symbols-outlined text-[16px]">edit_note</span>
                       </button>
 
                       {/* Write Blog Post Button */}
@@ -925,7 +925,7 @@ export default function ResearchPage() {
                         className="btn btn-secondary btn-icon btn-sm cursor-pointer shrink-0"
                         title="Write Blog Post: starts a blog draft from this research"
                       >
-                        <span className="material-symbols-outlined text-[17px]">article</span>
+                        <span className="material-symbols-outlined text-[16px]">article</span>
                       </button>
 
                       {/* View Dossier Button */}
@@ -938,7 +938,7 @@ export default function ResearchPage() {
                         className="btn btn-ghost btn-icon btn-sm cursor-pointer shrink-0"
                         title="View Full Dossier"
                       >
-                        <span className="material-symbols-outlined text-[17px]">visibility</span>
+                        <span className="material-symbols-outlined text-[16px]">visibility</span>
                       </button>
 
                       {/* Delete Button */}
