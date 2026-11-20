@@ -154,6 +154,7 @@ export const GATEWAY_PLAN_TIERS: Array<{
   description: string;
   activeClass: string;
   badgeClass: string;
+  dotColor: string;
 }> = [
   {
     id: "Free",
@@ -161,8 +162,9 @@ export const GATEWAY_PLAN_TIERS: Array<{
     price: "Free Forever ($0)",
     shortDesc: "Standard Models / Free Tier",
     description: "Free Forever users ($0/mo) - High speed, zero-cost models (e.g. Groq, Ollama)",
-    activeClass: "bg-teal-500/20 text-teal-300 border-teal-500/50 shadow-xs",
-    badgeClass: "bg-teal-500/15 text-teal-400 border border-teal-500/30",
+    activeClass: "bg-teal-100 dark:bg-teal-950/80 text-teal-950 dark:text-teal-100 border-2 border-teal-600 dark:border-teal-400 font-bold shadow-xs",
+    badgeClass: "bg-teal-100 dark:bg-teal-950/80 text-teal-950 dark:text-teal-100 border border-teal-500 font-bold",
+    dotColor: "bg-teal-600 dark:bg-teal-400",
   },
   {
     id: "Basic",
@@ -170,8 +172,9 @@ export const GATEWAY_PLAN_TIERS: Array<{
     price: "$5/mo",
     shortDesc: "Basic Writers ($5/mo)",
     description: "Basic plan subscribers ($5/month) - Reliable book & blog generation",
-    activeClass: "bg-blue-500/20 text-blue-300 border-blue-500/50 shadow-xs",
-    badgeClass: "bg-blue-500/15 text-blue-400 border border-blue-500/30",
+    activeClass: "bg-blue-100 dark:bg-blue-950/80 text-blue-950 dark:text-blue-100 border-2 border-blue-600 dark:border-blue-400 font-bold shadow-xs",
+    badgeClass: "bg-blue-100 dark:bg-blue-950/80 text-blue-950 dark:text-blue-100 border border-blue-500 font-bold",
+    dotColor: "bg-blue-600 dark:bg-blue-400",
   },
   {
     id: "Pro",
@@ -179,8 +182,9 @@ export const GATEWAY_PLAN_TIERS: Array<{
     price: "$19/mo",
     shortDesc: "Pro Writers ($19/mo)",
     description: "Pro Writer subscribers ($19/month) - Advanced reasoning & long-context models",
-    activeClass: "bg-purple-500/20 text-purple-300 border-purple-500/50 shadow-xs",
-    badgeClass: "bg-purple-500/15 text-purple-400 border border-purple-500/30",
+    activeClass: "bg-purple-100 dark:bg-purple-950/80 text-purple-950 dark:text-purple-100 border-2 border-purple-600 dark:border-purple-400 font-bold shadow-xs",
+    badgeClass: "bg-purple-100 dark:bg-purple-950/80 text-purple-950 dark:text-purple-100 border border-purple-500 font-bold",
+    dotColor: "bg-purple-600 dark:bg-purple-400",
   },
   {
     id: "Enterprise",
@@ -188,8 +192,9 @@ export const GATEWAY_PLAN_TIERS: Array<{
     price: "$49+/mo",
     shortDesc: "Enterprise / Custom",
     description: "Enterprise & high-volume teams - Dedicated high-throughput tier",
-    activeClass: "bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-xs",
-    badgeClass: "bg-amber-500/15 text-amber-400 border border-amber-500/30",
+    activeClass: "bg-amber-100 dark:bg-amber-950/80 text-amber-950 dark:text-amber-100 border-2 border-amber-600 dark:border-amber-400 font-bold shadow-xs",
+    badgeClass: "bg-amber-100 dark:bg-amber-950/80 text-amber-950 dark:text-amber-100 border border-amber-500 font-bold",
+    dotColor: "bg-amber-600 dark:bg-amber-400",
   },
 ];
 
@@ -1056,21 +1061,21 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
                 <div className="flex flex-wrap items-center gap-1.5 font-mono text-[11px]">
                   {primaryInstance ? (
                     <>
-                      <span className="px-2.5 py-0.5 rounded bg-surface border border-amber-500/50 text-amber-300 font-bold flex items-center gap-1 shadow-xs">
-                        <span className="material-symbols-outlined text-xs text-amber-400">stars</span>
+                      <span className="px-2.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/80 border border-amber-500 text-amber-950 dark:text-amber-100 font-extrabold flex items-center gap-1 shadow-xs">
+                        <span className="material-symbols-outlined text-xs text-amber-600 dark:text-amber-400">stars</span>
                         <span>Primary: {primaryInstance.label || primaryInstance.provider} ({primaryInstance.model || "default"})</span>
                       </span>
                       {standbyInsts.map((inst, i) => (
                         <span key={inst.id} className="flex items-center gap-1.5">
-                          <span className="text-on-surface-variant font-bold">→</span>
+                          <span className="text-on-surface font-black text-sm">→</span>
                           <span
-                            className={`px-2 py-0.5 rounded border font-medium flex items-center gap-1 ${
+                            className={`px-2 py-0.5 rounded border font-bold flex items-center gap-1 ${
                               gatewayConfig.failoverEnabled
-                                ? "bg-surface border-sky-500/40 text-sky-300 shadow-xs"
+                                ? "bg-sky-100 dark:bg-sky-950/80 border-sky-500 text-sky-950 dark:text-sky-100 shadow-xs"
                                 : "opacity-40 line-through bg-surface-container-low border-transparent text-on-surface-variant"
                             }`}
                           >
-                            <span className="material-symbols-outlined text-xs text-sky-400">shield</span>
+                            <span className="material-symbols-outlined text-xs text-sky-600 dark:text-sky-400">shield</span>
                             <span>Standby #{inst.standbyPriority || (inst.fallbackTiers?.[0] ?? (i + 1))}: {inst.label || inst.provider} ({inst.model || "default"})</span>
                           </span>
                         </span>
@@ -1097,34 +1102,25 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
                       (i.role === "standby" || i.tier === "standby" || i.tier === "fallback" || (i.fallbackTiers && i.fallbackTiers.length > 0))
                   );
                   return (
-                    <div key={tier.id} className="p-2 rounded-lg bg-surface/60 border border-[var(--hairline)] text-xs space-y-1">
+                    <div key={tier.id} className="p-2 rounded-lg bg-surface border border-[var(--hairline-strong)] text-xs space-y-1 shadow-2xs">
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-on-surface text-[11px] flex items-center gap-1">
-                          <span
-                            className={`w-2 h-2 rounded-full ${
-                              tier.id === "Free"
-                                ? "bg-teal-400"
-                                : tier.id === "Basic"
-                                ? "bg-blue-400"
-                                : tier.id === "Pro"
-                                ? "bg-purple-400"
-                                : "bg-amber-400"
-                            }`}
-                          />
+                        <span className="font-bold text-on-surface text-[11px] flex items-center gap-1.5">
+                          <span className={`w-2.5 h-2.5 rounded-full ${tier.dotColor}`} />
                           {tier.label}
                         </span>
-                        <span className="text-[10px] text-on-surface-variant font-mono">{tier.price}</span>
+                        <span className="text-[10px] text-on-surface-variant font-mono font-semibold">{tier.price}</span>
                       </div>
-                      <div className="text-[10px] text-on-surface-variant/90 leading-tight">
+                      <div className="text-[11px] text-on-surface-variant leading-tight">
                         {prim ? (
                           <div className="truncate">
-                            <span className="text-amber-300 font-semibold">Primary:</span> {prim.label || prim.provider}
+                            <span className="text-amber-800 dark:text-amber-300 font-bold">Primary:</span>{" "}
+                            <span className="text-on-surface font-semibold">{prim.label || prim.provider}</span>
                             {standbys.length > 0 && (
-                              <span className="text-sky-300 ml-1">+{standbys.length} standby</span>
+                              <span className="text-sky-800 dark:text-sky-300 font-bold ml-1">+{standbys.length} standby</span>
                             )}
                           </div>
                         ) : (
-                          <span className="text-rose-400">No primary set</span>
+                          <span className="text-rose-600 dark:text-rose-400 font-medium">No primary set</span>
                         )}
                       </div>
                     </div>
@@ -1318,12 +1314,14 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
 
                         <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
                           {isPrimary ? (
-                            <span className="chip chip-primary text-[10px] font-bold bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-xs">
-                              ★ PRIMARY
+                            <span className="chip text-[10px] font-extrabold bg-amber-400 text-slate-950 border border-amber-500 shadow-xs px-2 py-0.5 rounded flex items-center gap-1">
+                              <span className="material-symbols-outlined text-[12px]">stars</span>
+                              PRIMARY
                             </span>
                           ) : (
-                            <span className="chip chip-secondary text-[10px] font-bold bg-sky-500/20 text-sky-300 border-sky-500/40 shadow-xs">
-                              🛡️ STANDBY #{inst.standbyPriority || (fallbackTiers[0] ?? 1)}
+                            <span className="chip text-[10px] font-extrabold bg-sky-400 text-slate-950 border border-sky-500 shadow-xs px-2 py-0.5 rounded flex items-center gap-1">
+                              <span className="material-symbols-outlined text-[12px]">shield</span>
+                              STANDBY #{inst.standbyPriority || (fallbackTiers[0] ?? 1)}
                             </span>
                           )}
 
@@ -1336,8 +1334,8 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
                             return (
                               <span
                                 key={pt}
-                                className={`text-[9.5px] font-bold px-1.5 py-0.5 rounded ${
-                                  tierDef?.badgeClass || "bg-surface-container-high text-on-surface-variant"
+                                className={`text-[10px] font-extrabold px-2 py-0.5 rounded shadow-2xs ${
+                                  tierDef?.badgeClass || "bg-surface-container-high text-on-surface border border-[var(--hairline-strong)]"
                                 }`}
                                 title={`${tierDef?.label || pt} (${tierDef?.price || ""})`}
                               >
@@ -1347,7 +1345,7 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
                           })}
 
                           {isFreeProvider && (
-                            <span className="flex items-center gap-0.5 text-[10px] font-semibold text-teal-400 bg-teal-500/15 px-2 py-0.5 rounded-full border border-teal-500/25">
+                            <span className="flex items-center gap-0.5 text-[10px] font-extrabold text-teal-950 dark:text-teal-100 bg-teal-200 dark:bg-teal-900 px-2 py-0.5 rounded-full border border-teal-500 shadow-2xs">
                               <span className="material-symbols-outlined text-[11px]">money_off</span>
                               Free
                             </span>
@@ -1356,7 +1354,7 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
                             type="button"
                             onClick={() => handleRemoveProviderInstance(inst.id)}
                             title={`Remove this instance`}
-                            className="w-6 h-6 rounded flex items-center justify-center text-on-surface-variant hover:text-rose-400 hover:bg-rose-500/10 transition-colors ml-1"
+                            className="w-6 h-6 rounded flex items-center justify-center text-on-surface-variant hover:text-rose-600 hover:bg-rose-500/10 transition-colors ml-1"
                           >
                             <span className="material-symbols-outlined text-[15px]">delete</span>
                           </button>
@@ -1367,12 +1365,12 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
                       <div className="p-2.5 rounded-lg bg-surface-container-highest/60 border border-[var(--hairline)] space-y-2">
                         <div className="flex items-center justify-between text-xs">
                           <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] uppercase font-semibold text-on-surface-variant">Spend:</span>
-                            <span className="font-mono font-bold text-emerald-400">
+                            <span className="text-[10px] uppercase font-bold text-on-surface-variant">Spend:</span>
+                            <span className="font-mono font-bold text-emerald-700 dark:text-emerald-300">
                               {isFreeProvider ? "Free • $0.00" : formatCurrency(provCost)}
                             </span>
                           </div>
-                          <div className="flex items-center gap-2 text-[11px] font-mono text-on-surface-variant">
+                          <div className="flex items-center gap-2 text-[11px] font-mono text-on-surface-variant font-semibold">
                             <span>{provRequests} reqs</span>
                             <span className="text-primary font-bold">{provRpm} RPM</span>
                           </div>
@@ -1382,18 +1380,18 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
                           <div className="w-full h-1.5 rounded-full overflow-hidden flex bg-surface-container-high">
                             <div
                               style={{ width: `${provTokenRatio}%` }}
-                              className="bg-indigo-500 h-full"
+                              className="bg-indigo-600 h-full"
                               title={`Input: ${provTokenRatio.toFixed(0)}%`}
                             />
                             <div
                               style={{ width: `${100 - provTokenRatio}%` }}
-                              className="bg-amber-500 h-full"
+                              className="bg-amber-600 h-full"
                               title={`Output: ${(100 - provTokenRatio).toFixed(0)}%`}
                             />
                           </div>
-                          <div className="flex justify-between text-[10px] text-on-surface-variant font-mono">
-                            <span className="text-indigo-400">In: {formatTokens(provInTokens)}</span>
-                            <span className="text-amber-400">Out: {formatTokens(provOutTokens)}</span>
+                          <div className="flex justify-between text-[10px] font-mono font-bold">
+                            <span className="text-indigo-700 dark:text-indigo-300">In: {formatTokens(provInTokens)}</span>
+                            <span className="text-amber-700 dark:text-amber-300">Out: {formatTokens(provOutTokens)}</span>
                           </div>
                         </div>
                       </div>
@@ -1546,10 +1544,10 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
                             <button
                               type="button"
                               onClick={() => handleSetRole(inst.id, "primary")}
-                              className={`px-3 py-1 rounded text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                              className={`px-3 py-1 rounded text-xs font-bold flex items-center gap-1.5 transition-all ${
                                 isPrimary
-                                  ? "bg-amber-500 text-slate-950 font-bold shadow-xs"
-                                  : "text-on-surface-variant hover:text-on-surface"
+                                  ? "bg-amber-500 text-slate-950 shadow-xs"
+                                  : "text-on-surface hover:bg-surface-container-highest"
                               }`}
                               title="Set as the active Primary provider for initial requests"
                             >
@@ -1561,10 +1559,10 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
                             <button
                               type="button"
                               onClick={() => handleSetRole(inst.id, "standby")}
-                              className={`px-3 py-1 rounded text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                              className={`px-3 py-1 rounded text-xs font-bold flex items-center gap-1.5 transition-all ${
                                 !isPrimary
-                                  ? "bg-sky-500 text-slate-950 font-bold shadow-xs"
-                                  : "text-on-surface-variant hover:text-on-surface"
+                                  ? "bg-sky-500 text-slate-950 shadow-xs"
+                                  : "text-on-surface hover:bg-surface-container-highest"
                               }`}
                               title="Set as a Standby backup provider for failovers"
                             >
@@ -1574,8 +1572,8 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
                           </div>
 
                           {!isPrimary && (
-                            <div className="flex items-center gap-1">
-                              <span className="text-[10px] text-on-surface-variant font-medium">Standby Order:</span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[11px] text-on-surface font-bold">Standby Order:</span>
                               {[1, 2, 3, 4].map((p) => {
                                 const currentPriority = inst.standbyPriority || (fallbackTiers[0] ?? 1);
                                 const isCurrent = currentPriority === p;
@@ -1584,10 +1582,10 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
                                     key={p}
                                     type="button"
                                     onClick={() => handleSetStandbyPriority(inst.id, p)}
-                                    className={`w-6 h-6 rounded text-[10px] font-mono font-bold flex items-center justify-center transition-all border ${
+                                    className={`w-6 h-6 rounded text-[10px] font-mono font-black flex items-center justify-center transition-all border ${
                                       isCurrent
-                                        ? "bg-sky-500 text-slate-950 border-sky-400 font-extrabold shadow-xs"
-                                        : "bg-surface-container-high border-[var(--hairline)] text-on-surface-variant hover:text-on-surface"
+                                        ? "bg-sky-500 text-slate-950 border-sky-600 shadow-xs"
+                                        : "bg-surface border border-[var(--hairline-strong)] text-on-surface hover:bg-surface-container-high"
                                     }`}
                                     title={`Failover Priority ${p}`}
                                   >
@@ -1625,18 +1623,20 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
                                 key={tier.id}
                                 type="button"
                                 onClick={() => handleTogglePlanTier(inst.id, tier.id)}
-                                className={`px-2.5 py-1 rounded text-[11px] font-medium flex items-center gap-1.5 border transition-all ${
+                                className={`px-2.5 py-1 rounded text-[11px] font-bold flex items-center gap-1.5 border transition-all ${
                                   isAssigned
                                     ? tier.activeClass
-                                    : "bg-surface-container-high border-[var(--hairline)] text-on-surface-variant hover:bg-surface-container-highest"
+                                    : "bg-surface border border-[var(--hairline-strong)] text-on-surface hover:bg-surface-container-high"
                                 }`}
                                 title={tier.description}
                               >
-                                <span className="material-symbols-outlined text-[12px]">
-                                  {isAssigned ? "check_circle" : "circle"}
+                                <span className={`material-symbols-outlined text-[13px] ${isAssigned ? "" : "text-on-surface-variant"}`}>
+                                  {isAssigned ? "check_circle" : "radio_button_unchecked"}
                                 </span>
-                                <span className="font-semibold">{tier.label}</span>
-                                <span className="text-[9.5px] opacity-75 font-mono">({tier.price})</span>
+                                <span>{tier.label}</span>
+                                <span className={`text-[9.5px] font-mono ${isAssigned ? "opacity-90 font-semibold" : "text-on-surface-variant font-medium"}`}>
+                                  ({tier.price})
+                                </span>
                               </button>
                             );
                           })}
@@ -1644,7 +1644,7 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
                           <button
                             type="button"
                             onClick={() => handleToggleAllPlans(inst.id)}
-                            className="px-2 py-1 rounded text-[10px] font-medium text-primary hover:bg-primary/10 border border-primary/25 ml-auto"
+                            className="px-2.5 py-1 rounded text-[11px] font-extrabold text-primary hover:bg-primary/10 border border-primary/40 ml-auto transition-colors"
                             title="Toggle all plans"
                           >
                             All Plans
