@@ -121,7 +121,7 @@ const MODEL_RATE_TABLE: Array<{ match: string; inputRate: number; outputRate: nu
 ];
 
 export function getModelDefaultRates(provider: ApiProvider, model: string): ModelRate {
-  if (provider === "ollama" || provider === "ollama_cloud") {
+  if (provider === "ollama" || provider === "ollama_cloud" || provider === "groq") {
     return { inputRate: 0, outputRate: 0 };
   }
 
@@ -136,8 +136,6 @@ export function getModelDefaultRates(provider: ApiProvider, model: string): Mode
   switch (provider) {
     case "deepseek":
       return { inputRate: 0.10, outputRate: 0.20 };
-    case "groq":
-      return { inputRate: 0.20, outputRate: 0.30 };
     case "commandcode":
       return { inputRate: 2.00, outputRate: 6.00 };
     case "gemini":

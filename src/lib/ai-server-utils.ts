@@ -1,8 +1,8 @@
-import { resolveUpstream, UpstreamNotAllowedError } from "@/lib/ai-upstream";
+import { resolveUpstream, UpstreamNotAllowedError, getServerGatewayKeyForProvider } from "@/lib/ai-upstream";
 import { BlockedRequestError, safeFetch } from "@/lib/net-guard";
 import { providerDefaults } from "@/lib/ai-providers";
-import { getBizAiGatewayConfig } from "@/lib/server-subscription-store";
-import type { ApiSettings, BizAiGatewayConfig } from "@/lib/store-types";
+import { getBizAiGatewayConfig, hydrateGatewayConfigFromKv } from "@/lib/server-subscription-store";
+import type { ApiSettings, BizAiGatewayConfig, ApiProvider } from "@/lib/store-types";
 
 export type ChatResponse = {
   text: string;
@@ -280,24 +280,62 @@ export async function callModel({
   userPrompt,
   temperature = 0.7,
   topP = 0.9,
+  engine,
 }: {
   api: ApiSettings;
   systemPrompt: string;
   userPrompt: string;
   temperature?: number;
   topP?: number;
+  engine?: "bizai" | "byok";
 }): Promise<ChatResponse> {
-  // If provider/model is not explicitly defined in api, fall back to platform default
   const effectiveApi = { ...api };
   let gatewayConfig: BizAiGatewayConfig | null = null;
   try {
-    gatewayConfig = getBizAiGatewayConfig();
-    if (!effectiveApi.provider && gatewayConfig?.primaryProvider) {
-      effectiveApi.provider = gatewayConfig.primaryProvider;
-      effectiveApi.model = gatewayConfig.primaryModel;
-    }
+    gatewayConfig = await hydrateGatewayConfigFromKv();
   } catch {
-    // ignore
+    gatewayConfig = getBizAiGatewayConfig();
+  }
+
+  // Check if current provider has a usable key (either from client BYOK or from server gateway config)
+  const serverKeyForCurrent = effectiveApi.provider
+    ? getServerGatewayKeyForProvider(effectiveApi.provider)
+    : "";
+  const hasUsableKey = Boolean(
+    effectiveApi.apiKey || serverKeyForCurrent || effectiveApi.provider === "ollama"
+  );
+
+  const primaryInstance = gatewayConfig?.instances?.find(
+    (i) => i.tier === "primary" || i.id === gatewayConfig.primaryInstanceId
+  );
+
+  // If engine is explicitly 'bizai' OR if user has no usable key for the requested provider:
+  // Route to the BizAI Gateway's configured primary provider / instance!
+  if ((engine === "bizai" || !hasUsableKey)) {
+    if (primaryInstance) {
+      effectiveApi.provider = primaryInstance.provider;
+      effectiveApi.model =
+        primaryInstance.model ||
+        providerDefaults[primaryInstance.provider]?.model ||
+        "";
+      effectiveApi.baseUrl =
+        primaryInstance.customEndpoint ||
+        providerDefaults[primaryInstance.provider]?.baseUrl ||
+        "";
+      effectiveApi.apiKey = primaryInstance.apiKey || "";
+    } else if (gatewayConfig?.primaryProvider) {
+      effectiveApi.provider = gatewayConfig.primaryProvider;
+      effectiveApi.model =
+        gatewayConfig.providerModels?.[gatewayConfig.primaryProvider] ||
+        gatewayConfig.primaryModel ||
+        providerDefaults[gatewayConfig.primaryProvider]?.model ||
+        "";
+      effectiveApi.baseUrl =
+        gatewayConfig.customEndpoints?.[gatewayConfig.primaryProvider] ||
+        providerDefaults[gatewayConfig.primaryProvider]?.baseUrl ||
+        "";
+      effectiveApi.apiKey = ""; // resolved by resolveUpstream using server gateway keys
+    }
   }
 
   const primaryUpstream = await resolveUpstream(effectiveApi);
@@ -315,19 +353,50 @@ export async function callModel({
     if (
       gatewayConfig &&
       gatewayConfig.failoverEnabled &&
-      gatewayConfig.fallbacks &&
-      gatewayConfig.fallbacks.length > 0 &&
       shouldTriggerFailover(primaryError, gatewayConfig.failoverTriggers)
     ) {
       console.warn(
-        `[BizAI Gateway Failover] Primary model (${primaryUpstream.provider}/${primaryUpstream.model}) failed: ${(primaryError as Error).message}. Initiating multi-model failover chain...`
+        `[BizAI Gateway Failover] Primary model (${primaryUpstream.provider}/${primaryUpstream.model}) failed: ${(primaryError as Error).message}. Initiating multi-tier failover chain...`
       );
 
-      const activeFallbacks = gatewayConfig.fallbacks.filter(
-        (f) =>
-          f.enabled &&
-          (f.provider !== primaryUpstream.provider || f.model !== primaryUpstream.model)
-      );
+      let activeFallbacks: Array<{ provider: ApiProvider; model: string; label: string; apiKey?: string; baseUrl?: string }> = [];
+
+      if (gatewayConfig.instances && gatewayConfig.instances.length > 0) {
+        const fallbackInsts = gatewayConfig.instances.filter(
+          (i) => i.tier === "fallback" || (i.fallbackTiers && i.fallbackTiers.length > 0)
+        );
+        const tierEntries: Array<{ tierNum: number; inst: (typeof fallbackInsts)[0] }> = [];
+        for (const inst of fallbackInsts) {
+          const tiers = inst.fallbackTiers && inst.fallbackTiers.length > 0 ? inst.fallbackTiers : [1];
+          for (const t of tiers) {
+            tierEntries.push({ tierNum: t, inst });
+          }
+        }
+        tierEntries.sort((a, b) => a.tierNum - b.tierNum);
+        activeFallbacks = tierEntries
+          .filter((e) => e.inst.id !== primaryInstance?.id)
+          .map((e) => ({
+            provider: e.inst.provider,
+            model: e.inst.model,
+            label: e.inst.label || `Tier ${e.tierNum} (${e.inst.provider})`,
+            apiKey: e.inst.apiKey,
+            baseUrl: e.inst.customEndpoint,
+          }));
+      }
+
+      if (activeFallbacks.length === 0 && gatewayConfig.fallbacks && gatewayConfig.fallbacks.length > 0) {
+        activeFallbacks = gatewayConfig.fallbacks
+          .filter(
+            (f) =>
+              f.enabled &&
+              (f.provider !== primaryUpstream.provider || f.model !== primaryUpstream.model)
+          )
+          .map((f) => ({
+            provider: f.provider,
+            model: f.model,
+            label: f.label || "Fallback",
+          }));
+      }
 
       for (const fallback of activeFallbacks) {
         try {
@@ -338,8 +407,8 @@ export async function callModel({
           const fallbackSettings: ApiSettings = {
             provider: fallback.provider,
             model: fallback.model,
-            baseUrl: providerDefaults[fallback.provider]?.baseUrl || "",
-            apiKey: effectiveApi.apiKey || "", // if user provided BYOK key; else resolveUpstream uses server gateway key
+            baseUrl: fallback.baseUrl || (providerDefaults as Record<string, { baseUrl: string; model: string }>)[fallback.provider]?.baseUrl || "",
+            apiKey: fallback.apiKey || effectiveApi.apiKey || "", // instance key or BYOK or server gateway key
             appName: effectiveApi.appName || "Writerdost AI",
             siteUrl: effectiveApi.siteUrl || "",
           };

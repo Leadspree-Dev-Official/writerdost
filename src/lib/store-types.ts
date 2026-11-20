@@ -700,12 +700,53 @@ export interface GatewayFallbackTier {
   provider: ApiProvider;
   model: string;
   label: string;
+  instanceId?: string;
+}
+
+export type GatewayTierMode = "primary" | "fallback" | "unassigned";
+
+export interface GatewayProviderInstance {
+  id: string;
+  provider: ApiProvider;
+  label?: string;
+  model: string;
+  apiKey?: string;
+  customEndpoint?: string;
+  isFree?: boolean;
+  tier: GatewayTierMode;
+  fallbackTiers?: number[];
+  createdAt?: number;
+}
+
+export interface GatewayProviderMetric {
+  provider: ApiProvider;
+  model?: string;
+  totalRequests: number;
+  totalTokens: number;
+  inputTokens: number;
+  outputTokens: number;
+  totalCost: number;
+  lastUsedTimestamp?: number;
+  recentTimestamps?: number[];
+  isFree?: boolean;
+}
+
+export interface GatewayAnalytics {
+  totalRequests: number;
+  totalTokens: number;
+  inputTokens: number;
+  outputTokens: number;
+  totalCost: number;
+  freeRequests: number;
+  freeTokens: number;
+  requestsPerMinute: number;
+  providers: Record<string, GatewayProviderMetric>;
 }
 
 export interface BizAiGatewayConfig {
-  // Platform default primary provider & model
-  primaryProvider: ApiProvider;
-  primaryModel: string;
+  // Platform default primary provider & model (optional until configured)
+  primaryProvider?: ApiProvider;
+  primaryModel?: string;
 
   // Server-managed gateway API keys (stored server-side, masked when returned to client)
   serverKeys: {
@@ -717,6 +758,18 @@ export interface BizAiGatewayConfig {
     commandcode?: string;
     openrouter?: string;
   };
+
+  // Explicit list of configured/added provider IDs
+  configuredProviders?: ApiProvider[];
+
+  // Custom Base URLs / proxy endpoints per provider (e.g. Cloudflare AI Gateway, LiteLLM, Portkey)
+  customEndpoints?: Record<string, string>;
+
+  // Preferred model preset per provider
+  providerModels?: Record<string, string>;
+
+  // Providers marked as free/zero-cost ($0.00 rate)
+  freeProviders?: Record<string, boolean>;
 
   // Failover Chain
   failoverEnabled: boolean;
@@ -732,11 +785,15 @@ export interface BizAiGatewayConfig {
   contextThresholdTokens: number;
   contextFallbackProvider: ApiProvider;
   contextFallbackModel: string;
+
+  // Multi-instance provider instances (allows adding any provider more than once with per-instance tiers)
+  instances?: GatewayProviderInstance[];
+  primaryInstanceId?: string;
 }
 
 export const DEFAULT_BIZAI_GATEWAY_CONFIG: BizAiGatewayConfig = {
-  primaryProvider: "claude",
-  primaryModel: "claude-sonnet-5-5",
+  primaryProvider: undefined,
+  primaryModel: "",
   serverKeys: {
     anthropic: "",
     openai: "",
@@ -746,30 +803,23 @@ export const DEFAULT_BIZAI_GATEWAY_CONFIG: BizAiGatewayConfig = {
     commandcode: "",
     openrouter: "",
   },
-  failoverEnabled: true,
+  configuredProviders: [],
+  customEndpoints: {},
+  providerModels: {},
+  freeProviders: { groq: true, ollama: true },
+  failoverEnabled: false,
   failoverTriggers: {
     rateLimit429: true,
     serverErrors5xx: true,
     timeout: true,
   },
-  fallbacks: [
-    {
-      enabled: true,
-      provider: "gemini",
-      model: "gemini-3.8-flash",
-      label: "Secondary Tier (Automatic Failover)",
-    },
-    {
-      enabled: true,
-      provider: "deepseek",
-      model: "deepseek-flash",
-      label: "Tertiary Tier (Emergency Outage)",
-    },
-  ],
+  fallbacks: [],
   contextThresholdEnabled: false,
   contextThresholdTokens: 95000,
   contextFallbackProvider: "deepseek",
-  contextFallbackModel: "deepseek-flash",
+  contextFallbackModel: "",
+  instances: [],
+  primaryInstanceId: undefined,
 };
 
 
