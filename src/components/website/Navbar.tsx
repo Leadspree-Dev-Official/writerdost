@@ -24,8 +24,9 @@ export default function WebsiteNavbar() {
   }, []);
 
   const navLinks = [
-    { label: "Architecture", href: "/#architecture" },
-    { label: "Book Studio", href: "/book" },
+    { label: "300k Book Studio", href: "/book" },
+    { label: "Copywriting", href: "/copywriting" },
+    { label: "Research Lab", href: "/research" },
     { label: "Features", href: "/#features" },
     { label: "WordPress Sync", href: "/#wordpress" },
     { label: "Pricing", href: "/#pricing" },
@@ -44,23 +45,23 @@ export default function WebsiteNavbar() {
 
       {/* Top micro-announcement banner */}
       {showBanner && (
-        <div className="relative bg-surface-container-high dark:bg-[#10121a] border-b border-outline-variant/30 dark:border-white/8 text-on-surface-variant dark:text-slate-300 text-[12px] py-1.5 px-4 text-center font-medium tracking-wide flex items-center justify-center gap-2">
-          <span className="inline-flex items-center gap-1 bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full text-[10.5px] font-bold uppercase tracking-wider">
-            Architecture Update
+        <div className="relative bg-gradient-to-r from-primary-container via-indigo-600 to-purple-700 text-white text-[12px] py-1.5 px-4 text-center font-medium tracking-wide flex items-center justify-center gap-2">
+          <span className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-xs px-2 py-0.5 rounded-full text-[10.5px] font-bold uppercase tracking-wider">
+            Major Release
           </span>
           <span>
-            Autonomous 4-Agent Parallel Swarms &amp; Amazon KDP Validated Formatting are live.
+            300,000-Word Book Studio, Copywriting Frameworks &amp; Custom Skills (BYOS) are now live!
           </span>
           <a
-            href="#architecture"
-            className="text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 font-semibold underline underline-offset-2 ml-1 hidden sm:inline transition-colors"
+            href="#features"
+            className="underline underline-offset-2 font-semibold hover:opacity-90 ml-1 hidden sm:inline"
           >
-            Explore Pipeline &rarr;
+            Explore What&apos;s New &rarr;
           </a>
           <button
             type="button"
             onClick={() => setShowBanner(false)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant/70 hover:text-on-surface dark:text-slate-400 dark:hover:text-white transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition-colors"
             aria-label="Dismiss banner"
           >
             <span className="material-symbols-outlined text-[16px]">close</span>
@@ -152,7 +153,7 @@ export default function WebsiteNavbar() {
                   className="btn btn-primary btn-sm flex items-center gap-1.5 shadow-md shadow-primary/25 active:scale-[0.98] transition-transform"
                 >
                   <span>Start Free</span>
-                  <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
+                  <span className="material-symbols-outlined text-[15px]">auto_awesome</span>
                 </Link>
               </>
             )}
