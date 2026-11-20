@@ -66,7 +66,7 @@ export default function HeroInteractivePreview() {
   return (
     <div
       id="interactive-demo"
-      className="scroll-mt-24 w-full max-w-6xl mx-auto rounded-2xl border border-white/10 bg-[#10121a] shadow-2xl shadow-black/50 overflow-hidden font-body transition-all duration-300"
+      className="scroll-mt-24 w-full max-w-6xl mx-auto rounded-2xl border border-outline-variant/30 dark:border-white/10 bg-surface-container-lowest dark:bg-[#10101c] shadow-xl shadow-black/5 dark:shadow-black/50 overflow-hidden font-body transition-all duration-300"
     >
       {/* Studio Header Bar */}
       <div className="bg-surface-container dark:bg-[#151525] px-4 py-3 border-b border-outline-variant/30 flex flex-wrap items-center justify-between gap-3">

@@ -1398,6 +1398,19 @@ body {
    Taste-Skill 2.5 Editorial Design Tokens & Layout Utilities
    ========================================================================= */
 :root {
+  --editorial-ink: #ffffff;
+  --editorial-surface: #ffffff;
+  --editorial-surface-raised: #f8fafc;
+  --editorial-border: rgba(0, 0, 0, 0.08);
+  --editorial-border-hover: rgba(0, 0, 0, 0.16);
+  --editorial-text: #0f172a;
+  --editorial-text-muted: #64748b;
+  --editorial-accent: #059669;
+  --editorial-accent-hover: #047857;
+}
+
+:root.dark,
+.dark {
   --editorial-ink: #0b0d11;
   --editorial-surface: #13161f;
   --editorial-surface-raised: #1a1e29;
@@ -1429,9 +1442,13 @@ body {
   background: var(--editorial-surface);
   border: 1px solid var(--editorial-border);
   border-radius: 12px;
-  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08), 0 0 0 1px var(--editorial-border);
   overflow: hidden;
   position: relative;
+}
+
+.dark .app-frame {
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 .card-lift {

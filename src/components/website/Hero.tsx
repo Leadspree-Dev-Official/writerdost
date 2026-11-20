@@ -14,9 +14,9 @@ export default function Hero() {
         <div className="flex justify-center mb-6">
           <Link
             href="#architecture"
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-[12px] font-semibold tracking-wide shadow-xs hover:border-emerald-500/50 transition-colors"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-[12px] font-semibold tracking-wide shadow-xs hover:border-emerald-500/50 transition-colors"
           >
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
             <span>4-Agent Parallel Swarm Engine + KDP Export Validation</span>
             <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
           </Link>
@@ -29,7 +29,7 @@ export default function Hero() {
           </h1>
 
           {/* Subtitle with hard fact and outcome */}
-          <p className="text-base sm:text-lg lg:text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed font-normal">
+          <p className="text-base sm:text-lg lg:text-xl text-on-surface-variant dark:text-slate-300 max-w-2xl mx-auto leading-relaxed font-normal">
             Plan, draft, and format 1,000 to 100,000-word manuscripts with a 4-agent parallel swarm. No token markups, zero chapter drift.
           </p>
 
@@ -56,7 +56,7 @@ export default function Hero() {
             <a
               href="#architecture"
               aria-label="Explore swarm pipeline architecture"
-              className="btn btn-secondary btn-lg w-full sm:w-auto px-7 py-3.5 text-base flex items-center justify-center gap-2 active:scale-[0.98] transition-transform text-slate-200 border-white/10 hover:bg-white/5"
+              className="btn btn-secondary btn-lg w-full sm:w-auto px-7 py-3.5 text-base flex items-center justify-center gap-2 active:scale-[0.98] transition-transform text-on-surface border-outline-variant/60 hover:bg-surface-container dark:text-slate-200 dark:border-white/10 dark:hover:bg-white/5"
             >
               <span>Explore Architecture</span>
               <span className="material-symbols-outlined text-[18px]">south</span>
@@ -64,17 +64,17 @@ export default function Hero() {
           </div>
 
           {/* Grounded Technical Indicators */}
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[12px] text-slate-400 font-medium pt-2">
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[12px] text-on-surface-variant dark:text-slate-400 font-medium pt-2">
             <span className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[15px] text-emerald-400">verified</span>
+              <span className="material-symbols-outlined text-[15px] text-emerald-600 dark:text-emerald-400">verified</span>
               Amazon KDP &amp; EPUB Validated
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[15px] text-emerald-400">key</span>
+              <span className="material-symbols-outlined text-[15px] text-emerald-600 dark:text-emerald-400">key</span>
               Bring Your Own Keys (Zero Markup)
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[15px] text-emerald-400">shield</span>
+              <span className="material-symbols-outlined text-[15px] text-emerald-600 dark:text-emerald-400">shield</span>
               Local Ollama Offline Mode
             </span>
           </div>

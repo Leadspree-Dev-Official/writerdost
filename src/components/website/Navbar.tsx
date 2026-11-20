@@ -44,8 +44,8 @@ export default function WebsiteNavbar() {
 
       {/* Top micro-announcement banner */}
       {showBanner && (
-        <div className="relative bg-[#10121a] border-b border-white/8 text-slate-300 text-[12px] py-1.5 px-4 text-center font-medium tracking-wide flex items-center justify-center gap-2">
-          <span className="inline-flex items-center gap-1 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 px-2 py-0.5 rounded-full text-[10.5px] font-bold uppercase tracking-wider">
+        <div className="relative bg-surface-container-high dark:bg-[#10121a] border-b border-outline-variant/30 dark:border-white/8 text-on-surface-variant dark:text-slate-300 text-[12px] py-1.5 px-4 text-center font-medium tracking-wide flex items-center justify-center gap-2">
+          <span className="inline-flex items-center gap-1 bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full text-[10.5px] font-bold uppercase tracking-wider">
             Architecture Update
           </span>
           <span>
@@ -53,14 +53,14 @@ export default function WebsiteNavbar() {
           </span>
           <a
             href="#architecture"
-            className="text-emerald-400 hover:text-emerald-300 font-semibold underline underline-offset-2 ml-1 hidden sm:inline transition-colors"
+            className="text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 font-semibold underline underline-offset-2 ml-1 hidden sm:inline transition-colors"
           >
             Explore Pipeline &rarr;
           </a>
           <button
             type="button"
             onClick={() => setShowBanner(false)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant/70 hover:text-on-surface dark:text-slate-400 dark:hover:text-white transition-colors"
             aria-label="Dismiss banner"
           >
             <span className="material-symbols-outlined text-[16px]">close</span>

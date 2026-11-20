@@ -85,17 +85,17 @@ export default function SwarmPipelineDiagram() {
   ];
 
   return (
-    <section id="architecture" className="py-20 md:py-28 bg-[#0b0d12] border-b border-white/8 font-body">
+    <section id="architecture" className="py-20 md:py-28 bg-surface dark:bg-[#0b0d12] border-b border-outline-variant/30 dark:border-white/8 font-body">
       <div className="wrap-screen">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-14 space-y-4">
-          <span className="text-[12px] font-bold text-emerald-400 uppercase tracking-widest px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+          <span className="text-[12px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-widest px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
             System Directive Architecture
           </span>
-          <h2 className="text-3xl sm:text-4xl font-black text-slate-100 tracking-tight leading-tight">
+          <h2 className="text-3xl sm:text-4xl font-black text-on-surface dark:text-slate-100 tracking-tight leading-tight">
             How Writerdost Generates 100,000 Words Without Hallucination
           </h2>
-          <p className="text-base sm:text-lg text-slate-400 leading-relaxed">
+          <p className="text-base sm:text-lg text-on-surface-variant dark:text-slate-400 leading-relaxed">
             Standard single-prompt LLMs forget characters and repeat ideas after 3,000 words. Writerdost coordinates an autonomous 4-stage pipeline that treats a book like an engineering build.
           </p>
         </div>
@@ -111,38 +111,38 @@ export default function SwarmPipelineDiagram() {
                 onClick={() => setSelectedStage(idx)}
                 className={`card-lift cursor-pointer p-5 rounded-xl border transition-all flex flex-col justify-between ${
                   isSelected
-                    ? "bg-[#141824] border-emerald-500/50 shadow-lg shadow-emerald-500/5 ring-1 ring-emerald-500/30"
-                    : "bg-[#10121a] border-white/8 hover:border-white/20"
+                    ? "bg-emerald-500/5 dark:bg-[#141824] border-emerald-500/50 shadow-lg shadow-emerald-500/5 ring-1 ring-emerald-500/30"
+                    : "bg-surface-container-lowest dark:bg-[#10121a] border-outline-variant/30 dark:border-white/8 hover:border-outline-variant/60 dark:hover:border-white/20"
                 }`}
               >
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <span className="text-[11px] font-mono font-bold text-emerald-400 px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">
+                    <span className="text-[11px] font-mono font-bold text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">
                       STAGE {stg.number}
                     </span>
-                    <span className="material-symbols-outlined text-slate-400 text-[20px]">
+                    <span className="material-symbols-outlined text-on-surface-variant dark:text-slate-400 text-[20px]">
                       {stg.icon}
                     </span>
                   </div>
 
-                  <h3 className="text-[15px] font-bold text-slate-100 tracking-tight mb-1">
+                  <h3 className="text-[15px] font-bold text-on-surface dark:text-slate-100 tracking-tight mb-1">
                     {stg.title}
                   </h3>
-                  <p className="text-[11.5px] font-medium text-slate-400 mb-3">
+                  <p className="text-[11.5px] font-medium text-on-surface-variant/80 dark:text-slate-400 mb-3">
                     {stg.subtitle}
                   </p>
-                  <p className="text-[12px] text-slate-300 leading-relaxed">
+                  <p className="text-[12px] text-on-surface-variant dark:text-slate-300 leading-relaxed">
                     {stg.summary}
                   </p>
                 </div>
 
-                <div className="mt-5 pt-4 border-t border-white/8 flex items-center justify-between">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
+                <div className="mt-5 pt-4 border-t border-outline-variant/20 dark:border-white/8 flex items-center justify-between">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-on-surface-variant/80 dark:text-slate-400">
                     {stg.tag}
                   </span>
                   <span
                     className={`text-[11px] font-semibold flex items-center gap-1 ${
-                      isSelected ? "text-emerald-400" : "text-slate-400"
+                      isSelected ? "text-emerald-700 dark:text-emerald-400" : "text-on-surface-variant dark:text-slate-400"
                     }`}
                   >
                     {isSelected ? "Active Stage" : "Inspect →"}
@@ -154,27 +154,27 @@ export default function SwarmPipelineDiagram() {
         </div>
 
         {/* Deep Dive Telemetry Display for Selected Stage */}
-        <div className="app-frame p-6 sm:p-8 bg-[#12141f] border border-white/10 rounded-2xl">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-white/8">
+        <div className="app-frame p-6 sm:p-8 bg-surface-container dark:bg-[#12141f] border border-outline-variant/30 dark:border-white/10 rounded-2xl">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-outline-variant/20 dark:border-white/8">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[12px] font-mono uppercase tracking-wider text-emerald-400">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
+                <span className="text-[12px] font-mono uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
                   Telemetry Snapshot: Stage {stages[selectedStage].number} — {stages[selectedStage].title}
                 </span>
               </div>
-              <p className="text-xl font-bold text-slate-100">
+              <p className="text-xl font-bold text-on-surface dark:text-slate-100">
                 {stages[selectedStage].subtitle}
               </p>
             </div>
 
             <div className="flex items-center gap-4">
               {stages[selectedStage].metrics.map((m) => (
-                <div key={m.label} className="bg-white/5 border border-white/8 px-4 py-2 rounded-lg">
-                  <span className="text-[10.5px] font-mono uppercase tracking-wider text-slate-400 block">
+                <div key={m.label} className="bg-surface-container-lowest dark:bg-white/5 border border-outline-variant/20 dark:border-white/8 px-4 py-2 rounded-lg">
+                  <span className="text-[10.5px] font-mono uppercase tracking-wider text-on-surface-variant dark:text-slate-400 block">
                     {m.label}
                   </span>
-                  <span className="text-[14px] font-bold text-slate-100 block">
+                  <span className="text-[14px] font-bold text-on-surface dark:text-slate-100 block">
                     {m.val}
                   </span>
                 </div>
@@ -184,11 +184,11 @@ export default function SwarmPipelineDiagram() {
 
           <div className="pt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
             {stages[selectedStage].details.map((detail, dIdx) => (
-              <div key={dIdx} className="flex items-start gap-3 p-3.5 rounded-lg bg-white/2 border border-white/5">
-                <span className="material-symbols-outlined text-emerald-400 text-[18px] mt-0.5 shrink-0">
+              <div key={dIdx} className="flex items-start gap-3 p-3.5 rounded-lg bg-surface-container-lowest/80 dark:bg-white/2 border border-outline-variant/20 dark:border-white/5">
+                <span className="material-symbols-outlined text-emerald-600 dark:text-emerald-400 text-[18px] mt-0.5 shrink-0">
                   check_circle
                 </span>
-                <span className="text-[13px] text-slate-300 leading-snug">
+                <span className="text-[13px] text-on-surface dark:text-slate-300 leading-snug">
                   {detail}
                 </span>
               </div>
