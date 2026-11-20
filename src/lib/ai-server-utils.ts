@@ -306,7 +306,7 @@ export async function callModel({
   );
 
   const primaryInstance = gatewayConfig?.instances?.find(
-    (i) => i.tier === "primary" || i.id === gatewayConfig.primaryInstanceId
+    (i) => i.role === "primary" || i.tier === "primary" || i.id === gatewayConfig.primaryInstanceId
   );
 
   // If engine is explicitly 'bizai' OR if user has no usable key for the requested provider:
@@ -362,23 +362,22 @@ export async function callModel({
       let activeFallbacks: Array<{ provider: ApiProvider; model: string; label: string; apiKey?: string; baseUrl?: string }> = [];
 
       if (gatewayConfig.instances && gatewayConfig.instances.length > 0) {
-        const fallbackInsts = gatewayConfig.instances.filter(
-          (i) => i.tier === "fallback" || (i.fallbackTiers && i.fallbackTiers.length > 0)
+        const standbyInsts = gatewayConfig.instances.filter(
+          (i) =>
+            (i.role === "standby" || i.tier === "standby" || i.tier === "fallback" || (i.fallbackTiers && i.fallbackTiers.length > 0)) &&
+            i.id !== primaryInstance?.id
         );
-        const tierEntries: Array<{ tierNum: number; inst: (typeof fallbackInsts)[0] }> = [];
-        for (const inst of fallbackInsts) {
-          const tiers = inst.fallbackTiers && inst.fallbackTiers.length > 0 ? inst.fallbackTiers : [1];
-          for (const t of tiers) {
-            tierEntries.push({ tierNum: t, inst });
-          }
+        const tierEntries: Array<{ tierNum: number; inst: (typeof standbyInsts)[0] }> = [];
+        for (const inst of standbyInsts) {
+          const priority = inst.standbyPriority || (inst.fallbackTiers && inst.fallbackTiers.length > 0 ? inst.fallbackTiers[0] : 1);
+          tierEntries.push({ tierNum: priority, inst });
         }
         tierEntries.sort((a, b) => a.tierNum - b.tierNum);
         activeFallbacks = tierEntries
-          .filter((e) => e.inst.id !== primaryInstance?.id)
           .map((e) => ({
             provider: e.inst.provider,
             model: e.inst.model,
-            label: e.inst.label || `Tier ${e.tierNum} (${e.inst.provider})`,
+            label: e.inst.label || `Standby #${e.tierNum} (${e.inst.provider})`,
             apiKey: e.inst.apiKey,
             baseUrl: e.inst.customEndpoint,
           }));

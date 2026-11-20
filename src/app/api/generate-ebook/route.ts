@@ -1,10 +1,12 @@
-import type { ApiSettings, GeneratedProjectPayload, OutlinePoint } from "@/lib/store-types";
+import type { ApiSettings, GeneratedProjectPayload, OutlinePoint, GenerationEngine } from "@/lib/store-types";
 import { robustParseJson, slugify, sendStreamEvent, type StreamEvent } from "@/lib/app-utils";
 import { getToneDirective } from "@/lib/tone-standards";
 import { getLanguageDirective, DEFAULT_LANGUAGE } from "@/lib/languages";
 import { callModel } from "@/lib/ai-server-utils";
 import { guardCostlyRequest } from "@/lib/costly-route";
 import { clampInt, LIMITS } from "@/lib/validation";
+import { hydrateGatewayConfigFromKv } from "@/lib/server-subscription-store";
+import { getServerGatewayKeyForProvider } from "@/lib/ai-upstream";
 
 type RequestPayload = {
   api: ApiSettings;
@@ -22,6 +24,7 @@ type RequestPayload = {
     language?: string;
     researchSources: Array<{ type: string; value: string; label: string }>;
   };
+  engine?: GenerationEngine;
 };
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -56,17 +59,46 @@ export async function POST(request: Request) {
 
       try {
         const body = (await request.json()) as RequestPayload;
-        const { api, settings, draft } = body;
+        const { api, settings, draft, engine } = body;
         draft.length = clampInt(draft.length, 10_000, 1_000, LIMITS.targetWords);
         draft.researchSources = Array.isArray(draft.researchSources)
           ? draft.researchSources.slice(0, LIMITS.researchSources)
           : [];
-        const readyForLiveAi = Boolean(api.baseUrl && api.model && (api.apiKey || api.provider === "ollama" || api.provider === "ollama_cloud"));
-        if (!readyForLiveAi) {
+
+        // Check if provider/key is configured
+        const isByok = engine === "byok";
+        const hasByokKey = Boolean(api?.apiKey || api?.provider === "ollama" || api?.provider === "ollama_cloud");
+
+        if (isByok && !hasByokKey) {
           sendEvent({
             type: "error",
             message:
-              "No AI provider is configured. Add a provider, model and API key in Settings → API, then run the Agents again.",
+              "No AI provider is configured for BYOK. Add a provider, model and API key in Settings → API, or switch to BizAI Managed.",
+          });
+          controller.close();
+          return;
+        }
+
+        // For BizAI Managed, ensure gateway config has a working provider/key
+        const gatewayConfig = await hydrateGatewayConfigFromKv();
+        const primaryInstance = gatewayConfig?.instances?.find(
+          (i) => i.role === "primary" || i.tier === "primary" || i.id === gatewayConfig?.primaryInstanceId
+        );
+        const primaryProvider = primaryInstance?.provider || gatewayConfig?.primaryProvider;
+        const hasGatewayKey = Boolean(
+          primaryProvider && (
+            primaryProvider === "ollama" ||
+            primaryInstance?.apiKey ||
+            gatewayConfig.serverKeys?.[primaryProvider as keyof typeof gatewayConfig.serverKeys] ||
+            getServerGatewayKeyForProvider(primaryProvider)
+          )
+        );
+
+        if (!isByok && !hasGatewayKey && !hasByokKey) {
+          sendEvent({
+            type: "error",
+            message:
+              "BizAI Gateway has no active provider key configured. Please configure a provider and API key in Admin → Gateway, or add a personal API key in Settings → API.",
           });
           controller.close();
           return;
@@ -100,6 +132,7 @@ ${bibliography}
           userPrompt: `Title/Topic: ${draft.vision}\nAudience: ${draft.audience}\nTone: ${draft.tone}\n\nBibliography:\n${bibliography}\n\nGenerate deep research notes and structural insights derived from these specific sources to support a ${draft.length} word manuscript.`,
           temperature: settings.temperature,
           topP: settings.topP,
+          engine,
         });
         sendEvent({ type: "usage", tokens: researchUsage.total_tokens });
         sendEvent({ type: "log", agent: "Research Agent", message: "Research phase complete.", status: "success" });
@@ -140,6 +173,7 @@ ${bibliography}
             `\n\nCRITICAL: If I provided an explicit list of chapters/curriculum in my Vision, your 'chapters' array MUST map directly to my provided structure, but you MUST rebrand and rename every chapter title and focus to be 100% original.`,
           temperature: settings.temperature,
           topP: settings.topP,
+          engine,
         });
         sendEvent({ type: "usage", tokens: planningUsage.total_tokens });
         const planningResult = robustParseJson(planningText) || {};
@@ -195,6 +229,7 @@ ${plannedChapter ? `MANDATORY CHAPTER TITLE: ${plannedChapter.title}\nMANDATORY 
 CRITICAL DEPTH REQUIREMENT: You MUST generate ${bulletPointTarget} and for every single main point, you MUST generate ${subBulletTarget}. Do not abbreviate. We are building a high-wordcount, professional manuscript.`,
             temperature: settings.temperature,
             topP: settings.topP,
+            engine,
           });
           
           sendEvent({ type: "usage", tokens: outlineUsage.total_tokens });

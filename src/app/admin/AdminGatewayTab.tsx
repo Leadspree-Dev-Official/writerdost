@@ -9,6 +9,7 @@ import {
   type GatewayAnalytics,
   type GatewayProviderInstance,
   type GatewayTierMode,
+  type GatewayPlanTier,
 } from "@/lib/store-types";
 import { MODEL_PRESETS } from "@/app/settings/ByokModelModal";
 import { getModelDefaultRates, providerDefaults } from "@/lib/ai-providers";
@@ -145,6 +146,53 @@ const GATEWAY_PROVIDERS: ProviderDefinition[] = [
   },
 ];
 
+export const GATEWAY_PLAN_TIERS: Array<{
+  id: GatewayPlanTier;
+  label: string;
+  price: string;
+  shortDesc: string;
+  description: string;
+  activeClass: string;
+  badgeClass: string;
+}> = [
+  {
+    id: "Free",
+    label: "Free Plan",
+    price: "Free Forever ($0)",
+    shortDesc: "Standard Models / Free Tier",
+    description: "Free Forever users ($0/mo) - High speed, zero-cost models (e.g. Groq, Ollama)",
+    activeClass: "bg-teal-500/20 text-teal-300 border-teal-500/50 shadow-xs",
+    badgeClass: "bg-teal-500/15 text-teal-400 border border-teal-500/30",
+  },
+  {
+    id: "Basic",
+    label: "Basic Plan",
+    price: "$5/mo",
+    shortDesc: "Basic Writers ($5/mo)",
+    description: "Basic plan subscribers ($5/month) - Reliable book & blog generation",
+    activeClass: "bg-blue-500/20 text-blue-300 border-blue-500/50 shadow-xs",
+    badgeClass: "bg-blue-500/15 text-blue-400 border border-blue-500/30",
+  },
+  {
+    id: "Pro",
+    label: "Pro Plan",
+    price: "$19/mo",
+    shortDesc: "Pro Writers ($19/mo)",
+    description: "Pro Writer subscribers ($19/month) - Advanced reasoning & long-context models",
+    activeClass: "bg-purple-500/20 text-purple-300 border-purple-500/50 shadow-xs",
+    badgeClass: "bg-purple-500/15 text-purple-400 border border-purple-500/30",
+  },
+  {
+    id: "Enterprise",
+    label: "Enterprise",
+    price: "$49+/mo",
+    shortDesc: "Enterprise / Custom",
+    description: "Enterprise & high-volume teams - Dedicated high-throughput tier",
+    activeClass: "bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-xs",
+    badgeClass: "bg-amber-500/15 text-amber-400 border border-amber-500/30",
+  },
+];
+
 export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
   const [gatewayConfig, setGatewayConfig] = useState<BizAiGatewayConfig>(DEFAULT_BIZAI_GATEWAY_CONFIG);
   const [analytics, setAnalytics] = useState<GatewayAnalytics | null>(null);
@@ -165,11 +213,13 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
     }
     const synthetic: GatewayProviderInstance[] = [];
     const providers = config.configuredProviders || [];
+    // Only synthesize for providers that actually have a configured server key, were explicitly configured, or are primary
     const allProviders = Array.from(
       new Set([
         ...providers,
         ...(config.primaryProvider ? [config.primaryProvider] : []),
         ...Object.keys(config.serverKeys || {})
+          .filter((k) => Boolean(config.serverKeys?.[k as keyof typeof config.serverKeys]?.trim()))
           .map((k) => {
             const match = GATEWAY_PROVIDERS.find((p) => p.keyId === k);
             return match ? match.id : null;
@@ -198,8 +248,11 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
         apiKey: provDef.keyId ? config.serverKeys?.[provDef.keyId] || "" : "",
         customEndpoint: config.customEndpoints?.[provId] || "",
         isFree: Boolean(provDef.isFree || config.freeProviders?.[provId]),
-        tier: isPrimary ? "primary" : fallbackIndices.length > 0 ? "fallback" : "unassigned",
-        fallbackTiers: fallbackIndices,
+        tier: isPrimary ? "primary" : "standby",
+        role: isPrimary ? "primary" : "standby",
+        planTiers: ["Free", "Basic", "Pro", "Enterprise"],
+        fallbackTiers: fallbackIndices.length > 0 ? fallbackIndices : [1],
+        standbyPriority: fallbackIndices.length > 0 ? fallbackIndices[0] : 1,
         createdAt: Date.now(),
       });
     }
@@ -208,12 +261,14 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
       synthetic.push({
         id: "inst_groq_default",
         provider: "groq",
-        label: "Groq Cloud (Primary)",
+        label: "Groq Cloud",
         model: "openai/gpt-oss-120b",
         apiKey: config.serverKeys?.groq || "",
         customEndpoint: "",
         isFree: true,
         tier: "primary",
+        role: "primary",
+        planTiers: ["Free", "Basic", "Pro", "Enterprise"],
         fallbackTiers: [],
         createdAt: Date.now(),
       });
@@ -227,27 +282,33 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
     : ensureInstances(gatewayConfig);
 
   const primaryInstance = instances.find(
-    (i) => i.tier === "primary" || i.id === gatewayConfig.primaryInstanceId
+    (i) => i.role === "primary" || i.tier === "primary" || i.id === gatewayConfig.primaryInstanceId
   );
 
-  const fallbackInsts = instances.filter(
-    (i) => i.tier === "fallback" || (i.fallbackTiers && i.fallbackTiers.length > 0)
-  );
+  const standbyInsts = instances.filter(
+    (i) =>
+      (i.role === "standby" || i.tier === "standby" || i.tier === "fallback" || (i.fallbackTiers && i.fallbackTiers.length > 0)) &&
+      i.id !== primaryInstance?.id
+  ).sort((a, b) => {
+    const pA = a.standbyPriority || (a.fallbackTiers?.[0] ?? 99);
+    const pB = b.standbyPriority || (b.fallbackTiers?.[0] ?? 99);
+    return pA - pB;
+  });
 
-  const tierEntries: Array<{ tierNum: number; inst: GatewayProviderInstance }> = [];
-  for (const inst of fallbackInsts) {
-    const tiers = inst.fallbackTiers && inst.fallbackTiers.length > 0 ? inst.fallbackTiers : [1];
-    for (const t of tiers) {
-      tierEntries.push({ tierNum: t, inst });
-    }
-  }
-  tierEntries.sort((a, b) => a.tierNum - b.tierNum);
+  const unconfiguredCount = instances.filter(
+    (i) => !i.apiKey && i.provider !== "ollama" && i.id !== primaryInstance?.id
+  ).length;
+
+  const tierEntries: Array<{ tierNum: number; inst: GatewayProviderInstance }> = standbyInsts.map((inst, idx) => ({
+    tierNum: inst.standbyPriority || (inst.fallbackTiers?.[0] ?? (idx + 1)),
+    inst,
+  }));
 
   const handleAddProviderInstance = async (provId: ApiProvider) => {
     const provDef = GATEWAY_PROVIDERS.find((p) => p.id === provId);
     const countSame = instances.filter((i) => i.provider === provId).length;
     const label = countSame === 0 ? (provDef?.name || provId) : `${provDef?.name || provId} #${countSame + 1}`;
-    const hasPrimary = instances.some((i) => i.tier === "primary");
+    const hasPrimary = instances.some((i) => i.role === "primary" || i.tier === "primary");
     const nextInst: GatewayProviderInstance = {
       id: `inst_${provId}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       provider: provId,
@@ -256,8 +317,11 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
       apiKey: provDef?.keyId ? gatewayConfig.serverKeys?.[provDef.keyId] || "" : "",
       customEndpoint: gatewayConfig.customEndpoints?.[provId] || "",
       isFree: Boolean(provDef?.isFree || gatewayConfig.freeProviders?.[provId]),
-      tier: !hasPrimary ? "primary" : "unassigned",
-      fallbackTiers: [],
+      tier: !hasPrimary ? "primary" : "standby",
+      role: !hasPrimary ? "primary" : "standby",
+      planTiers: ["Free", "Basic", "Pro", "Enterprise"],
+      fallbackTiers: !hasPrimary ? [] : [standbyInsts.length + 1],
+      standbyPriority: !hasPrimary ? undefined : standbyInsts.length + 1,
       createdAt: Date.now(),
     };
     const nextInstances = [...instances, nextInst];
@@ -287,6 +351,34 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
     }
   };
 
+  const handlePruneUnconfigured = async () => {
+    if (!confirm(`Remove ${unconfiguredCount} unconfigured provider instance(s) with no API key set?`)) return;
+    const kept = instances.filter(
+      (i) => (i.apiKey && i.apiKey.trim().length > 0) || i.provider === "ollama" || i.id === primaryInstance?.id
+    );
+    const nextConfig: BizAiGatewayConfig = {
+      ...gatewayConfig,
+      instances: kept,
+      configuredProviders: Array.from(new Set(kept.map((i) => i.provider))),
+    };
+    setGatewayConfig(nextConfig);
+    try {
+      if (typeof window !== "undefined") {
+        localStorage.setItem("writerdost_admin_gateway_config", JSON.stringify(nextConfig));
+      }
+      const res = await gatewayApi("/api/admin/gateway", {
+        method: "POST",
+        body: JSON.stringify(nextConfig),
+      });
+      const data = await res.json();
+      if (data?.config) {
+        setGatewayConfig(data.config);
+      }
+    } catch {
+      // Non-blocking
+    }
+  };
+
   const handleRemoveProviderInstance = async (instId: string) => {
     const inst = instances.find((i) => i.id === instId);
     if (!inst) return;
@@ -296,9 +388,10 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
     let nextPrimaryModel = gatewayConfig.primaryModel;
     let nextPrimaryId = gatewayConfig.primaryInstanceId;
 
-    if (inst.tier === "primary") {
+    if (inst.role === "primary" || inst.tier === "primary") {
       const remainingPrimary = nextInstances[0];
       if (remainingPrimary) {
+        remainingPrimary.role = "primary";
         remainingPrimary.tier = "primary";
         remainingPrimary.fallbackTiers = [];
         nextPrimary = remainingPrimary.provider;
@@ -351,55 +444,132 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
     });
   };
 
-  const handleSetPrimaryTier = (instId: string) => {
-    const nextInstances = instances.map((inst) => {
+  const handleSetRole = (instId: string, role: "primary" | "standby") => {
+    const targetInst = instances.find((i) => i.id === instId);
+    if (!targetInst) return;
+
+    if (role === "primary") {
+      const next = instances.map((inst) => {
+        if (inst.id === instId) {
+          return {
+            ...inst,
+            role: "primary" as const,
+            tier: "primary" as const,
+            fallbackTiers: [],
+            standbyPriority: undefined,
+          };
+        }
+        if (inst.role === "primary" || inst.tier === "primary") {
+          return {
+            ...inst,
+            role: "standby" as const,
+            tier: "standby" as const,
+            standbyPriority: 1,
+            fallbackTiers: [1],
+          };
+        }
+        return inst;
+      });
+      setGatewayConfig({
+        ...gatewayConfig,
+        instances: next,
+        primaryProvider: targetInst.provider,
+        primaryModel: targetInst.model,
+        primaryInstanceId: targetInst.id,
+      });
+    } else {
+      const next = instances.map((inst) => {
+        if (inst.id === instId) {
+          return {
+            ...inst,
+            role: "standby" as const,
+            tier: "standby" as const,
+            standbyPriority: inst.standbyPriority || 1,
+            fallbackTiers: [inst.standbyPriority || 1],
+          };
+        }
+        return inst;
+      });
+      const otherPrimary = next.find((i) => (i.role === "primary" || i.tier === "primary") && i.id !== instId);
+      if (!otherPrimary && next.length > 1) {
+        const firstOther = next.find((i) => i.id !== instId);
+        if (firstOther) {
+          firstOther.role = "primary";
+          firstOther.tier = "primary";
+          firstOther.fallbackTiers = [];
+        }
+      }
+      const prim = next.find((i) => i.role === "primary" || i.tier === "primary");
+      setGatewayConfig({
+        ...gatewayConfig,
+        instances: next,
+        primaryProvider: prim?.provider,
+        primaryModel: prim?.model,
+        primaryInstanceId: prim?.id,
+      });
+    }
+  };
+
+  const handleSetStandbyPriority = (instId: string, priority: number) => {
+    const next = instances.map((inst) => {
       if (inst.id === instId) {
         return {
           ...inst,
-          tier: "primary" as const,
-          fallbackTiers: [],
-        };
-      }
-      if (inst.tier === "primary") {
-        return {
-          ...inst,
-          tier: "unassigned" as const,
+          role: "standby" as const,
+          tier: "standby" as const,
+          standbyPriority: priority,
+          fallbackTiers: [priority],
         };
       }
       return inst;
     });
-    const target = nextInstances.find((i) => i.id === instId);
     setGatewayConfig({
       ...gatewayConfig,
-      instances: nextInstances,
-      primaryInstanceId: instId,
-      primaryProvider: target?.provider,
-      primaryModel: target?.model,
+      instances: next,
     });
   };
 
-  const handleToggleFallbackTier = (instId: string, tierNum: number) => {
-    const nextInstances = instances.map((inst) => {
+  const handleTogglePlanTier = (instId: string, planTier: GatewayPlanTier) => {
+    const next = instances.map((inst) => {
       if (inst.id === instId) {
-        const currentTiers = inst.fallbackTiers || [];
-        const exists = currentTiers.includes(tierNum);
-        const nextTiers = exists
-          ? currentTiers.filter((t) => t !== tierNum)
-          : [...currentTiers, tierNum].sort((a, b) => a - b);
+        const currentPlans = inst.planTiers || ["Free", "Basic", "Pro", "Enterprise"];
+        const nextPlans = currentPlans.includes(planTier)
+          ? currentPlans.filter((p) => p !== planTier)
+          : [...currentPlans, planTier];
         return {
           ...inst,
-          tier: (nextTiers.length > 0 ? "fallback" : "unassigned") as GatewayTierMode,
-          fallbackTiers: nextTiers,
+          planTiers: nextPlans,
         };
       }
       return inst;
     });
     setGatewayConfig({
       ...gatewayConfig,
-      instances: nextInstances,
-      failoverEnabled: true,
+      instances: next,
     });
   };
+
+  const handleToggleAllPlans = (instId: string) => {
+    const allPlanIds: GatewayPlanTier[] = ["Free", "Basic", "Pro", "Enterprise"];
+    const next = instances.map((inst) => {
+      if (inst.id === instId) {
+        const currentPlans = inst.planTiers || [];
+        const nextPlans = currentPlans.length === allPlanIds.length ? [] : allPlanIds;
+        return {
+          ...inst,
+          planTiers: nextPlans,
+        };
+      }
+      return inst;
+    });
+    setGatewayConfig({
+      ...gatewayConfig,
+      instances: next,
+    });
+  };
+
+  const handleSetPrimaryTier = (instId: string) => handleSetRole(instId, "primary");
+  const handleToggleFallbackTier = (instId: string, tierNum: number) => handleSetStandbyPriority(instId, tierNum);
 
   const scrollToInstance = (id: string) => {
     setAddProviderOpen(false);
@@ -876,39 +1046,90 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
               </div>
             </div>
 
-            {/* Active Pipeline Visual Flow */}
-            <div className="p-3 rounded-lg border border-primary/20 bg-primary/5 flex flex-col md:flex-row items-start md:items-center justify-between gap-2.5 text-xs">
-              <div className="flex items-center gap-1.5 text-on-surface font-semibold shrink-0">
-                <span className="material-symbols-outlined text-primary text-base">alt_route</span>
-                <span>Active Multi-Tier Pipeline:</span>
-              </div>
-              <div className="flex flex-wrap items-center gap-1.5 font-mono text-[11px]">
-                {primaryInstance ? (
-                  <>
-                    <span className="px-2.5 py-0.5 rounded bg-surface border border-primary/40 text-primary font-bold flex items-center gap-1">
-                      <span className="material-symbols-outlined text-xs">star</span>
-                      <span>Primary: {primaryInstance.label || primaryInstance.provider} ({primaryInstance.model || "no model set"})</span>
-                    </span>
-                    {tierEntries.map((entry, i) => (
-                      <span key={`${entry.tierNum}-${entry.inst.id}-${i}`} className="flex items-center gap-1.5">
-                        <span className="text-on-surface-variant">→</span>
-                        <span
-                          className={`px-2 py-0.5 rounded border font-medium ${
-                            gatewayConfig.failoverEnabled
-                              ? "bg-surface border-[var(--hairline-strong)] text-on-surface"
-                              : "opacity-40 line-through bg-surface-container-low border-transparent text-on-surface-variant"
-                          }`}
-                        >
-                          Tier {entry.tierNum}: {entry.inst.label || entry.inst.provider} ({entry.inst.model || "default"})
-                        </span>
+            {/* Active Pipeline & Plan Tier Routing Visual Flow */}
+            <div className="p-3.5 rounded-xl border border-primary/20 bg-primary/5 space-y-3">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2.5 text-xs">
+                <div className="flex items-center gap-1.5 text-on-surface font-semibold shrink-0">
+                  <span className="material-symbols-outlined text-primary text-base">alt_route</span>
+                  <span>Active Gateway Failover Flow:</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5 font-mono text-[11px]">
+                  {primaryInstance ? (
+                    <>
+                      <span className="px-2.5 py-0.5 rounded bg-surface border border-amber-500/50 text-amber-300 font-bold flex items-center gap-1 shadow-xs">
+                        <span className="material-symbols-outlined text-xs text-amber-400">stars</span>
+                        <span>Primary: {primaryInstance.label || primaryInstance.provider} ({primaryInstance.model || "default"})</span>
                       </span>
-                    ))}
-                  </>
-                ) : (
-                  <span className="text-on-surface-variant italic">
-                    No primary provider or failover pipeline active. Set a primary tier below.
-                  </span>
-                )}
+                      {standbyInsts.map((inst, i) => (
+                        <span key={inst.id} className="flex items-center gap-1.5">
+                          <span className="text-on-surface-variant font-bold">→</span>
+                          <span
+                            className={`px-2 py-0.5 rounded border font-medium flex items-center gap-1 ${
+                              gatewayConfig.failoverEnabled
+                                ? "bg-surface border-sky-500/40 text-sky-300 shadow-xs"
+                                : "opacity-40 line-through bg-surface-container-low border-transparent text-on-surface-variant"
+                            }`}
+                          >
+                            <span className="material-symbols-outlined text-xs text-sky-400">shield</span>
+                            <span>Standby #{inst.standbyPriority || (inst.fallbackTiers?.[0] ?? (i + 1))}: {inst.label || inst.provider} ({inst.model || "default"})</span>
+                          </span>
+                        </span>
+                      ))}
+                    </>
+                  ) : (
+                    <span className="text-on-surface-variant italic">
+                      No primary provider configured. Click &quot;Primary&quot; on a provider below.
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Plan Tiers Mapping Guide */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 pt-2 border-t border-[var(--hairline)]">
+                {GATEWAY_PLAN_TIERS.map((tier) => {
+                  const assignedToTier = instances.filter((i) =>
+                    (i.planTiers || ["Free", "Basic", "Pro", "Enterprise"]).includes(tier.id)
+                  );
+                  const prim = assignedToTier.find((i) => i.role === "primary" || i.tier === "primary");
+                  const standbys = assignedToTier.filter(
+                    (i) =>
+                      i.id !== prim?.id &&
+                      (i.role === "standby" || i.tier === "standby" || i.tier === "fallback" || (i.fallbackTiers && i.fallbackTiers.length > 0))
+                  );
+                  return (
+                    <div key={tier.id} className="p-2 rounded-lg bg-surface/60 border border-[var(--hairline)] text-xs space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-on-surface text-[11px] flex items-center gap-1">
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              tier.id === "Free"
+                                ? "bg-teal-400"
+                                : tier.id === "Basic"
+                                ? "bg-blue-400"
+                                : tier.id === "Pro"
+                                ? "bg-purple-400"
+                                : "bg-amber-400"
+                            }`}
+                          />
+                          {tier.label}
+                        </span>
+                        <span className="text-[10px] text-on-surface-variant font-mono">{tier.price}</span>
+                      </div>
+                      <div className="text-[10px] text-on-surface-variant/90 leading-tight">
+                        {prim ? (
+                          <div className="truncate">
+                            <span className="text-amber-300 font-semibold">Primary:</span> {prim.label || prim.provider}
+                            {standbys.length > 0 && (
+                              <span className="text-sky-300 ml-1">+{standbys.length} standby</span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-rose-400">No primary set</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -922,13 +1143,26 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
                   LLM Provider Configurations &amp; API Instances
                 </h3>
                 <p className="text-xs text-on-surface-variant">
-                  Add any provider multiple times, configure models &amp; keys, and assign single primary tier or multiple fallback tiers.
+                  Configure Primary &amp; Standby providers and assign them to your subscription plan tiers (Free, Basic, Pro, Enterprise).
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs font-mono text-on-surface-variant bg-surface-container-high px-2 py-1 rounded">
                   {instances.length} Configured Instance{instances.length === 1 ? "" : "s"}
                 </span>
+
+                {unconfiguredCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={handlePruneUnconfigured}
+                    className="btn btn-secondary btn-sm flex items-center gap-1.5 text-xs text-rose-400 hover:text-rose-300 border-rose-500/30 shadow-xs"
+                    title="Remove empty unconfigured instances with no API key set"
+                  >
+                    <span className="material-symbols-outlined text-[15px]">cleaning_services</span>
+                    <span>Prune {unconfiguredCount} Unset</span>
+                  </button>
+                )}
+
                 <button
                   type="button"
                   onClick={() => handleSaveGateway()}
@@ -1083,21 +1317,35 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
                         </div>
 
                         <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
-                          {isPrimary && (
-                            <span className="chip chip-primary text-[10px] font-bold">
+                          {isPrimary ? (
+                            <span className="chip chip-primary text-[10px] font-bold bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-xs">
                               ★ PRIMARY
                             </span>
-                          )}
-                          {isFallback && !isPrimary && (
-                            <span className="chip chip-secondary text-[10px] font-bold">
-                              TIER {fallbackTiers.sort((a, b) => a - b).join(", ")}
+                          ) : (
+                            <span className="chip chip-secondary text-[10px] font-bold bg-sky-500/20 text-sky-300 border-sky-500/40 shadow-xs">
+                              🛡️ STANDBY #{inst.standbyPriority || (fallbackTiers[0] ?? 1)}
                             </span>
                           )}
-                          {!isPrimary && !isFallback && (
-                            <span className="chip chip-neutral text-[10px] font-semibold opacity-60">
-                              STANDBY
-                            </span>
-                          )}
+
+                          {/* Plan tier badges on the header */}
+                          {(inst.planTiers && inst.planTiers.length > 0
+                            ? inst.planTiers
+                            : (["Free", "Basic", "Pro", "Enterprise"] as GatewayPlanTier[])
+                          ).map((pt) => {
+                            const tierDef = GATEWAY_PLAN_TIERS.find((t) => t.id === pt);
+                            return (
+                              <span
+                                key={pt}
+                                className={`text-[9.5px] font-bold px-1.5 py-0.5 rounded ${
+                                  tierDef?.badgeClass || "bg-surface-container-high text-on-surface-variant"
+                                }`}
+                                title={`${tierDef?.label || pt} (${tierDef?.price || ""})`}
+                              >
+                                {pt}
+                              </span>
+                            );
+                          })}
+
                           {isFreeProvider && (
                             <span className="flex items-center gap-0.5 text-[10px] font-semibold text-teal-400 bg-teal-500/15 px-2 py-0.5 rounded-full border border-teal-500/25">
                               <span className="material-symbols-outlined text-[11px]">money_off</span>
@@ -1281,66 +1529,126 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
                         )}
                       </div>
 
-                      {/* Tier Assignment Controls */}
-                      <div className="p-2.5 rounded-lg bg-surface-container-highest/40 border border-[var(--hairline)] space-y-2">
-                        <div className="flex items-center justify-between text-xs font-semibold">
-                          <span className="flex items-center gap-1.5 text-on-surface text-[11px]">
-                            <span className="material-symbols-outlined text-[14px] text-primary">layers</span>
-                            <span>Tier Assignment</span>
+                      {/* Provider Role: Primary vs Standby */}
+                      <div className="p-2.5 rounded-lg bg-surface-container-highest/50 border border-[var(--hairline)] space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="flex items-center gap-1.5 text-on-surface text-[11px] font-semibold">
+                            <span className="material-symbols-outlined text-[14px] text-primary">swap_calls</span>
+                            <span>Provider Role</span>
                           </span>
-                          <span className="text-[10px] text-on-surface-variant font-mono">
-                            {isPrimary
-                              ? "Single Primary Tier"
-                              : fallbackTiers.length > 0
-                              ? `Fallback Tier ${fallbackTiers.sort((a, b) => a - b).join(", ")}`
-                              : "Unassigned"}
+                          <span className="text-[10px] font-mono text-on-surface-variant">
+                            {isPrimary ? "Active Generation Route" : `Standby Failover #${inst.standbyPriority || (fallbackTiers[0] ?? 1)}`}
                           </span>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-2 pt-0.5">
-                          {/* Single Primary Tier button */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
+                          <div className="inline-flex rounded-lg border border-[var(--hairline-strong)] p-0.5 bg-surface-container-high">
+                            <button
+                              type="button"
+                              onClick={() => handleSetRole(inst.id, "primary")}
+                              className={`px-3 py-1 rounded text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                                isPrimary
+                                  ? "bg-amber-500 text-slate-950 font-bold shadow-xs"
+                                  : "text-on-surface-variant hover:text-on-surface"
+                              }`}
+                              title="Set as the active Primary provider for initial requests"
+                            >
+                              <span className="material-symbols-outlined text-[14px]">
+                                {isPrimary ? "stars" : "star"}
+                              </span>
+                              <span>Primary</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleSetRole(inst.id, "standby")}
+                              className={`px-3 py-1 rounded text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                                !isPrimary
+                                  ? "bg-sky-500 text-slate-950 font-bold shadow-xs"
+                                  : "text-on-surface-variant hover:text-on-surface"
+                              }`}
+                              title="Set as a Standby backup provider for failovers"
+                            >
+                              <span className="material-symbols-outlined text-[14px]">shield</span>
+                              <span>Standby</span>
+                            </button>
+                          </div>
+
+                          {!isPrimary && (
+                            <div className="flex items-center gap-1">
+                              <span className="text-[10px] text-on-surface-variant font-medium">Standby Order:</span>
+                              {[1, 2, 3, 4].map((p) => {
+                                const currentPriority = inst.standbyPriority || (fallbackTiers[0] ?? 1);
+                                const isCurrent = currentPriority === p;
+                                return (
+                                  <button
+                                    key={p}
+                                    type="button"
+                                    onClick={() => handleSetStandbyPriority(inst.id, p)}
+                                    className={`w-6 h-6 rounded text-[10px] font-mono font-bold flex items-center justify-center transition-all border ${
+                                      isCurrent
+                                        ? "bg-sky-500 text-slate-950 border-sky-400 font-extrabold shadow-xs"
+                                        : "bg-surface-container-high border-[var(--hairline)] text-on-surface-variant hover:text-on-surface"
+                                    }`}
+                                    title={`Failover Priority ${p}`}
+                                  >
+                                    #{p}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Subscription Plan Tiers Assignment */}
+                      <div className="p-2.5 rounded-lg bg-surface-container-highest/40 border border-[var(--hairline)] space-y-2">
+                        <div className="flex items-center justify-between text-xs font-semibold">
+                          <span className="flex items-center gap-1.5 text-on-surface text-[11px]">
+                            <span className="material-symbols-outlined text-[14px] text-primary">sell</span>
+                            <span>Assigned Plan Tiers</span>
+                          </span>
+                          <span className="text-[10px] text-on-surface-variant font-mono">
+                            {(inst.planTiers || []).length === GATEWAY_PLAN_TIERS.length
+                              ? "All Plans"
+                              : (inst.planTiers || []).length === 0
+                              ? "All Plans (Default)"
+                              : (inst.planTiers || []).join(", ")}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {GATEWAY_PLAN_TIERS.map((tier) => {
+                            const activeList = inst.planTiers || ["Free", "Basic", "Pro", "Enterprise"];
+                            const isAssigned = activeList.includes(tier.id);
+                            return (
+                              <button
+                                key={tier.id}
+                                type="button"
+                                onClick={() => handleTogglePlanTier(inst.id, tier.id)}
+                                className={`px-2.5 py-1 rounded text-[11px] font-medium flex items-center gap-1.5 border transition-all ${
+                                  isAssigned
+                                    ? tier.activeClass
+                                    : "bg-surface-container-high border-[var(--hairline)] text-on-surface-variant hover:bg-surface-container-highest"
+                                }`}
+                                title={tier.description}
+                              >
+                                <span className="material-symbols-outlined text-[12px]">
+                                  {isAssigned ? "check_circle" : "circle"}
+                                </span>
+                                <span className="font-semibold">{tier.label}</span>
+                                <span className="text-[9.5px] opacity-75 font-mono">({tier.price})</span>
+                              </button>
+                            );
+                          })}
+
                           <button
                             type="button"
-                            onClick={() => handleSetPrimaryTier(inst.id)}
-                            className={`btn btn-sm !h-[26px] !py-0 !text-[11px] flex items-center gap-1 transition-all ${
-                              isPrimary
-                                ? "btn-primary shadow-sm ring-1 ring-primary"
-                                : "btn-secondary text-on-surface-variant hover:text-on-surface"
-                            }`}
-                            title="Set as the single Primary Tier for initial requests"
+                            onClick={() => handleToggleAllPlans(inst.id)}
+                            className="px-2 py-1 rounded text-[10px] font-medium text-primary hover:bg-primary/10 border border-primary/25 ml-auto"
+                            title="Toggle all plans"
                           >
-                            <span className="material-symbols-outlined text-[13px]">
-                              {isPrimary ? "stars" : "star"}
-                            </span>
-                            <span>{isPrimary ? "★ Primary Tier" : "Set as Primary"}</span>
+                            All Plans
                           </button>
-
-                          <div className="h-4 w-[1px] bg-[var(--hairline-strong)] mx-0.5" />
-
-                          {/* Multiple Fallback Tiers */}
-                          <div className="flex items-center gap-1 flex-wrap">
-                            <span className="text-[9.5px] text-on-surface-variant uppercase font-bold tracking-wider">
-                              Fallbacks:
-                            </span>
-                            {[1, 2, 3, 4].map((tierNum) => {
-                              const isAssigned = fallbackTiers.includes(tierNum);
-                              return (
-                                <button
-                                  key={tierNum}
-                                  type="button"
-                                  onClick={() => handleToggleFallbackTier(inst.id, tierNum)}
-                                  className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold transition-all border ${
-                                    isAssigned
-                                      ? "bg-secondary text-on-secondary border-secondary shadow-xs"
-                                      : "bg-surface-container-high border-[var(--hairline)] text-on-surface-variant hover:bg-surface-container-highest"
-                                  }`}
-                                  title={`Toggle Tier ${tierNum} fallback`}
-                                >
-                                  {isAssigned ? `✓ Tier ${tierNum}` : `Tier ${tierNum}`}
-                                </button>
-                              );
-                            })}
-                          </div>
                         </div>
                       </div>
 

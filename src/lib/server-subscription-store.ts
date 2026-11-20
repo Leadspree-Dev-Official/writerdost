@@ -582,25 +582,37 @@ export function updateBizAiGatewayConfig(updates: Partial<BizAiGatewayConfig>): 
   let nextPrimaryModel = updates.primaryModel !== undefined ? updates.primaryModel : current.primaryModel;
   let nextPrimaryInstanceId = updates.primaryInstanceId !== undefined ? updates.primaryInstanceId : current.primaryInstanceId;
 
-  const primaryInst = updatedInstances.find((i) => i.tier === "primary" || i.id === nextPrimaryInstanceId);
+  const primaryInst = updatedInstances.find(
+    (i) => i.role === "primary" || i.tier === "primary" || i.id === nextPrimaryInstanceId
+  );
   if (primaryInst) {
     nextPrimaryProvider = primaryInst.provider;
     nextPrimaryModel = primaryInst.model;
     nextPrimaryInstanceId = primaryInst.id;
+    if (primaryInst.apiKey) {
+      (updatedKeys as Record<string, string>)[primaryInst.provider] = primaryInst.apiKey;
+    }
+  }
+
+  // Also ensure any configured instance keys are mirrored into serverKeys
+  for (const inst of updatedInstances) {
+    if (inst.apiKey && !(updatedKeys as Record<string, string>)[inst.provider]) {
+      (updatedKeys as Record<string, string>)[inst.provider] = inst.apiKey;
+    }
   }
 
   let nextFallbacks = updates.fallbacks !== undefined ? updates.fallbacks : current.fallbacks;
   if (updates.instances && updatedInstances.length > 0) {
     const fallbackList: GatewayFallbackTier[] = [];
     const fallbackInsts = updatedInstances.filter(
-      (i) => i.tier === "fallback" || (i.fallbackTiers && i.fallbackTiers.length > 0)
+      (i) =>
+        (i.role === "standby" || i.tier === "standby" || i.tier === "fallback" || (i.fallbackTiers && i.fallbackTiers.length > 0)) &&
+        i.id !== nextPrimaryInstanceId
     );
     const tierEntries: Array<{ tierNum: number; inst: (typeof fallbackInsts)[0] }> = [];
     for (const inst of fallbackInsts) {
-      const tiers = inst.fallbackTiers && inst.fallbackTiers.length > 0 ? inst.fallbackTiers : [1];
-      for (const t of tiers) {
-        tierEntries.push({ tierNum: t, inst });
-      }
+      const priority = inst.standbyPriority || (inst.fallbackTiers && inst.fallbackTiers.length > 0 ? inst.fallbackTiers[0] : 1);
+      tierEntries.push({ tierNum: priority, inst });
     }
     tierEntries.sort((a, b) => a.tierNum - b.tierNum);
     for (const entry of tierEntries) {
@@ -608,7 +620,7 @@ export function updateBizAiGatewayConfig(updates: Partial<BizAiGatewayConfig>): 
         enabled: true,
         provider: entry.inst.provider,
         model: entry.inst.model,
-        label: entry.inst.label || `Tier ${entry.tierNum} (${entry.inst.provider})`,
+        label: entry.inst.label || `Standby #${entry.tierNum} (${entry.inst.provider})`,
         instanceId: entry.inst.id,
       });
     }

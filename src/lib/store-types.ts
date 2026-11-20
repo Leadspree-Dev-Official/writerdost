@@ -703,7 +703,9 @@ export interface GatewayFallbackTier {
   instanceId?: string;
 }
 
-export type GatewayTierMode = "primary" | "fallback" | "unassigned";
+export type GatewayTierMode = "primary" | "fallback" | "standby" | "unassigned";
+
+export type GatewayPlanTier = "Free" | "Basic" | "Pro" | "Enterprise";
 
 export interface GatewayProviderInstance {
   id: string;
@@ -714,7 +716,10 @@ export interface GatewayProviderInstance {
   customEndpoint?: string;
   isFree?: boolean;
   tier: GatewayTierMode;
+  role?: "primary" | "standby";
+  planTiers?: GatewayPlanTier[];
   fallbackTiers?: number[];
+  standbyPriority?: number;
   createdAt?: number;
 }
 
