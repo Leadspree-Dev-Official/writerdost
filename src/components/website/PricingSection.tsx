@@ -1,468 +1,149 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { DEFAULT_FOUNDER_CAMPAIGN, FounderCampaignConfig, PLAN_DEFINITIONS, UserPlan } from "@/lib/store-types";
 
 export default function PricingSection() {
-  const [billingInterval, setBillingInterval] = useState<"monthly" | "yearly">("monthly");
-  const [campaign, setCampaign] = useState<FounderCampaignConfig>(DEFAULT_FOUNDER_CAMPAIGN);
-  const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number }>({
-    days: 30,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-  });
-
-  const plans: Exclude<UserPlan, "Custom">[] = ["Free", "Basic", "Pro", "Enterprise"];
-
-  // Fetch live campaign settings
-  useEffect(() => {
-    let mounted = true;
-    fetch("/api/founder-campaign")
-      .then((res) => res.json())
-      .then((data) => {
-        if (mounted && data?.config) {
-          setCampaign(data.config);
-        }
-      })
-      .catch(() => {});
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  // Rolling countdown timer
-  useEffect(() => {
-    if (!campaign.isEnabled) return;
-
-    const calculateTimeLeft = () => {
-      const cycleMs = (campaign.durationDays || 30) * 24 * 60 * 60 * 1000;
-      const startTime = new Date(campaign.cycleStartedAt).getTime();
-      const now = Date.now();
-      let elapsed = now - startTime;
-
-      if (elapsed > cycleMs && campaign.autoRenew) {
-        elapsed = elapsed % cycleMs;
-      }
-
-      const diff = Math.max(0, cycleMs - elapsed);
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-      return { days, hours, minutes, seconds };
-    };
-
-    const interval = setInterval(() => {
-      setTimeLeft(calculateTimeLeft());
-    }, 1000);
-    const timeout = setTimeout(() => {
-      setTimeLeft(calculateTimeLeft());
-    }, 0);
-
-    return () => {
-      clearInterval(interval);
-      clearTimeout(timeout);
-    };
-  }, [campaign]);
-
-  const basicRemaining = Math.max(0, campaign.basicTotalSlots - campaign.basicClaimedSlots);
-  const proRemaining = Math.max(0, campaign.proTotalSlots - campaign.proClaimedSlots);
-
   return (
-    <section id="pricing" className="py-20 md:py-28 font-body bg-surface-container-low/20 dark:bg-[#0a0a14]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* 1. Normal Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-10 space-y-4">
-          <span className="text-[12px] font-bold text-primary uppercase tracking-widest px-3 py-1 rounded-full bg-primary/10 border border-primary/20">
-            Simple, Transparent Pricing
+    <section id="pricing" className="py-20 md:py-28 font-body bg-[#0b0d12] border-b border-white/8">
+      <div className="wrap-screen">
+        {/* Header */}
+        <div className="text-center max-w-3xl mx-auto mb-14 space-y-4">
+          <span className="text-[12px] font-bold text-emerald-400 uppercase tracking-widest px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+            Zero Token Markup
           </span>
-          <h2 className="text-3xl sm:text-4xl font-black text-on-surface tracking-tight leading-tight">
-            Plans Built for Every Stage of Writing.
+          <h2 className="text-3xl sm:text-4xl font-black text-slate-100 tracking-tight leading-tight">
+            Wholesale API Economics. Zero SaaS Tollbooths.
           </h2>
-          <p className="text-base sm:text-lg text-on-surface-variant leading-relaxed">
-            From first-time indie authors to high-output media agencies. Bring your own AI key or use cloud models with zero lock-in.
+          <p className="text-base sm:text-lg text-slate-400 leading-relaxed">
+            Most AI writing tools charge $49–$99/month and restrict your word count. Writerdost provides the full autonomous multi-agent studio free during beta—you pay only wholesale API rates with zero markup.
           </p>
-
-          {/* Monthly / Yearly Toggle */}
-          <div className="pt-2 flex justify-center">
-            <div className="inline-flex items-center p-1 rounded-full bg-surface-container dark:bg-[#1a1a2e] border border-outline-variant/40 shadow-xs">
-              <button
-                type="button"
-                onClick={() => setBillingInterval("monthly")}
-                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                  billingInterval === "monthly"
-                    ? "bg-surface text-on-surface shadow-xs"
-                    : "text-on-surface-variant hover:text-on-surface"
-                }`}
-              >
-                Monthly Billing
-              </button>
-              <button
-                type="button"
-                onClick={() => setBillingInterval("yearly")}
-                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                  billingInterval === "yearly"
-                    ? "bg-surface text-on-surface shadow-xs"
-                    : "text-on-surface-variant hover:text-on-surface"
-                }`}
-              >
-                <span>Annual Billing</span>
-                <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
-                  Save 20%
-                </span>
-              </button>
-            </div>
-          </div>
         </div>
 
-        {/* 1-Click Demo Quick Notice */}
-        <div className="max-w-4xl mx-auto mb-10 p-4 rounded-2xl bg-gradient-to-r from-primary/10 via-indigo-500/10 to-transparent border border-primary/25 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
-          <div className="flex items-center gap-3">
-            <span className="w-9 h-9 rounded-xl bg-primary text-white flex items-center justify-center shrink-0 shadow-sm">
-              <span className="material-symbols-outlined text-[20px]">bolt</span>
-            </span>
+        {/* Dual-Column Honest Economics Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto mb-12">
+          {/* Card 1: Free Beta Access */}
+          <div className="card-lift p-8 rounded-2xl bg-[#12141f] border border-emerald-500/30 flex flex-col justify-between shadow-xl shadow-black/40 relative">
+            <div className="absolute top-4 right-4">
+              <span className="text-[11px] font-bold text-emerald-400 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 uppercase tracking-wider">
+                Public Beta
+              </span>
+            </div>
+
             <div>
-              <h4 className="text-sm font-bold text-on-surface">
-                Want to test every plan before signing up?
-              </h4>
-              <p className="text-xs text-on-surface-variant">
-                Try our instant 1-click demo accounts for Free, Basic, Pro, Enterprise, and Admin modes with zero password typing.
+              <span className="text-[12px] font-mono uppercase tracking-wider text-slate-400 block mb-1">
+                Platform Access
+              </span>
+              <h3 className="text-2xl font-black text-slate-100 tracking-tight">
+                Writerdost Studio
+              </h3>
+              <div className="my-5 flex items-baseline gap-2">
+                <span className="text-5xl font-black text-slate-100 tracking-tight">$0</span>
+                <span className="text-sm font-semibold text-slate-400">/ free during beta</span>
+              </div>
+              <p className="text-[13px] text-slate-300 mb-6 leading-relaxed">
+                Full access to the 4-agent swarm orchestration pipeline, quota pacing engine, and KDP formatting studio.
+              </p>
+
+              <div className="space-y-3 pt-4 border-t border-white/8">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  What is included:
+                </p>
+                {[
+                  "Unlimited book and long-form manuscript projects",
+                  "Full 4-Agent Autonomous Swarm (Memory, Pacing, Sub-Swarm, QA)",
+                  "Dynamic Quota & Chapter Pacing Manager (1k to 100k+ words)",
+                  "TipTap Distraction-Free Book Studio with live telemetry",
+                  "Amazon KDP validated EPUB, print PDF & DOCX export",
+                  "Direct WordPress REST API multi-site syndication",
+                  "Local browser encrypted buffer with zero telemetry leaks",
+                ].map((feat, idx) => (
+                  <div key={idx} className="flex items-start gap-2.5 text-[13px] text-slate-300">
+                    <span className="material-symbols-outlined text-emerald-400 text-[18px] shrink-0 mt-0.5">
+                      check_circle
+                    </span>
+                    <span>{feat}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-white/8 space-y-2">
+              <Link
+                href="/signup"
+                className="btn btn-primary w-full py-3.5 text-sm font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+              >
+                <span>Create Free Beta Account</span>
+                <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+              </Link>
+              <p className="text-[11px] text-center text-slate-400">
+                No credit card required • Instant access
               </p>
             </div>
           </div>
-          <Link
-            href="/login"
-            className="btn btn-primary btn-sm shrink-0 flex items-center gap-1.5 shadow-sm"
-          >
-            <span>Launch 1-Click Demos</span>
-            <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
-          </Link>
-        </div>
 
-        {/* 2. Normal Pricing Cards Grid (FIRST) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
-          {plans.map((planId) => {
-            const plan = PLAN_DEFINITIONS[planId];
-            const price = billingInterval === "yearly" ? plan.priceYearly : plan.priceMonthly;
-            const isPopular = plan.isPopular;
-
-            return (
-              <div
-                key={planId}
-                className={`relative rounded-2xl p-6 sm:p-7 border transition-all duration-200 flex flex-col justify-between ${
-                  isPopular
-                    ? "bg-surface-container-lowest dark:bg-[#141428] border-primary shadow-xl shadow-primary/10 ring-2 ring-primary/40 -translate-y-1"
-                    : "bg-surface-container-lowest dark:bg-[#101020] border-outline-variant/30 hover:border-primary/40 shadow-sm hover:shadow-md"
-                }`}
-              >
-                {isPopular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-[10.5px] font-black tracking-wider uppercase bg-primary text-white shadow-md">
-                    Most Popular
-                  </div>
-                )}
-
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <h3 className="text-xl font-black text-on-surface tracking-tight">
-                      {plan.name}
-                    </h3>
-                  </div>
-                  <p className="text-xs text-on-surface-variant min-h-[34px] leading-relaxed">
-                    {plan.description}
-                  </p>
-
-                  {/* Price Block */}
-                  <div className="my-6 pt-2 pb-4 border-y border-outline-variant/20 flex items-baseline gap-1">
-                    <span className="text-4xl font-black text-on-surface tracking-tight">
-                      {price === 0 ? "Free" : `$${price}`}
-                    </span>
-                    {price > 0 && (
-                      <span className="text-xs text-on-surface-variant font-medium">
-                        /{billingInterval === "yearly" ? "year" : "month"}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Feature Checklist */}
-                  <div className="space-y-2.5">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
-                      Included Capabilities
-                    </p>
-                    {plan.featureList.map((feat, idx) => (
-                      <div key={idx} className="flex items-start gap-2.5 text-xs text-on-surface/90 leading-tight">
-                        <span className="material-symbols-outlined text-emerald-500 text-[16px] shrink-0 mt-0.5">
-                          check_circle
-                        </span>
-                        <span>{feat}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* CTA Button */}
-                <div className="mt-8 pt-4 border-t border-outline-variant/20 space-y-2">
-                  <Link
-                    href={`/signup?plan=${planId.toLowerCase()}`}
-                    className={`w-full py-3 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                      isPopular
-                        ? "btn-primary shadow-md shadow-primary/25"
-                        : "btn-secondary border border-outline-variant/40"
-                    }`}
-                  >
-                    <span>
-                      {planId === "Free"
-                        ? "Get Started Free"
-                        : planId === "Enterprise"
-                        ? "Get Custom Enterprise ($49/mo)"
-                        : `Get Started with ${plan.name}`}
-                    </span>
-                    <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
-                  </Link>
-                  <Link
-                    href={`/login`}
-                    className="text-[11px] text-center block text-on-surface-variant hover:text-primary transition-colors font-medium"
-                  >
-                    Or try {plan.name} via 1-click demo &rarr;
-                  </Link>
-                </div>
+          {/* Card 2: Wholesale API Economics */}
+          <div className="card-lift p-8 rounded-2xl bg-[#10121a] border border-white/8 flex flex-col justify-between shadow-xl shadow-black/40">
+            <div>
+              <span className="text-[12px] font-mono uppercase tracking-wider text-slate-400 block mb-1">
+                Your Direct API Spend
+              </span>
+              <h3 className="text-2xl font-black text-slate-100 tracking-tight">
+                Wholesale API Economics
+              </h3>
+              <div className="my-5 flex items-baseline gap-2">
+                <span className="text-3xl font-black text-slate-100 tracking-tight">~$1.50</span>
+                <span className="text-sm font-semibold text-slate-400">per 50k-word manuscript</span>
               </div>
-            );
-          })}
-        </div>
+              <p className="text-[13px] text-slate-300 mb-6 leading-relaxed">
+                Plug in your own API key directly from Claude, OpenAI, or Gemini. The platform never marks up your tokens.
+              </p>
 
-        {/* 3. 🌟 BOTH FOUNDER PASSES DISPLAYED SIDE-BY-SIDE (AFTER NORMAL PRICING) 🌟 */}
-        {campaign.isEnabled && (
-          <div className="mt-20 rounded-3xl p-6 sm:p-10 bg-gradient-to-br from-amber-500/10 via-purple-600/10 to-primary/10 border-2 border-amber-500/30 dark:border-amber-400/25 shadow-xl relative overflow-hidden">
-            {/* Background glowing flair */}
-            <div className="absolute -right-20 -top-20 w-80 h-80 bg-amber-400/10 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
-
-            <div className="relative z-10">
-              {/* Header with Badges & Rolling Timer */}
-              <div className="flex flex-col lg:flex-row items-center justify-between gap-6 pb-8 border-b border-outline-variant/30">
-                <div className="text-center lg:text-left space-y-2">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500 text-amber-950 font-black text-[11px] tracking-wider uppercase shadow-sm">
-                    <span className="material-symbols-outlined text-[16px]">stars</span>
-                    Limited-Time Early Backer Event
+              <div className="space-y-3 pt-4 border-t border-white/8">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Cost Transparency Breakdown:
+                </p>
+                {[
+                  "Anthropic Claude 3.5 Sonnet: ~$1.20 - $2.40 per 50k words",
+                  "Google Gemini 1.5 Pro: ~$0.50 - $1.10 per 50k words",
+                  "OpenAI GPT-4o: ~$1.50 - $3.00 per 50k words",
+                  "Local Ollama (Llama 3 / Gemma 2): $0.00 (100% Free & Offline)",
+                  "Zero platform fee, zero hidden token markup, zero lock-in",
+                  "Encrypted keys stored only in your session buffer",
+                ].map((item, idx) => (
+                  <div key={idx} className="flex items-start gap-2.5 text-[13px] text-slate-300">
+                    <span className="material-symbols-outlined text-slate-400 text-[18px] shrink-0 mt-0.5">
+                      payments
+                    </span>
+                    <span>{item}</span>
                   </div>
-                  <h3 className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">
-                    Founder 5-Year Access Passes
-                  </h3>
-                  <p className="text-sm text-on-surface-variant max-w-xl">
-                    Pay once, write for 5 full years. Zero recurring monthly fees, commercial copyright protection, and locked-in generation limits.
-                  </p>
-                </div>
-
-                {/* Rolling 30-Day Scarcity Countdown Counter */}
-                <div className="flex flex-col items-center sm:items-end gap-2 bg-surface/90 dark:bg-[#121224]/90 p-4 rounded-2xl border border-amber-500/30 shadow-md">
-                  <div className="flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
-                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                    <span>Rolling Batch Closes In:</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex flex-col items-center px-3 py-1.5 bg-surface-container rounded-xl border border-outline-variant/30 min-w-[52px]">
-                      <span className="text-xl sm:text-2xl font-black text-on-surface font-mono">{timeLeft.days}</span>
-                      <span className="text-[10px] text-on-surface-variant font-bold uppercase">Days</span>
-                    </div>
-                    <span className="text-lg font-bold text-on-surface-variant">:</span>
-                    <div className="flex flex-col items-center px-3 py-1.5 bg-surface-container rounded-xl border border-outline-variant/30 min-w-[52px]">
-                      <span className="text-xl sm:text-2xl font-black text-on-surface font-mono">
-                        {String(timeLeft.hours).padStart(2, "0")}
-                      </span>
-                      <span className="text-[10px] text-on-surface-variant font-bold uppercase">Hours</span>
-                    </div>
-                    <span className="text-lg font-bold text-on-surface-variant">:</span>
-                    <div className="flex flex-col items-center px-3 py-1.5 bg-surface-container rounded-xl border border-outline-variant/30 min-w-[52px]">
-                      <span className="text-xl sm:text-2xl font-black text-on-surface font-mono">
-                        {String(timeLeft.minutes).padStart(2, "0")}
-                      </span>
-                      <span className="text-[10px] text-on-surface-variant font-bold uppercase">Mins</span>
-                    </div>
-                    <span className="text-lg font-bold text-on-surface-variant">:</span>
-                    <div className="flex flex-col items-center px-3 py-1.5 bg-surface-container rounded-xl border border-outline-variant/30 min-w-[52px]">
-                      <span className="text-xl sm:text-2xl font-black text-amber-500 font-mono">
-                        {String(timeLeft.seconds).padStart(2, "0")}
-                      </span>
-                      <span className="text-[10px] text-on-surface-variant font-bold uppercase">Secs</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Both Passes Displayed Simultaneously in a 2-Card Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
-                
-                {/* 1. Founder Basic Pass ($99) */}
-                <div className="p-7 sm:p-8 rounded-2xl bg-surface dark:bg-[#141428] border border-outline-variant/40 shadow-lg flex flex-col justify-between relative group hover:border-amber-500/50 transition-all">
-                  <div>
-                    <div className="flex items-center justify-between gap-3 mb-2">
-                      <span className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
-                        Indie Author Deal
-                      </span>
-                      <span className="text-xs font-semibold text-rose-500 flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[15px]">local_fire_department</span>
-                        Only {basicRemaining} spots left
-                      </span>
-                    </div>
-                    <h4 className="text-2xl font-black text-on-surface tracking-tight mt-1">
-                      Founder Basic Pass
-                    </h4>
-                    <p className="text-xs text-on-surface-variant mt-1.5">
-                      5-Year Full Basic Creator Access. Ideal for indie novelists and steady bloggers.
-                    </p>
-
-                    {/* Price */}
-                    <div className="my-6 pt-3 pb-5 border-y border-outline-variant/20 flex items-baseline gap-2">
-                      <span className="text-4xl font-black text-on-surface tracking-tight">
-                        ${campaign.basicPrice}
-                      </span>
-                      <span className="text-xs font-bold text-on-surface-variant">
-                        / 5-Year Flat Pass
-                      </span>
-                      <span className="ml-auto text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
-                        Save $146 vs Annual
-                      </span>
-                    </div>
-
-                    {/* Features */}
-                    <div className="space-y-2.5">
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
-                        Included Features:
-                      </p>
-                      {[
-                        "5 Full Years (60 Months) of Basic Creator features",
-                        "10 Ebook Projects generated each month",
-                        "20 AI Blog Articles generated each month",
-                        "EPUB & PDF Export with formatting presets",
-                        "Full commercial publishing rights & copyright",
-                        "Early Backer profile badge & community recognition",
-                      ].map((feat, idx) => (
-                        <div key={idx} className="flex items-start gap-2.5 text-xs text-on-surface/90">
-                          <span className="material-symbols-outlined text-emerald-500 text-[16px] shrink-0 mt-0.5">
-                            check_circle
-                          </span>
-                          <span>{feat}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="mt-8 pt-4 border-t border-outline-variant/20 space-y-2">
-                    <Link
-                      href="/signup?plan=basic&pass=founder"
-                      className="w-full py-3.5 px-4 rounded-xl text-xs font-black uppercase tracking-wider bg-amber-500 hover:bg-amber-400 text-amber-950 transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg cursor-pointer"
-                    >
-                      <span>Claim Founder Basic Pass (${campaign.basicPrice})</span>
-                      <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-                    </Link>
-                    <p className="text-[10.5px] text-center text-on-surface-variant">
-                      30-Day Money-Back Guarantee • Zero Monthly Renewals
-                    </p>
-                  </div>
-                </div>
-
-                {/* 2. Founder Pro Pass ($299) */}
-                <div className="p-7 sm:p-8 rounded-2xl bg-gradient-to-b from-primary/10 via-surface to-surface dark:from-primary/20 dark:via-[#161630] dark:to-[#121224] border-2 border-primary shadow-xl flex flex-col justify-between relative group hover:shadow-2xl hover:shadow-primary/20 transition-all">
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-[11px] font-black tracking-wider uppercase bg-primary text-white shadow-md flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-[14px]">bolt</span>
-                    Ultimate Value • 68% Off
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between gap-3 mb-2 mt-1">
-                      <span className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-primary/20 text-primary border border-primary/30">
-                        Pro Author & Agency Deal
-                      </span>
-                      <span className="text-xs font-bold text-rose-500 flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[15px]">local_fire_department</span>
-                        Only {proRemaining} spots left
-                      </span>
-                    </div>
-                    <h4 className="text-2xl font-black text-on-surface tracking-tight mt-1">
-                      Founder Pro Pass
-                    </h4>
-                    <p className="text-xs text-on-surface-variant mt-1.5">
-                      5-Year Full Pro Writer Access with Claude 3.5 Sonnet, GPT-4o, and automated pipelines.
-                    </p>
-
-                    {/* Price */}
-                    <div className="my-6 pt-3 pb-5 border-y border-outline-variant/20 flex items-baseline gap-2">
-                      <span className="text-4xl font-black text-on-surface tracking-tight">
-                        ${campaign.proPrice}
-                      </span>
-                      <span className="text-xs font-bold text-on-surface-variant">
-                        / 5-Year Flat Pass
-                      </span>
-                      <span className="ml-auto text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
-                        Save $646 vs Annual
-                      </span>
-                    </div>
-
-                    {/* Features */}
-                    <div className="space-y-2.5">
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
-                        Included Features:
-                      </p>
-                      {[
-                        "5 Full Years (60 Months) of Pro Writer features",
-                        "50 Ebook Projects generated each month",
-                        "100 AI Blog Articles generated each month",
-                        "Advanced AI Models: Claude 3.5 Sonnet, GPT-4o, DeepSeek",
-                        "BlogGen automated scheduled publishing pipelines",
-                        "Priority AI generation queue & VIP customer support",
-                        "Direct CMS integrations (WordPress, Ghost, Webflow)",
-                      ].map((feat, idx) => (
-                        <div key={idx} className="flex items-start gap-2.5 text-xs text-on-surface/90">
-                          <span className="material-symbols-outlined text-primary text-[16px] shrink-0 mt-0.5">
-                            verified
-                          </span>
-                          <span>{feat}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="mt-8 pt-4 border-t border-outline-variant/20 space-y-2">
-                    <Link
-                      href="/signup?plan=pro&pass=founder"
-                      className="w-full py-3.5 px-4 rounded-xl text-xs font-black uppercase tracking-wider btn-primary transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/25 cursor-pointer"
-                    >
-                      <span>Claim Founder Pro Pass (${campaign.proPrice})</span>
-                      <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-                    </Link>
-                    <p className="text-[10.5px] text-center text-on-surface-variant">
-                      30-Day Money-Back Guarantee • Zero Monthly Renewals
-                    </p>
-                  </div>
-                </div>
-
+                ))}
               </div>
             </div>
-          </div>
-        )}
 
-        {/* Trust & Guarantee strip */}
-        <div className="mt-14 pt-8 border-t border-outline-variant/20 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-xs text-on-surface-variant font-medium">
-          <span className="flex items-center gap-1.5">
-            <span className="material-symbols-outlined text-emerald-500 text-[16px]">verified</span>
-            No credit card required for Free tier
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="material-symbols-outlined text-emerald-500 text-[16px]">verified</span>
-            100% intellectual property ownership
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="material-symbols-outlined text-emerald-500 text-[16px]">verified</span>
-            BYO API key with zero platform lock-in
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="material-symbols-outlined text-emerald-500 text-[16px]">verified</span>
-            Cancel or change plans anytime
-          </span>
+            <div className="mt-8 pt-6 border-t border-white/8 bg-white/2 rounded-xl p-4 border border-white/5">
+              <span className="text-[11.5px] font-mono uppercase tracking-wider text-emerald-400 block mb-1">
+                Why this model wins for authors:
+              </span>
+              <p className="text-[12px] text-slate-300 leading-relaxed">
+                When you write 3 books a month on traditional tools, you run into word quotas or pay $150+/mo. With Writerdost BYO keys, drafting 150,000 words costs roughly $4 to $6 in raw API usage.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Amazon KDP Guarantee Strip */}
+        <div className="max-w-4xl mx-auto p-6 rounded-2xl bg-[#12141f] border border-white/8 flex flex-col sm:flex-row items-center gap-6">
+          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+            <span className="material-symbols-outlined text-[24px]">verified</span>
+          </div>
+          <div>
+            <h4 className="text-base font-bold text-slate-100 tracking-tight">
+              Amazon KDP Format Guarantee
+            </h4>
+            <p className="text-[13px] text-slate-400 mt-1 leading-relaxed">
+              Every exported EPUB and print PDF is built according to Amazon KDP and IDPF 3.0 standards. If Amazon KDP rejects your manuscript due to a structural formatting error, our team personally resolves the issue.
+            </p>
+          </div>
         </div>
       </div>
     </section>

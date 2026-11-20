@@ -3,6 +3,7 @@
 import WebsiteNavbar from "@/components/website/Navbar";
 import Hero from "@/components/website/Hero";
 import LogosTicker from "@/components/website/LogosTicker";
+import SwarmPipelineDiagram from "@/components/website/SwarmPipelineDiagram";
 import ProblemSection from "@/components/website/ProblemSection";
 import MetricsBanner from "@/components/website/MetricsBanner";
 import HowItWorks from "@/components/website/HowItWorks";
@@ -24,14 +25,17 @@ export default function HomePage() {
       <WebsiteNavbar />
 
       {/* Main Marketing Content Flow */}
-      <main className="flex-1 w-full overflow-hidden">
+      <main id="main-content" tabIndex={-1} className="flex-1 w-full overflow-hidden focus:outline-hidden">
         {/* 1. Hero with Live Interactive Studio Simulation & Metrics */}
         <Hero />
 
         {/* 2. Supported LLM & Ecosystem Integrations */}
         <LogosTicker />
 
-        {/* 3. The Core Problem: Why Existing AI Writing Tools Break Down */}
+        {/* 3. 4-Agent Autonomous Swarm Architecture */}
+        <SwarmPipelineDiagram />
+
+        {/* 4. The Core Problem: Why Existing AI Writing Tools Break Down */}
         <ProblemSection />
 
         {/* 4. Hard Efficiency & Scale Metrics */}

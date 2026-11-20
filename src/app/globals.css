@@ -8,6 +8,17 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
   button, a, input, select, textarea {
     touch-action: manipulation;
   }
@@ -1381,4 +1392,53 @@ body {
   p {
     margin-bottom: 1.2em !important;
   }
+}
+
+/* =========================================================================
+   Taste-Skill 2.5 Editorial Design Tokens & Layout Utilities
+   ========================================================================= */
+:root {
+  --editorial-ink: #0b0d11;
+  --editorial-surface: #13161f;
+  --editorial-surface-raised: #1a1e29;
+  --editorial-border: rgba(255, 255, 255, 0.08);
+  --editorial-border-hover: rgba(255, 255, 255, 0.16);
+  --editorial-text: #f3f4f8;
+  --editorial-text-muted: #94a3b8;
+  --editorial-accent: #10b981;
+  --editorial-accent-hover: #059669;
+}
+
+.wrap-screen {
+  max-width: 1440px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .wrap-screen {
+    padding-left: 2.5rem;
+    padding-right: 2.5rem;
+  }
+}
+
+.app-frame {
+  background: var(--editorial-surface);
+  border: 1px solid var(--editorial-border);
+  border-radius: 12px;
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  position: relative;
+}
+
+.card-lift {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-lift:hover {
+  transform: translateY(-2px);
+  border-color: var(--editorial-border-hover);
 }

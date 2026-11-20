@@ -24,11 +24,9 @@ export default function WebsiteNavbar() {
   }, []);
 
   const navLinks = [
+    { label: "Architecture", href: "/#architecture" },
+    { label: "Book Studio", href: "/book" },
     { label: "Features", href: "/#features" },
-    { label: "Research Lab", href: "/research" },
-    { label: "Copywriting", href: "/copywriting" },
-    { label: "Agent Swarm", href: "/#agents" },
-    { label: "How It Works", href: "/#how-it-works" },
     { label: "WordPress Sync", href: "/#wordpress" },
     { label: "Pricing", href: "/#pricing" },
     { label: "FAQ", href: "/#faq" },
@@ -36,25 +34,33 @@ export default function WebsiteNavbar() {
 
   return (
     <header className="sticky top-0 z-50 w-full font-body transition-all duration-300">
+      {/* Skip to Main Content Link for Keyboard Accessibility */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-60 focus:px-4 focus:py-2 focus:bg-primary focus:text-white focus:rounded-lg focus:shadow-lg focus:font-semibold focus:text-sm"
+      >
+        Skip to main content
+      </a>
+
       {/* Top micro-announcement banner */}
       {showBanner && (
-        <div className="relative bg-gradient-to-r from-primary-container via-indigo-600 to-purple-700 text-white text-[12px] py-1.5 px-4 text-center font-medium tracking-wide flex items-center justify-center gap-2">
-          <span className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-xs px-2 py-0.5 rounded-full text-[10.5px] font-bold uppercase tracking-wider">
-            New
+        <div className="relative bg-[#10121a] border-b border-white/8 text-slate-300 text-[12px] py-1.5 px-4 text-center font-medium tracking-wide flex items-center justify-center gap-2">
+          <span className="inline-flex items-center gap-1 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 px-2 py-0.5 rounded-full text-[10.5px] font-bold uppercase tracking-wider">
+            Architecture Update
           </span>
           <span>
-            New: WordPress auto-publishing is here
+            Autonomous 4-Agent Parallel Swarms &amp; Amazon KDP Validated Formatting are live.
           </span>
           <a
-            href="#agents"
-            className="underline underline-offset-2 font-semibold hover:opacity-90 ml-1 hidden sm:inline"
+            href="#architecture"
+            className="text-emerald-400 hover:text-emerald-300 font-semibold underline underline-offset-2 ml-1 hidden sm:inline transition-colors"
           >
-            Learn more &rarr;
+            Explore Pipeline &rarr;
           </a>
           <button
             type="button"
             onClick={() => setShowBanner(false)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
             aria-label="Dismiss banner"
           >
             <span className="material-symbols-outlined text-[16px]">close</span>
@@ -125,7 +131,7 @@ export default function WebsiteNavbar() {
             {currentUser ? (
               <Link
                 href="/dashboard"
-                className="btn btn-primary btn-sm flex items-center gap-2 shadow-sm shadow-primary/20"
+                className="btn btn-primary btn-sm flex items-center gap-2 shadow-sm shadow-primary/20 active:scale-[0.98] transition-transform"
               >
                 <span className="w-5 h-5 rounded-full bg-white/20 text-white flex items-center justify-center text-[10px] font-bold uppercase">
                   {currentUser.fullName?.[0] || "U"}
@@ -137,16 +143,16 @@ export default function WebsiteNavbar() {
               <>
                 <Link
                   href="/login"
-                  className="hidden sm:inline-flex px-3.5 py-1.5 text-[13px] font-semibold text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors"
+                  className="hidden sm:inline-flex px-3.5 py-1.5 text-[13px] font-semibold text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors active:scale-[0.98]"
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/signup"
-                  className="btn btn-primary btn-sm flex items-center gap-1.5 shadow-md shadow-primary/25"
+                  className="btn btn-primary btn-sm flex items-center gap-1.5 shadow-md shadow-primary/25 active:scale-[0.98] transition-transform"
                 >
                   <span>Start Free</span>
-                  <span className="material-symbols-outlined text-[15px]">auto_awesome</span>
+                  <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
                 </Link>
               </>
             )}
@@ -157,6 +163,8 @@ export default function WebsiteNavbar() {
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden w-9 h-9 rounded-lg flex items-center justify-center text-on-surface hover:bg-surface-container transition-colors ml-1"
               aria-label="Toggle navigation menu"
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-navigation"
             >
               <span className="material-symbols-outlined text-[22px]">
                 {mobileMenuOpen ? "close" : "menu"}
@@ -167,7 +175,10 @@ export default function WebsiteNavbar() {
 
         {/* Mobile Dropdown Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-surface dark:bg-[#0c0c14] border-b border-outline-variant/30 px-4 pt-2 pb-6 space-y-2">
+          <div
+            id="mobile-navigation"
+            className="md:hidden bg-surface dark:bg-[#0c0c14] border-b border-outline-variant/30 px-4 pt-2 pb-6 space-y-2"
+          >
             <div className="flex flex-col space-y-1">
               {navLinks.map((link) => (
                 <Link

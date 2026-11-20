@@ -3,12 +3,13 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
-type TabKey = "agents" | "editor" | "rewrite" | "wordpress";
+type TabKey = "agents" | "copywriting" | "editor" | "rewrite" | "wordpress";
 
 export default function HeroInteractivePreview() {
   const [activeTab, setActiveTab] = useState<TabKey>("agents");
   const [activeFont, setActiveFont] = useState<string>("eb-garamond");
   const [activeTone, setActiveTone] = useState<string>("Bestseller");
+  const [copyMode, setCopyMode] = useState<"cold-email" | "sales-pitch" | "google-ads">("cold-email");
   const [synced, setSynced] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [simulatedWordCount, setSimulatedWordCount] = useState(14820);
@@ -65,7 +66,7 @@ export default function HeroInteractivePreview() {
   return (
     <div
       id="interactive-demo"
-      className="w-full max-w-6xl mx-auto rounded-2xl border border-outline-variant/40 bg-surface-container-lowest dark:bg-[#10101c] shadow-2xl shadow-primary/10 overflow-hidden font-body transition-all duration-300"
+      className="scroll-mt-24 w-full max-w-6xl mx-auto rounded-2xl border border-white/10 bg-[#10121a] shadow-2xl shadow-black/50 overflow-hidden font-body transition-all duration-300"
     >
       {/* Studio Header Bar */}
       <div className="bg-surface-container dark:bg-[#151525] px-4 py-3 border-b border-outline-variant/30 flex flex-wrap items-center justify-between gap-3">
@@ -79,18 +80,26 @@ export default function HeroInteractivePreview() {
           <div className="h-4 w-px bg-outline-variant/40 hidden sm:block" />
           <span className="text-[12.5px] font-semibold text-on-surface flex items-center gap-1.5">
             <span className="material-symbols-outlined text-[16px] text-primary">auto_stories</span>
-            The Autonomous Enterprise.epub
+            The Autonomous Enterprise (300k Words).epub
           </span>
           <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold border border-emerald-500/20 hidden md:inline-flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            Swarm Live
+            BookMemoryBank Active
           </span>
         </div>
 
         {/* Tab Navigation Switchers */}
-        <div className="flex items-center gap-1 bg-surface-container-high dark:bg-[#1c1c30] p-1 rounded-xl">
+        <div
+          role="tablist"
+          aria-label="Studio preview features"
+          className="flex items-center gap-1 bg-surface-container-high dark:bg-[#1c1c30] p-1 rounded-xl"
+        >
           <button
             type="button"
+            role="tab"
+            id="studio-tab-agents"
+            aria-selected={activeTab === "agents"}
+            aria-controls="studio-panel-agents"
             onClick={() => setActiveTab("agents")}
             className={`px-3 py-1.5 rounded-lg text-[12px] font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
               activeTab === "agents"
@@ -99,11 +108,33 @@ export default function HeroInteractivePreview() {
             }`}
           >
             <span className="material-symbols-outlined text-[15px]">smart_toy</span>
-            <span className="hidden sm:inline">Agent Swarm</span>
+            <span className="hidden sm:inline">300k Book Swarm</span>
             <span className="sm:hidden">Swarm</span>
           </button>
           <button
             type="button"
+            role="tab"
+            id="studio-tab-copywriting"
+            aria-selected={activeTab === "copywriting"}
+            aria-controls="studio-panel-copywriting"
+            onClick={() => setActiveTab("copywriting")}
+            className={`px-3 py-1.5 rounded-lg text-[12px] font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+              activeTab === "copywriting"
+                ? "bg-surface-container-lowest dark:bg-[#252542] text-primary shadow-xs"
+                : "text-on-surface-variant hover:text-on-surface"
+            }`}
+          >
+            <span className="material-symbols-outlined text-[15px]">campaign</span>
+            <span className="hidden sm:inline">Copywriting Studio</span>
+            <span className="sm:hidden">Copy</span>
+            <span className="text-[9.5px] px-1 py-0.2 rounded bg-primary/20 text-primary font-bold hidden md:inline">NEW</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            id="studio-tab-editor"
+            aria-selected={activeTab === "editor"}
+            aria-controls="studio-panel-editor"
             onClick={() => setActiveTab("editor")}
             className={`px-3 py-1.5 rounded-lg text-[12px] font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
               activeTab === "editor"
@@ -117,6 +148,10 @@ export default function HeroInteractivePreview() {
           </button>
           <button
             type="button"
+            role="tab"
+            id="studio-tab-rewrite"
+            aria-selected={activeTab === "rewrite"}
+            aria-controls="studio-panel-rewrite"
             onClick={() => setActiveTab("rewrite")}
             className={`px-3 py-1.5 rounded-lg text-[12px] font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
               activeTab === "rewrite"
@@ -130,6 +165,10 @@ export default function HeroInteractivePreview() {
           </button>
           <button
             type="button"
+            role="tab"
+            id="studio-tab-wordpress"
+            aria-selected={activeTab === "wordpress"}
+            aria-controls="studio-panel-wordpress"
             onClick={() => setActiveTab("wordpress")}
             className={`px-3 py-1.5 rounded-lg text-[12px] font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
               activeTab === "wordpress"
@@ -146,7 +185,13 @@ export default function HeroInteractivePreview() {
 
       {/* Tab 1: Agent Swarm in Action */}
       {activeTab === "agents" && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[460px]">
+        <div
+          id="studio-panel-agents"
+          role="tabpanel"
+          aria-labelledby="studio-tab-agents"
+          tabIndex={0}
+          className="grid grid-cols-1 lg:grid-cols-12 min-h-[460px] focus:outline-hidden"
+        >
           {/* Left Column: Swarm Status & Agent Pipeline */}
           <div className="lg:col-span-4 border-b lg:border-b-0 lg:border-r border-outline-variant/30 p-5 bg-surface-container-low/40 dark:bg-[#121222]/40 flex flex-col justify-between space-y-4">
             <div>
@@ -259,7 +304,7 @@ export default function HeroInteractivePreview() {
                   </h3>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-1 rounded-md bg-surface-container text-on-surface-variant font-mono text-[11px]">
+                  <span className="px-2.5 py-1 rounded-md bg-surface-container text-on-surface-variant font-mono tabular-nums text-[11px]">
                     {simulatedWordCount.toLocaleString()} words
                   </span>
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
@@ -290,26 +335,227 @@ export default function HeroInteractivePreview() {
             <div className="mt-6 pt-4 border-t border-outline-variant/25 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-[12px] text-on-surface-variant">
                 <span className="material-symbols-outlined text-[16px] text-emerald-500">check</span>
-                <span>Continuity checks passed</span>
+                <span>BookMemoryBank continuity synced (Ch. 1-24)</span>
                 <span className="mx-1">•</span>
                 <span className="material-symbols-outlined text-[16px] text-emerald-500">check</span>
-                <span>Factual citations linked</span>
+                <span>300k Word Omnibus Engine</span>
               </div>
               <Link
-                href="/create"
+                href="/book"
                 className="btn btn-primary btn-sm flex items-center gap-1.5 shadow-sm"
               >
-                <span>Launch Your Swarm</span>
-                <span className="material-symbols-outlined text-[15px]">rocket_launch</span>
+                <span>Launch 300k Book Studio</span>
+                <span className="material-symbols-outlined text-[15px]">auto_stories</span>
               </Link>
             </div>
           </div>
         </div>
       )}
 
+      {/* Tab: Dedicated Copywriting Studio */}
+      {activeTab === "copywriting" && (
+        <div
+          id="studio-panel-copywriting"
+          role="tabpanel"
+          aria-labelledby="studio-tab-copywriting"
+          tabIndex={0}
+          className="p-6 min-h-[460px] flex flex-col justify-between focus:outline-hidden"
+        >
+          <div>
+            {/* Copywriting Mode Switcher */}
+            <div className="flex flex-wrap items-center justify-between gap-3 p-2 rounded-xl bg-surface-container-low dark:bg-[#16162a] border border-outline-variant/30 mb-6">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] font-bold text-on-surface-variant px-2 uppercase tracking-wider">
+                  Conversion Framework:
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setCopyMode("cold-email")}
+                  className={`px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all cursor-pointer ${
+                    copyMode === "cold-email"
+                      ? "bg-primary text-white shadow-xs"
+                      : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
+                  }`}
+                >
+                  B2B Cold Email (PAS)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCopyMode("sales-pitch")}
+                  className={`px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all cursor-pointer ${
+                    copyMode === "sales-pitch"
+                      ? "bg-primary text-white shadow-xs"
+                      : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
+                  }`}
+                >
+                  60s Elevator Sales Pitch
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCopyMode("google-ads")}
+                  className={`px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all cursor-pointer ${
+                    copyMode === "google-ads"
+                      ? "bg-primary text-white shadow-xs"
+                      : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
+                  }`}
+                >
+                  Google Responsive Search Ads (RSA)
+                </button>
+              </div>
+
+              {/* Anti-AI Slop Indicator */}
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold border border-emerald-500/20">
+                <span className="material-symbols-outlined text-[14px]">shield</span>
+                <span>Anti-AI Cliché Filter Active</span>
+              </div>
+            </div>
+
+            {/* Copy Display Area */}
+            {copyMode === "cold-email" && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                <div className="lg:col-span-4 p-4 rounded-xl bg-surface-container-low/50 dark:bg-[#141426] border border-outline-variant/30 space-y-3">
+                  <span className="text-[11px] font-bold text-primary uppercase tracking-wider block">
+                    Schwartz Calibration
+                  </span>
+                  <div className="p-2.5 rounded-lg bg-surface-container dark:bg-[#1a1a30] text-[12px] text-on-surface-variant space-y-1">
+                    <strong className="text-on-surface block">Stage: Problem-Aware</strong>
+                    <p className="text-[11.5px]">Agitates the rising cost of paid acquisition without sounding accusatory or preachy.</p>
+                  </div>
+                  <div className="pt-2 border-t border-outline-variant/20 space-y-1.5 text-[11px] text-on-surface-variant">
+                    <div className="flex justify-between">
+                      <span>Reading Grade:</span>
+                      <strong className="text-on-surface font-mono">6th Grade (Flesch)</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Word Count:</span>
+                      <strong className="text-emerald-600 dark:text-emerald-400 font-mono">98 words (High Reply)</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="lg:col-span-8 p-5 rounded-xl bg-white dark:bg-[#0f0f1c] border border-outline-variant/30 shadow-xs space-y-4">
+                  <div className="pb-3 border-b border-outline-variant/20 flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-[11.5px] font-bold text-on-surface-variant font-mono">
+                      Subject Line: <span className="text-primary font-bold">Quick question on your organic pipeline</span>
+                    </span>
+                    <span className="text-[10.5px] px-2 py-0.5 rounded bg-primary/10 text-primary font-bold">
+                      PAS Framework
+                    </span>
+                  </div>
+                  <div className="text-[13.5px] leading-relaxed text-on-surface space-y-2.5 font-sans">
+                    <p>Hi [First Name],</p>
+                    <p>
+                      Noticed your team is scaling paid acquisition on LinkedIn this quarter. Most marketing leads hit an acquisition wall right here as CAC climbs 35% with declining lead quality.
+                    </p>
+                    <p>
+                      We built an organic search and authority content engine that generated $320k in ARR pipeline for CloudFlow in 90 days without paid ad spend.
+                    </p>
+                    <p>
+                      Mind if I send over a 2-minute video teardown showing where your competitors are picking up free organic demo bookings?
+                    </p>
+                    <p className="text-on-surface-variant pt-1 text-[12px] font-mono">
+                      48-Hour Bump: &ldquo;Hey [First Name], bumping this once in case it got buried. Worth a 2-minute look?&rdquo;
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {copyMode === "sales-pitch" && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                <div className="lg:col-span-4 p-4 rounded-xl bg-surface-container-low/50 dark:bg-[#141426] border border-outline-variant/30 space-y-3">
+                  <span className="text-[11px] font-bold text-primary uppercase tracking-wider block">
+                    Persuasion Architecture
+                  </span>
+                  <div className="p-2.5 rounded-lg bg-surface-container dark:bg-[#1a1a30] text-[12px] text-on-surface-variant space-y-1">
+                    <strong className="text-on-surface block">Hook &rarr; Story &rarr; Offer</strong>
+                    <p className="text-[11.5px]">Positions the proprietary multi-agent swarm as the only bridge from manual fatigue to autonomous scale.</p>
+                  </div>
+                  <div className="pt-2 border-t border-outline-variant/20 space-y-1 text-[11px] text-on-surface-variant">
+                    <span className="block font-semibold text-on-surface">Target Delivery Time:</span>
+                    <span className="font-mono text-primary font-bold text-[12px]">55 Seconds (Elevator Ready)</span>
+                  </div>
+                </div>
+
+                <div className="lg:col-span-8 p-5 rounded-xl bg-white dark:bg-[#0f0f1c] border border-outline-variant/30 shadow-xs space-y-3">
+                  <div className="pb-3 border-b border-outline-variant/20 flex items-center justify-between">
+                    <span className="text-[12px] font-bold text-on-surface">60-Second Conversion Pitch</span>
+                    <span className="text-[10.5px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">
+                      Zero AI Fluff
+                    </span>
+                  </div>
+                  <blockquote className="text-[14px] leading-relaxed text-on-surface italic font-serif border-l-2 border-primary/60 pl-3">
+                    &ldquo;Standard AI works fine for a 500-word paragraph. But when you ask it for an authoritative 300,000-word book or high-converting copy, it collapses into repetitive robotic filler. We built Writerdost around specialized autonomous swarms with BookMemoryBank continuity. You get publication-ready manuscripts and conversion campaigns in an afternoon, with zero AI slop and full copyright ownership.&rdquo;
+                  </blockquote>
+                  <div className="p-3 rounded-lg bg-surface-container-low dark:bg-[#16162a] text-[11.5px] text-on-surface-variant font-sans">
+                    <strong className="text-on-surface">🛡️ Instant Objection Buster: </strong>
+                    Addresses hallucination concerns by citing the 3-Tier Source Classification and empirical fact catalog before writing.
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {copyMode === "google-ads" && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                <div className="lg:col-span-4 p-4 rounded-xl bg-surface-container-low/50 dark:bg-[#141426] border border-outline-variant/30 space-y-3">
+                  <span className="text-[11px] font-bold text-primary uppercase tracking-wider block">
+                    Google Ads Compliance
+                  </span>
+                  <div className="p-2.5 rounded-lg bg-surface-container dark:bg-[#1a1a30] text-[12px] text-on-surface-variant space-y-1">
+                    <strong className="text-on-surface block">Ad Strength: Excellent</strong>
+                    <p className="text-[11.5px]">Strict character constraint adherence (&le;30 char headlines, &le;90 char descriptions) for maximum Quality Score.</p>
+                  </div>
+                  <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[14px]">verified</span>
+                    <span>Zero Policy Violations</span>
+                  </div>
+                </div>
+
+                <div className="lg:col-span-8 p-5 rounded-xl bg-white dark:bg-[#0f0f1c] border border-outline-variant/30 shadow-xs space-y-3">
+                  <div className="pb-2 border-b border-outline-variant/20 flex items-center justify-between">
+                    <span className="text-[12px] font-bold text-on-surface">Responsive Search Ad Variations</span>
+                    <span className="text-[10px] font-mono text-on-surface-variant">Character Count Verified</span>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-low dark:bg-[#16162c] text-[12px]">
+                      <span className="font-semibold text-on-surface">AI Book Writer: 300,000 Words</span>
+                      <span className="text-[11px] font-mono text-emerald-500 font-bold">29 / 30 chars</span>
+                    </div>
+                    <div className="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-low dark:bg-[#16162c] text-[12px]">
+                      <span className="font-semibold text-on-surface">Zero AI Slop. Human Cadence.</span>
+                      <span className="text-[11px] font-mono text-emerald-500 font-bold">28 / 30 chars</span>
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-surface-container-low dark:bg-[#16162c] text-[12px] space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-on-surface">Write 300,000-word manuscripts or high-converting sales copy with autonomous agent swarms.</span>
+                        <span className="text-[11px] font-mono text-emerald-500 font-bold shrink-0 ml-2">89 / 90 chars</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-6 pt-3 flex flex-wrap items-center justify-between gap-3 text-[12px] text-on-surface-variant border-t border-outline-variant/20">
+            <span>Eugene Schwartz 5 Stages • PAS &amp; AIDA • Google RSA &amp; Meta Compliant</span>
+            <Link href="/copywriting" className="text-primary font-bold hover:underline flex items-center gap-1">
+              Explore Copywriting Studio &rarr;
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Tab 2: Focused Canvas Editor */}
       {activeTab === "editor" && (
-        <div className="p-6 min-h-[460px] flex flex-col justify-between">
+        <div
+          id="studio-panel-editor"
+          role="tabpanel"
+          aria-labelledby="studio-tab-editor"
+          tabIndex={0}
+          className="p-6 min-h-[460px] flex flex-col justify-between focus:outline-hidden"
+        >
           <div>
             {/* Editor Toolbar */}
             <div className="flex flex-wrap items-center justify-between gap-3 p-2 rounded-xl bg-surface-container-low dark:bg-[#16162a] border border-outline-variant/30 mb-6">
@@ -428,7 +674,13 @@ export default function HeroInteractivePreview() {
 
       {/* Tab 3: Rewrite Studio */}
       {activeTab === "rewrite" && (
-        <div className="p-6 min-h-[460px] flex flex-col justify-between">
+        <div
+          id="studio-panel-rewrite"
+          role="tabpanel"
+          aria-labelledby="studio-tab-rewrite"
+          tabIndex={0}
+          className="p-6 min-h-[460px] flex flex-col justify-between focus:outline-hidden"
+        >
           <div>
             {/* Tone Selector Buttons */}
             <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
@@ -514,7 +766,13 @@ export default function HeroInteractivePreview() {
 
       {/* Tab 4: WordPress Auto-Publisher */}
       {activeTab === "wordpress" && (
-        <div className="p-6 min-h-[460px] flex flex-col justify-between">
+        <div
+          id="studio-panel-wordpress"
+          role="tabpanel"
+          aria-labelledby="studio-tab-wordpress"
+          tabIndex={0}
+          className="p-6 min-h-[460px] flex flex-col justify-between focus:outline-hidden"
+        >
           <div>
             <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
               <div>

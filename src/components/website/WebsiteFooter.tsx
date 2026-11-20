@@ -32,7 +32,7 @@ export default function WebsiteFooter() {
             </Link>
 
             <p className="text-[13px] text-on-surface-variant leading-relaxed max-w-sm">
-              Empowering authors, digital publishers, and marketing teams to produce cohesive 200,000+ word manuscripts and automated scheduled WordPress campaigns using collaborative multi-agent AI.
+              Empowering authors, digital publishers, and marketing teams to produce cohesive 300,000+ word manuscripts and high-converting direct-response copy using collaborative multi-agent AI.
             </p>
 
           </div>
@@ -43,6 +43,16 @@ export default function WebsiteFooter() {
               Product Suite
             </h4>
             <ul className="space-y-2 text-[13px]">
+              <li>
+                <Link href="/book" className="hover:text-on-surface transition-colors font-semibold text-primary">
+                  300k Book Studio
+                </Link>
+              </li>
+              <li>
+                <Link href="/copywriting" className="hover:text-on-surface transition-colors font-semibold text-primary">
+                  Copywriting Studio
+                </Link>
+              </li>
               <li>
                 <Link href="/create" className="hover:text-on-surface transition-colors">
                   Autonomous Ebook Swarm
