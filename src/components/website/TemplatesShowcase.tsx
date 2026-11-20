@@ -22,88 +22,88 @@ export interface BlueprintTemplate {
 
 const BLUEPRINTS: BlueprintTemplate[] = [
   {
-    id: "authority-non-fiction",
+    id: "definitive-thought-leadership",
     category: "non-fiction",
-    title: "Authority Non-Fiction Playbook",
-    tagline: "Comprehensive 10-Chapter Master Manual",
-    description: "Ideal for business leaders, consultants, and educators turning deep expertise into a definitive published guide.",
+    title: "Thought Leadership Masterwork",
+    tagline: "Seminal 4-Part Macro Architecture",
+    description: "Designed for industry leaders, executives, and researchers establishing domain dominance (akin to Thinking Fast & Slow or Sapiens).",
     badge: "POPULAR",
     badgeColor: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30",
-    words: "~25,000 words",
-    chapters: "10 Chapters",
-    icon: "auto_stories",
+    words: "60,000 - 100,000 words",
+    chapters: "12-16 Chapters",
+    icon: "psychology",
     gradient: "from-purple-500 to-indigo-600",
-    deliverables: ["Curriculum Architecture", "Actionable Worksheets", "Kindle-Ready EPUB", "Print PDF Layout"],
+    deliverables: ["4-Part Macro Architecture", "Contrarian Theses", "Empirical Case Studies", "Kindle-Ready EPUB"],
   },
   {
-    id: "kdp-short-read",
-    category: "non-fiction",
-    title: "KDP Fast-Track Short Read",
-    tagline: "High-Impact 60-Minute Tactical Read",
-    description: "Designed for rapid publishing on Amazon Kindle. Solves one specific customer pain point with surgical precision.",
-    badge: "FAST-TRACK",
-    badgeColor: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
-    words: "~12,000 words",
-    chapters: "5 Chapters",
-    icon: "bolt",
-    gradient: "from-emerald-500 to-teal-600",
-    deliverables: ["Amazon Blurb Copy", "Chapter Key Takeaways", "Lead Magnet Funnel", "Formatted MOBI/EPUB"],
-  },
-  {
-    id: "fiction-novel",
+    id: "epic-narrative-novel",
     category: "fiction",
-    title: "Fiction & Novel Story Arc",
-    tagline: "Multi-Act Narrative with Character Consistency",
-    description: "Orchestrate intricate multi-point-of-view stories with continuous character lore, scene tension, and dialogue pacing.",
+    title: "Epic Fiction & Worldbuilding Tome",
+    tagline: "Multi-POV Arc with BookMemoryBank Lore",
+    description: "Built for epic fantasy, sci-fi sagas, and multi-generational fiction with deep continuity tracking across dozens of chapters.",
     badge: "NEW",
     badgeColor: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30",
-    words: "~45,000+ words",
-    chapters: "16-20 Chapters",
-    icon: "psychology",
+    words: "Up to 300,000 words",
+    chapters: "20-40 Chapters",
+    icon: "auto_stories",
     gradient: "from-blue-500 to-cyan-600",
-    deliverables: ["Hero's Journey Beat Sheet", "Character Lore Ledger", "Sensory Scene Hooks", "Chapter Climax Arcs"],
+    deliverables: ["Interlocking Character Arcs", "Deep Lore Memory Ledger", "Sensory Scene Hooks", "Cross-Chapter Continuity"],
+  },
+  {
+    id: "b2b-copywriting-pack",
+    category: "business",
+    title: "B2B Cold Outreach & Conversion Pack",
+    tagline: "Eugene Schwartz 5 Stages of Awareness",
+    description: "High-reply PAS cold emails, 60-second elevator pitches, and Google RSA ads with strict character constraints and anti-AI filtering.",
+    badge: "FAST-TRACK",
+    badgeColor: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
+    words: "Full Sales Campaign",
+    chapters: "Outreach + Ads + Follow-ups",
+    icon: "campaign",
+    gradient: "from-emerald-500 to-teal-600",
+    deliverables: ["PAS Cold Email Sequences", "Google RSA (<30/90 chars)", "Anti-AI Cliché Filter", "48-Hour Bump Follow-ups"],
   },
   {
     id: "founder-lead-magnet",
     category: "business",
     title: "Client Acquisition Whitepaper",
-    tagline: "High-Converting B2B Trust Asset",
-    description: "Transform your agency or SaaS methodology into an authoritative, downloadable blueprint that drives qualified sales calls.",
+    tagline: "High-Converting B2B Authority Asset",
+    description: "Transform your proprietary methodology into an authoritative, downloadable blueprint that drives qualified demo bookings.",
     badge: "POPULAR",
     badgeColor: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30",
-    words: "~8,500 words",
+    words: "~12,000 words",
     chapters: "4 Deep Sections",
     icon: "workspace_premium",
     gradient: "from-amber-500 to-orange-600",
     deliverables: ["Executive Summary", "Proprietary Data Models", "Call-to-Action Closing", "Brandable PDF"],
   },
   {
+    id: "technical-handbook",
+    category: "non-fiction",
+    title: "Engineering & Technical Reference Tome",
+    tagline: "System Architecture with Empirical Case Studies",
+    description: "For principal architects, engineers, and scientists authoring an exhaustive reference manual or university-grade textbook.",
+    badge: "NEW",
+    badgeColor: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30",
+    words: "80,000 - 140,000 words",
+    chapters: "15-25 Chapters",
+    icon: "code",
+    gradient: "from-indigo-500 to-purple-600",
+    deliverables: ["Architecture Blueprints", "Code Implementation Guides", "Troubleshooting Trees", "DOCX & Print PDF"],
+  },
+  {
     id: "seo-pillar-series",
     category: "blog",
-    title: "30-Day SEO Cluster Engine",
-    tagline: "Interlinked Topical Pillar + Spoke Articles",
-    description: "Generate an entire month of SEO-optimized articles with structured FAQs, JSON-LD schema, and direct WordPress synchronization.",
+    title: "GEO Content Strategy & Automated WordPress Drip",
+    tagline: "AI Search Citations + Interlinked Topical Authority",
+    description: "Generate an entire month of SEO and GEO-optimized articles with definition-first answer capsules, structured FAQs, JSON-LD schema, and direct WordPress synchronization.",
     badge: "FAST-TRACK",
-    badgeColor: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
-    words: "~18,000 words total",
+    badgeColor: "bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/30",
+    words: "~25,000 words total",
     chapters: "12 Interlinked Posts",
     icon: "rss_feed",
     gradient: "from-teal-500 to-emerald-600",
-    deliverables: ["Keyword Intent Mapping", "Schema Markup Blocks", "Native WordPress Drip", "Social Snippets"],
-  },
-  {
-    id: "executive-speech-to-book",
-    category: "business",
-    title: "Lecture & Audio to Manuscript",
-    tagline: "Podcast & Transcript Restructuring",
-    description: "Incorporate YouTube interviews, keynote speeches, or audio recordings directly into a polished, ghostwritten memoir or manual.",
-    badge: "NEW",
-    badgeColor: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30",
-    words: "~20,000 words",
-    chapters: "8 Chapters",
-    icon: "mic",
-    gradient: "from-rose-500 to-pink-600",
-    deliverables: ["Transcript De-tangling", "Anecdote Polishing", "Structured Citations", "Clean Editorial Tone"],
+    deliverables: ["AI Overview Extraction Capsules", "JSON-LD FAQ Schema", "Native WordPress Drip", "Topical Entity Clusters"],
   },
 ];
 
@@ -123,7 +123,7 @@ export default function TemplatesShowcase() {
     : BLUEPRINTS.filter((b) => b.category === activeCategory);
 
   return (
-    <section id="templates" className="py-20 md:py-28 font-body bg-surface">
+    <section id="templates" className="scroll-mt-20 py-20 md:py-28 font-body bg-surface">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-12 space-y-4">
@@ -139,10 +139,16 @@ export default function TemplatesShowcase() {
         </div>
 
         {/* Filter Pills */}
-        <div className="flex items-center justify-center gap-2 overflow-x-auto pb-4 mb-10 no-scrollbar">
+        <div
+          role="tablist"
+          aria-label="Blueprint categories"
+          className="flex items-center justify-center gap-2 overflow-x-auto pb-4 mb-10 no-scrollbar"
+        >
           {CATEGORIES.map((cat) => (
             <button
               key={cat.id}
+              role="tab"
+              aria-selected={activeCategory === cat.id}
               onClick={() => setActiveCategory(cat.id)}
               className={`px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all whitespace-nowrap cursor-pointer ${
                 activeCategory === cat.id

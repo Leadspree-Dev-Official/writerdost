@@ -7,20 +7,32 @@ export default function FaqSection() {
 
   const faqs = [
     {
-      q: "Who owns the copyright and intellectual property of the generated books?",
-      a: "You retain 100% ownership of everything created in Writerdost AI: all outlines, chapters, rewritten manuscripts, and exported files. You are free to publish on Amazon KDP, Apple Books, sell them, or syndicate them to your WordPress site with zero royalty obligations to Writerdost or LeadSpree.",
+      q: "Who owns the copyright and intellectual property of the generated books and copy?",
+      a: "You retain 100% ownership of everything created in Writerdost AI: all outlines, book chapters, rewritten manuscripts, sales copy, and exported files. You are free to publish on Amazon KDP, Apple Books, sell them, or syndicate them to your WordPress site with zero royalty obligations to Writerdost or LeadSpree.",
     },
     {
-      q: "How does the multi-agent swarm maintain narrative continuity across 200,000+ words?",
-      a: "Standard chatbots fail because they treat every chapter as an isolated prompt. Writerdost deploys a 4-agent swarm: the Research Agent builds a global domain graph, the Architect Agent creates a master structural beat sheet, parallel Chapter Writers draft concurrently against shared continuity memory, and the Critic Agent harmonizes voice and rhythm across all seams—scaling cleanly from 10,000 to 200,000 words.",
+      q: "How does Writerdost maintain narrative continuity across 300,000 words?",
+      a: "Standard chatbots fail because they treat every chapter as an isolated prompt, forgetting characters and contradicting prior chapters. Writerdost deploys a 4-agent swarm coupled with our BookMemoryBank state engine. BookMemoryBank tracks character profiles, timeline lore, core arguments, and terminology across all chapter boundaries, scaling seamlessly from a 12,000-word tactical guide to a 300,000-word omnibus.",
+    },
+    {
+      q: "What makes the Copywriting Studio different from standard ChatGPT prompts?",
+      a: "Rather than regurgitating generic sales copy full of AI clichés, the Copywriting Studio uses proven direct-response frameworks. It calibrates copy to Eugene Schwartz's 5 Stages of Awareness (Unaware through Most-Aware), adheres strictly to Google RSA character limits (<= 30 char headlines, <= 90 char descriptions) for high Quality Scores, complies with Meta ad policies, and runs an automated Anti-AI cliché filter that removes overused buzzwords like 'delve' and 'tapestry'.",
+    },
+    {
+      q: "How does Bring Your Own Skills (BYOS) work and is it secure?",
+      a: "The BYOS engine allows authors and agencies to import custom or community `.md` and YAML skills (compatible with Claude Code, Cursor, and standard agent skills). Our zero-dependency parser extracts domain rubrics while our security sanitizer programmatically strips all executable bash commands, curl strings, and terminal scripts—ensuring zero arbitrary code execution in your browser or workspace.",
     },
     {
       q: "How does the official writerdost-connect WordPress plugin work?",
       a: "We provide an official, lightweight WordPress plugin called 'writerdost-connect'. Once uploaded to your WordPress site, it securely interfaces with the standard WordPress REST API using Application Passwords. You can queue automated blog schedules, and Writerdost automatically generates articles, attaches tags/categories, sets featured images, and publishes on your chosen cron schedule.",
     },
     {
-      q: "Can I bring my own API keys or use local Ollama?",
-      a: "Yes. Bring your own key for OpenAI, OpenRouter, Claude, Gemini, DeepSeek, or Ollama Cloud. If you self-host Writerdost and enable the local Ollama mode, prompts can stay on your own machine. Otherwise your workspace is stored in Appwrite and prompts are sent to the provider you choose.",
+      q: "How does Writerdost optimize articles for Google AI Overviews, ChatGPT Search, and Perplexity (GEO)?",
+      a: "Modern search engines don't just index keywords; LLM search engines (Google AI Overviews, ChatGPT Search, Perplexity) extract direct, authoritative answers. Writerdost's SEO engine formats articles with definition-first lead sentences, 40–80 word direct answer capsules, and automated FAQPage JSON-LD schema. When published to your WordPress site, each post is structurally primed for both traditional SERP rankings and generative AI citations.",
+    },
+    {
+      q: "Can I bring my own API keys or use local Ollama with zero token markup?",
+      a: "Yes. You can connect your personal API keys for OpenAI, Anthropic Claude, Google Gemini, DeepSeek, Groq, or Mistral with zero token markup. You can also connect to local Ollama on localhost:11434 for 100% private, offline generation where your prompts never leave your local machine. All personal keys are encrypted at rest.",
     },
     {
       q: "What export formats are supported for publishing?",
@@ -33,7 +45,7 @@ export default function FaqSection() {
   ];
 
   return (
-    <section id="faq" className="py-20 md:py-28 font-body">
+    <section id="faq" className="scroll-mt-20 py-20 md:py-28 font-body">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center space-y-4 mb-14">
@@ -59,8 +71,11 @@ export default function FaqSection() {
               >
                 <button
                   type="button"
+                  id={`faq-btn-${index}`}
+                  aria-expanded={isOpen}
+                  aria-controls={`faq-panel-${index}`}
                   onClick={() => setOpenIndex(isOpen ? null : index)}
-                  className="w-full text-left p-5 sm:p-6 flex items-center justify-between gap-4 cursor-pointer"
+                  className="w-full text-left p-5 sm:p-6 flex items-center justify-between gap-4 cursor-pointer focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                 >
                   <span className="text-[15px] sm:text-base font-bold text-on-surface">
                     {faq.q}
@@ -75,7 +90,12 @@ export default function FaqSection() {
                 </button>
 
                 {isOpen && (
-                  <div className="px-5 pb-6 sm:px-6 sm:pb-6 pt-1 text-[13.5px] sm:text-[14px] text-on-surface-variant leading-relaxed border-t border-outline-variant/15 font-normal">
+                  <div
+                    id={`faq-panel-${index}`}
+                    role="region"
+                    aria-labelledby={`faq-btn-${index}`}
+                    className="px-5 pb-6 sm:px-6 sm:pb-6 pt-1 text-[13.5px] sm:text-[14px] text-on-surface-variant leading-relaxed border-t border-outline-variant/15 font-normal"
+                  >
                     {faq.a}
                   </div>
                 )}
