@@ -29,6 +29,10 @@ export const providerDefaults: Record<ApiProvider, { baseUrl: string; model: str
     baseUrl: "https://openrouter.ai/api/v1/chat/completions",
     model: "anthropic/claude-sonnet-5.5",
   },
+  experiential: {
+    baseUrl: "https://api.experientiallabs.ai/v1/chat/completions",
+    model: "gpt-6-luna",
+  },
   ollama: {
     baseUrl: "http://localhost:11434/v1/chat/completions",
     model: "llama3.3:70b",
@@ -54,7 +58,7 @@ const MODEL_RATE_TABLE: Array<{ match: string; inputRate: number; outputRate: nu
   { match: "gpt-6-astra", inputRate: 10.00, outputRate: 50.00 },
   { match: "gpt-6.1-sol", inputRate: 2.00, outputRate: 10.00 },
   { match: "gpt-6.1-terra", inputRate: 1.00, outputRate: 5.00 },
-  { match: "gpt-6-luna", inputRate: 0.10, outputRate: 0.50 },
+  { match: "gpt-6-luna", inputRate: 0.00, outputRate: 0.00 },
   { match: "gpt-5-turbo", inputRate: 2.00, outputRate: 8.00 },
   { match: "gpt-5", inputRate: 2.50, outputRate: 10.00 },
   { match: "gpt-4.5", inputRate: 75.00, outputRate: 150.00 },
@@ -96,13 +100,21 @@ const MODEL_RATE_TABLE: Array<{ match: string; inputRate: number; outputRate: nu
   { match: "gemini-1.5-flash", inputRate: 0.075, outputRate: 0.30 },
   { match: "gemini-1.5-pro", inputRate: 1.25, outputRate: 5.00 },
 
-  // DeepSeek
+  // DeepSeek & Experiential catalog
+  { match: "deepseek-v4.1-flash-1017-uncensored", inputRate: 0.10, outputRate: 0.20 },
   { match: "deepseek-v4-pro", inputRate: 0.25, outputRate: 0.50 },
   { match: "deepseek-v4.1-flash", inputRate: 0.10, outputRate: 0.20 },
   { match: "deepseek-flash", inputRate: 0.10, outputRate: 0.20 },
   { match: "deepseek-v4-flash", inputRate: 0.08, outputRate: 0.16 },
   { match: "deepseek-reasoner", inputRate: 0.55, outputRate: 2.19 },
   { match: "deepseek-chat", inputRate: 0.14, outputRate: 0.28 },
+
+  // Experiential / Open Catalog Additions
+  { match: "tencent-hy4-flash", inputRate: 0.06, outputRate: 0.12 },
+  { match: "jev", inputRate: 0.05, outputRate: 0.10 },
+  { match: "glm-5.3-flash-uncensored", inputRate: 0.08, outputRate: 0.16 },
+  { match: "glm-5.3-uncensored", inputRate: 0.15, outputRate: 0.30 },
+  { match: "qwen3.8-27b", inputRate: 0.20, outputRate: 0.40 },
 
   // Groq
   { match: "llama-4-scout", inputRate: 0.20, outputRate: 0.30 },

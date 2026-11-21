@@ -494,7 +494,7 @@ export function getMaskedBizAiGatewayConfig(): BizAiGatewayConfig {
   const config = getBizAiGatewayConfig();
   const maskedKeys: Record<string, string> = {};
 
-  const providers = ["anthropic", "openai", "gemini", "deepseek", "groq", "commandcode", "openrouter"] as const;
+  const providers = ["anthropic", "openai", "gemini", "deepseek", "groq", "commandcode", "openrouter", "experiential"] as const;
   for (const p of providers) {
     const directKey = config.serverKeys?.[p];
     const envKey =
@@ -504,7 +504,8 @@ export function getMaskedBizAiGatewayConfig(): BizAiGatewayConfig {
       p === "deepseek" ? process.env.DEEPSEEK_API_KEY :
       p === "groq" ? process.env.GROQ_API_KEY :
       p === "commandcode" ? process.env.COMMANDCODE_API_KEY :
-      p === "openrouter" ? process.env.OPENROUTER_API_KEY : "";
+      p === "openrouter" ? process.env.OPENROUTER_API_KEY :
+      p === "experiential" ? (process.env.EXPLABS_API_KEY || process.env.EXPERIENTIAL_API_KEY) : "";
 
     const activeKey = directKey || envKey || "";
     if (activeKey) {

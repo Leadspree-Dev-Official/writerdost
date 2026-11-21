@@ -133,6 +133,16 @@ const GATEWAY_PROVIDERS: ProviderDefinition[] = [
     colorHex: "#a855f7",
   },
   {
+    id: "experiential",
+    keyId: "experiential",
+    name: "Experiential Labs",
+    description: "Universal AI Gateway (platform.experientiallabs.ai)",
+    icon: "layers",
+    placeholder: "Bearer token / API key...",
+    colorClass: "bg-fuchsia-500/10 text-fuchsia-600 dark:text-fuchsia-400 border-fuchsia-500/20",
+    colorHex: "#d946ef",
+  },
+  {
     id: "ollama",
     keyId: undefined,
     name: "Ollama (Local / Cloud)",

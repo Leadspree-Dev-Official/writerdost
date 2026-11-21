@@ -6,6 +6,7 @@ export type ApiProvider =
   | "groq"
   | "commandcode"
   | "openrouter"
+  | "experiential"
   | "ollama"
   | "ollama_cloud"
   | "custom";
@@ -762,6 +763,7 @@ export interface BizAiGatewayConfig {
     groq?: string;
     commandcode?: string;
     openrouter?: string;
+    experiential?: string;
   };
 
   // Explicit list of configured/added provider IDs
@@ -807,6 +809,7 @@ export const DEFAULT_BIZAI_GATEWAY_CONFIG: BizAiGatewayConfig = {
     groq: "",
     commandcode: "",
     openrouter: "",
+    experiential: "",
   },
   configuredProviders: [],
   customEndpoints: {},

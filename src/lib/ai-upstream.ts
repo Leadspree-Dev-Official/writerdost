@@ -14,7 +14,7 @@ import { getBizAiGatewayConfig } from "@/lib/server-subscription-store";
 import type { ApiProvider, ApiSettings } from "@/lib/store-types";
 
 /** Providers whose default endpoint is pre-configured by us. */
-const PINNED_PROVIDERS = new Set(["openai", "claude", "gemini", "deepseek", "groq", "commandcode", "openrouter"]);
+const PINNED_PROVIDERS = new Set(["openai", "claude", "gemini", "deepseek", "groq", "commandcode", "openrouter", "experiential"]);
 
 /**
  * Extra hosts a self-hoster may allow for `custom` / `ollama_cloud`.
@@ -49,7 +49,8 @@ export function getServerGatewayKeyForProvider(provider: ApiProvider): string {
       provider === "deepseek" ? gateway?.serverKeys?.deepseek :
       provider === "groq" ? gateway?.serverKeys?.groq :
       provider === "commandcode" ? gateway?.serverKeys?.commandcode :
-      provider === "openrouter" ? gateway?.serverKeys?.openrouter : "";
+      provider === "openrouter" ? gateway?.serverKeys?.openrouter :
+      provider === "experiential" ? gateway?.serverKeys?.experiential : "";
     if (serverKey) return serverKey;
   } catch {
     // ignore
@@ -62,6 +63,7 @@ export function getServerGatewayKeyForProvider(provider: ApiProvider): string {
   if (provider === "groq") return process.env.GROQ_API_KEY || process.env.BIZAI_GATEWAY_KEY || "";
   if (provider === "commandcode") return process.env.COMMANDCODE_API_KEY || process.env.BIZAI_GATEWAY_KEY || "";
   if (provider === "openrouter") return process.env.OPENROUTER_API_KEY || process.env.BIZAI_GATEWAY_KEY || "";
+  if (provider === "experiential") return process.env.EXPLABS_API_KEY || process.env.EXPERIENTIAL_API_KEY || process.env.BIZAI_GATEWAY_KEY || "";
 
   return process.env.BIZAI_GATEWAY_KEY || "";
 }
@@ -141,6 +143,16 @@ export async function resolveUpstream(api: ApiSettings): Promise<ApiSettings> {
     const clientBaseUrl = (api.baseUrl || "").trim();
     if (clientBaseUrl && clientBaseUrl !== defaults.baseUrl) {
       targetBaseUrl = await validateEndpointUrl(clientBaseUrl, provider);
+    } else {
+      try {
+        const gateway = getBizAiGatewayConfig();
+        const customGatewayEndpoint = gateway?.customEndpoints?.[provider]?.trim();
+        if (customGatewayEndpoint && customGatewayEndpoint !== defaults.baseUrl) {
+          targetBaseUrl = await validateEndpointUrl(customGatewayEndpoint, provider);
+        }
+      } catch {
+        // ignore
+      }
     }
 
     return {
