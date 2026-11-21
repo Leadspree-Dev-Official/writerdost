@@ -43,12 +43,17 @@ export function isLiveAiReady(api: ApiSettings): boolean {
 function buildHeaders(api: ApiSettings, isClaude: boolean): Record<string, string> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
 
-  if (api.apiKey) {
+  let activeKey = api.apiKey;
+  if (!activeKey || activeKey.includes("••••")) {
+    activeKey = getServerGatewayKeyForProvider(api.provider);
+  }
+
+  if (activeKey) {
     if (isClaude) {
-      headers["x-api-key"] = api.apiKey;
+      headers["x-api-key"] = activeKey;
       headers["anthropic-version"] = "2023-06-01";
     } else {
-      headers.Authorization = `Bearer ${api.apiKey}`;
+      headers.Authorization = `Bearer ${activeKey}`;
     }
   }
 
@@ -302,7 +307,7 @@ export async function callModel({
     ? getServerGatewayKeyForProvider(effectiveApi.provider)
     : "";
   const hasUsableKey = Boolean(
-    effectiveApi.apiKey || serverKeyForCurrent || effectiveApi.provider === "ollama"
+    (effectiveApi.apiKey && !effectiveApi.apiKey.includes("••••")) || serverKeyForCurrent || effectiveApi.provider === "ollama"
   );
 
   const primaryInstance = gatewayConfig?.instances?.find(
@@ -322,7 +327,9 @@ export async function callModel({
         primaryInstance.customEndpoint ||
         providerDefaults[primaryInstance.provider]?.baseUrl ||
         "";
-      effectiveApi.apiKey = primaryInstance.apiKey || "";
+      effectiveApi.apiKey = (primaryInstance.apiKey && !primaryInstance.apiKey.includes("••••"))
+        ? primaryInstance.apiKey
+        : "";
     } else if (gatewayConfig?.primaryProvider) {
       effectiveApi.provider = gatewayConfig.primaryProvider;
       effectiveApi.model =

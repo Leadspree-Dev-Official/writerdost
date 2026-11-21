@@ -447,10 +447,37 @@ async function getCloudflareKv(): Promise<KvNamespaceLike | null> {
 
 export async function hydrateGatewayConfigFromKv(): Promise<BizAiGatewayConfig> {
   try {
+    const { getCloudflareContext } = await import("@opennextjs/cloudflare");
+    const ctx = await getCloudflareContext({ async: true });
+    const envRecord = ctx?.env as Record<string, unknown> | undefined;
+    if (envRecord) {
+      for (const [k, v] of Object.entries(envRecord)) {
+        if (typeof v === "string" && (!process.env[k] || process.env[k]?.includes("••••"))) {
+          process.env[k] = v;
+        }
+      }
+    }
+
     const kv = await getCloudflareKv();
     if (kv) {
       const stored = (await kv.get("writerdost_bizai_gateway", "json")) as Partial<BizAiGatewayConfig> | null;
       if (stored && typeof stored === "object") {
+        // Sanitize any masked strings from previous versions
+        if (stored.serverKeys) {
+          for (const [k, v] of Object.entries(stored.serverKeys)) {
+            if (typeof v === "string" && v.includes("••••")) {
+              delete (stored.serverKeys as Record<string, string>)[k];
+            }
+          }
+        }
+        if (Array.isArray(stored.instances)) {
+          for (const inst of stored.instances) {
+            if (typeof inst.apiKey === "string" && inst.apiKey.includes("••••")) {
+              inst.apiKey = "";
+            }
+          }
+        }
+
         const current = getBizAiGatewayConfig();
         const mergedKeys = {
           ...DEFAULT_BIZAI_GATEWAY_CONFIG.serverKeys,
@@ -485,7 +512,20 @@ export async function persistGatewayConfigToKv(config: BizAiGatewayConfig): Prom
 
 export function getBizAiGatewayConfig(): BizAiGatewayConfig {
   if (!globalThis.__writerdost_bizai_gateway) {
-    globalThis.__writerdost_bizai_gateway = { ...DEFAULT_BIZAI_GATEWAY_CONFIG };
+    globalThis.__writerdost_bizai_gateway = {
+      ...DEFAULT_BIZAI_GATEWAY_CONFIG,
+      serverKeys: {
+        ...DEFAULT_BIZAI_GATEWAY_CONFIG.serverKeys,
+        anthropic: process.env.ANTHROPIC_API_KEY || "",
+        openai: process.env.OPENAI_API_KEY || "",
+        gemini: process.env.GEMINI_API_KEY || "",
+        deepseek: process.env.DEEPSEEK_API_KEY || "",
+        groq: process.env.GROQ_API_KEY || "",
+        commandcode: process.env.COMMANDCODE_API_KEY || "",
+        openrouter: process.env.OPENROUTER_API_KEY || "",
+        experiential: process.env.EXPLABS_API_KEY || process.env.EXPERIENTIAL_API_KEY || "",
+      },
+    };
   }
   return globalThis.__writerdost_bizai_gateway;
 }
@@ -569,8 +609,15 @@ export function updateBizAiGatewayConfig(updates: Partial<BizAiGatewayConfig>): 
     updatedInstances = updates.instances.map((incoming) => {
       const existing = (current.instances || []).find((i) => i.id === incoming.id);
       let effectiveKey = incoming.apiKey?.trim() || "";
-      if (effectiveKey.includes("••••") && existing?.apiKey) {
-        effectiveKey = existing.apiKey;
+      if (effectiveKey.includes("••••")) {
+        const provKey = (incoming.provider === "claude" ? "anthropic" : incoming.provider) as keyof BizAiGatewayConfig["serverKeys"];
+        if (existing?.apiKey && !existing.apiKey.includes("••••")) {
+          effectiveKey = existing.apiKey;
+        } else if (provKey && current.serverKeys?.[provKey] && !current.serverKeys[provKey]?.includes("••••")) {
+          effectiveKey = current.serverKeys[provKey]!;
+        } else {
+          effectiveKey = "";
+        }
       }
       return {
         ...incoming,
@@ -590,15 +637,17 @@ export function updateBizAiGatewayConfig(updates: Partial<BizAiGatewayConfig>): 
     nextPrimaryProvider = primaryInst.provider;
     nextPrimaryModel = primaryInst.model;
     nextPrimaryInstanceId = primaryInst.id;
-    if (primaryInst.apiKey) {
-      (updatedKeys as Record<string, string>)[primaryInst.provider] = primaryInst.apiKey;
+    const primKey = (primaryInst.provider === "claude" ? "anthropic" : primaryInst.provider) as keyof BizAiGatewayConfig["serverKeys"];
+    if (primaryInst.apiKey && !primaryInst.apiKey.includes("••••") && primKey) {
+      (updatedKeys as Record<string, string>)[primKey] = primaryInst.apiKey;
     }
   }
 
   // Also ensure any configured instance keys are mirrored into serverKeys
   for (const inst of updatedInstances) {
-    if (inst.apiKey && !(updatedKeys as Record<string, string>)[inst.provider]) {
-      (updatedKeys as Record<string, string>)[inst.provider] = inst.apiKey;
+    const instKey = (inst.provider === "claude" ? "anthropic" : inst.provider) as keyof BizAiGatewayConfig["serverKeys"];
+    if (inst.apiKey && !inst.apiKey.includes("••••") && instKey && !(updatedKeys as Record<string, string>)[instKey]) {
+      (updatedKeys as Record<string, string>)[instKey] = inst.apiKey;
     }
   }
 

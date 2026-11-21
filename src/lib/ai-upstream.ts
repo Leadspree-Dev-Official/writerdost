@@ -51,7 +51,7 @@ export function getServerGatewayKeyForProvider(provider: ApiProvider): string {
       provider === "commandcode" ? gateway?.serverKeys?.commandcode :
       provider === "openrouter" ? gateway?.serverKeys?.openrouter :
       provider === "experiential" ? gateway?.serverKeys?.experiential : "";
-    if (serverKey) return serverKey;
+    if (serverKey && !serverKey.includes("••••")) return serverKey;
   } catch {
     // ignore
   }
@@ -133,7 +133,7 @@ export async function resolveUpstream(api: ApiSettings): Promise<ApiSettings> {
   if (PINNED_PROVIDERS.has(provider)) {
     const defaults = providerDefaults[provider];
     const serverFallbackKey = getServerGatewayKeyForProvider(provider);
-    const effectiveApiKey = api.apiKey || serverFallbackKey;
+    const effectiveApiKey = (api.apiKey && !api.apiKey.includes("••••")) ? api.apiKey : serverFallbackKey;
 
     if (!effectiveApiKey) {
       deny("An API key is required for the selected provider. Add your personal BYOK key in Settings or set up the BizAI Gateway server key in Admin.");

@@ -620,7 +620,9 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
     const activeBaseUrl = inst.customEndpoint || providerDefaults[inst.provider]?.baseUrl;
     const provDef = GATEWAY_PROVIDERS.find((p) => p.id === inst.provider);
     const fallbackServerKey = provDef?.keyId ? gatewayConfig.serverKeys?.[provDef.keyId] : "";
-    const activeKey = inst.apiKey?.includes("••••") ? "" : (inst.apiKey || fallbackServerKey || "");
+    const activeKey = (inst.apiKey && !inst.apiKey.includes("••••"))
+      ? inst.apiKey
+      : (fallbackServerKey && !fallbackServerKey.includes("••••") ? fallbackServerKey : "");
 
     if (!activeModel) {
       setTestResults((prev) => ({
@@ -644,6 +646,7 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
           appName: "Writerdost AI (Gateway Ping)",
           siteUrl: typeof window !== "undefined" ? window.location.origin : "",
         },
+        engine: "byok",
         systemPrompt: "You are an automated connectivity test ping. Respond strictly with 'OK'.",
         userPrompt: "Ping",
       });
@@ -680,6 +683,21 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
             try {
               const parsed = JSON.parse(cached);
               if (parsed?.configuredProviders?.length && (!d.config.configuredProviders || d.config.configuredProviders.length === 0)) {
+                // Strip any masked keys from localStorage
+                if (parsed.serverKeys) {
+                  for (const [k, v] of Object.entries(parsed.serverKeys)) {
+                    if (typeof v === "string" && v.includes("••••")) {
+                      delete (parsed.serverKeys as Record<string, string>)[k];
+                    }
+                  }
+                }
+                if (Array.isArray(parsed.instances)) {
+                  for (const inst of parsed.instances) {
+                    if (typeof inst.apiKey === "string" && inst.apiKey.includes("••••")) {
+                      inst.apiKey = "";
+                    }
+                  }
+                }
                 effectiveConfig = { ...d.config, ...parsed };
                 // Sync back to server
                 gatewayApi("/api/admin/gateway", {
