@@ -350,7 +350,18 @@ export interface User {
   plan: UserPlan;
   allowedFeatures: UserFeatures;
   credits?: number;
+  unlimitedCredits?: boolean;
+  /** Month (YYYY-MM) in which the user last used a credit overdraft. Free plan users cannot overdraft. */
+  lastOverdraftMonth?: string;
 }
+
+export const PLAN_DEFAULT_CREDITS: Record<UserPlan, number> = {
+  Free: 500,
+  Basic: 2_000,
+  Pro: 6_000,
+  Enterprise: 25_000,
+  Custom: 10_000,
+};
 
 export type GenerationEngine = 'bizai' | 'byok';
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAppStore } from "@/lib/app-store";
-import type { User, UserPlan, UserFeatures } from "@/lib/store-types";
+import { PLAN_DEFAULT_CREDITS, type User, type UserPlan, type UserFeatures } from "@/lib/store-types";
 
 interface AdminUsersTabProps {
   onNotifyError: (msg: string) => void;
@@ -12,6 +12,8 @@ export function AdminUsersTab({ onNotifyError }: AdminUsersTabProps) {
   const users = useAppStore((state) => state.users);
   const currentUser = useAppStore((state) => state.currentUser);
   const adminUpdateUser = useAppStore((state) => state.adminUpdateUser);
+  const adminUpdateUserCredits = useAppStore((state) => state.adminUpdateUserCredits);
+  const adminAutoRefillPlanCredits = useAppStore((state) => state.adminAutoRefillPlanCredits);
   const adminDeleteUser = useAppStore((state) => state.adminDeleteUser);
   const adminAddUser = useAppStore((state) => state.adminAddUser);
   const adminSetUserPlanAndFeatures = useAppStore((state) => state.adminSetUserPlanAndFeatures);
@@ -30,6 +32,18 @@ export function AdminUsersTab({ onNotifyError }: AdminUsersTabProps) {
     blogGenerator: false,
     advancedModels: false,
   });
+  const [editPlanCredits, setEditPlanCredits] = useState<number>(2000);
+  const [editPlanUnlimited, setEditPlanUnlimited] = useState<boolean>(false);
+
+  // Manage Credits Modal State
+  const [managingCreditsUser, setManagingCreditsUser] = useState<User | null>(null);
+  const [creditInput, setCreditInput] = useState<number>(500);
+  const [isUnlimitedInput, setIsUnlimitedInput] = useState<boolean>(false);
+  const [isSavingCredits, setIsSavingCredits] = useState<boolean>(false);
+
+  // Batch Auto-Refill State
+  const [isRefillingBatch, setIsRefillingBatch] = useState<boolean>(false);
+  const [refillNotification, setRefillNotification] = useState<string | null>(null);
 
   // New User Form State
   const [showAddForm, setShowAddForm] = useState(false);
@@ -37,6 +51,9 @@ export function AdminUsersTab({ onNotifyError }: AdminUsersTabProps) {
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newRole, setNewRole] = useState<"user" | "admin">("user");
+  const [newPlan, setNewPlan] = useState<UserPlan>("Basic");
+  const [newCredits, setNewCredits] = useState<number>(2000);
+  const [newUnlimited, setNewUnlimited] = useState<boolean>(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -78,12 +95,14 @@ export function AdminUsersTab({ onNotifyError }: AdminUsersTabProps) {
       role: newRole,
       status: "active",
       password: newPassword,
-      plan: "Basic",
+      plan: newPlan,
+      credits: newCredits,
+      unlimitedCredits: newUnlimited,
       allowedFeatures: {
         createEbook: true,
-        rewriteEbook: false,
-        blogGenerator: false,
-        advancedModels: false,
+        rewriteEbook: newPlan === "Pro" || newPlan === "Enterprise",
+        blogGenerator: newPlan !== "Basic",
+        advancedModels: newPlan === "Enterprise",
       },
     });
 
@@ -94,6 +113,9 @@ export function AdminUsersTab({ onNotifyError }: AdminUsersTabProps) {
       setNewEmail("");
       setNewPassword("");
       setNewRole("user");
+      setNewPlan("Basic");
+      setNewCredits(2000);
+      setNewUnlimited(false);
       setTimeout(() => {
         setShowAddForm(false);
         setFormSuccess(null);
@@ -135,6 +157,7 @@ export function AdminUsersTab({ onNotifyError }: AdminUsersTabProps) {
 
   const handlePlanChange = (plan: UserPlan) => {
     setSelectedPlan(plan);
+    setEditPlanCredits(PLAN_DEFAULT_CREDITS[plan] ?? 2000);
     if (plan === "Free") {
       setSelectedFeatures({ createEbook: true, rewriteEbook: false, blogGenerator: true, advancedModels: false });
     } else if (plan === "Basic") {
@@ -163,6 +186,8 @@ export function AdminUsersTab({ onNotifyError }: AdminUsersTabProps) {
   const handleOpenEditAccess = (user: User) => {
     setEditingUser(user);
     setSelectedPlan(user.plan || "Basic");
+    setEditPlanCredits(user.credits ?? PLAN_DEFAULT_CREDITS[user.plan || "Basic"] ?? 2000);
+    setEditPlanUnlimited(Boolean(user.unlimitedCredits));
     setSelectedFeatures(
       user.allowedFeatures || {
         createEbook: true,
@@ -175,9 +200,52 @@ export function AdminUsersTab({ onNotifyError }: AdminUsersTabProps) {
 
   const handleSaveAccess = async () => {
     if (!editingUser) return;
-    const res = await adminSetUserPlanAndFeatures(editingUser.id, selectedPlan, selectedFeatures);
+    const res = await adminUpdateUser(editingUser.id, {
+      plan: selectedPlan,
+      allowedFeatures: selectedFeatures,
+      credits: editPlanCredits,
+      unlimitedCredits: editPlanUnlimited,
+    });
     if (!res.success) onNotifyError(res.error || "Could not save the plan settings.");
     setEditingUser(null);
+  };
+
+  const handleOpenManageCredits = (user: User) => {
+    setManagingCreditsUser(user);
+    setCreditInput(user.credits ?? PLAN_DEFAULT_CREDITS[user.plan || "Basic"] ?? 500);
+    setIsUnlimitedInput(Boolean(user.unlimitedCredits));
+  };
+
+  const handleIncrementCredits = (amount: number) => {
+    setCreditInput((prev) => Math.max(0, prev + amount));
+  };
+
+  const handleSaveCredits = async () => {
+    if (!managingCreditsUser) return;
+    setIsSavingCredits(true);
+    const res = await adminUpdateUserCredits(
+      managingCreditsUser.id,
+      creditInput,
+      isUnlimitedInput,
+    );
+    setIsSavingCredits(false);
+    if (!res.success) {
+      onNotifyError(res.error || "Failed to update credits.");
+    } else {
+      setManagingCreditsUser(null);
+    }
+  };
+
+  const handleBatchRefill = async (mode: "reset" | "topup" = "reset") => {
+    setIsRefillingBatch(true);
+    const res = await adminAutoRefillPlanCredits(undefined, mode);
+    setIsRefillingBatch(false);
+    if (res.success) {
+      setRefillNotification(res.message || `Successfully refilled monthly credits for all active users.`);
+      setTimeout(() => setRefillNotification(null), 5000);
+    } else {
+      onNotifyError(res.error || "Failed to auto-refill monthly credits.");
+    }
   };
 
   const formatDate = (isoString: string) => {
@@ -291,16 +359,63 @@ export function AdminUsersTab({ onNotifyError }: AdminUsersTabProps) {
                 className="input font-mono"
               />
             </div>
-            <div className="field">
-              <label className="label">Account Role</label>
-              <select
-                value={newRole}
-                onChange={(e) => setNewRole(e.target.value as "user" | "admin")}
-                className="select"
-              >
-                <option value="user">Standard Author (User)</option>
-                <option value="admin">Workspace Admin</option>
-              </select>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="field">
+                <label className="label">Account Role</label>
+                <select
+                  value={newRole}
+                  onChange={(e) => setNewRole(e.target.value as "user" | "admin")}
+                  className="select"
+                >
+                  <option value="user">Standard Author (User)</option>
+                  <option value="admin">Workspace Admin</option>
+                </select>
+              </div>
+
+              <div className="field">
+                <label className="label">Subscription Plan</label>
+                <select
+                  value={newPlan}
+                  onChange={(e) => {
+                    const p = e.target.value as UserPlan;
+                    setNewPlan(p);
+                    setNewCredits(PLAN_DEFAULT_CREDITS[p] ?? 2000);
+                  }}
+                  className="select"
+                >
+                  <option value="Free">Free (500 credits)</option>
+                  <option value="Basic">Basic (2,000 credits)</option>
+                  <option value="Pro">Pro (6,000 credits)</option>
+                  <option value="Enterprise">Enterprise (25,000 credits)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-lg border border-[var(--hairline)] bg-[var(--color-surface-container-low)] space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-[var(--color-on-surface)]">Credit Allocation</span>
+                <label className="flex items-center gap-1.5 text-xs text-purple-600 dark:text-purple-400 font-semibold cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newUnlimited}
+                    onChange={(e) => setNewUnlimited(e.target.checked)}
+                    className="rounded border-[var(--hairline-strong)] text-purple-600 accent-purple-600"
+                  />
+                  <span>Unlimited Credits (∞)</span>
+                </label>
+              </div>
+              {!newUnlimited && (
+                <div className="field !mt-1">
+                  <input
+                    type="number"
+                    min="0"
+                    value={newCredits}
+                    onChange={(e) => setNewCredits(Math.max(0, parseInt(e.target.value) || 0))}
+                    className="input !h-[var(--ctl-md)] font-mono text-xs"
+                    placeholder="Initial credits"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="flex gap-2.5 pt-2">
@@ -367,21 +482,52 @@ export function AdminUsersTab({ onNotifyError }: AdminUsersTabProps) {
             </select>
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              setShowAddForm(!showAddForm);
-              setFormError(null);
-              setFormSuccess(null);
-            }}
-            className="btn btn-primary btn-sm flex items-center gap-1.5 shrink-0"
-          >
-            <span className="material-symbols-outlined text-sm">
-              {showAddForm ? "close" : "person_add"}
-            </span>
-            {showAddForm ? "Cancel Add" : "New User"}
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => handleBatchRefill("reset")}
+              disabled={isRefillingBatch}
+              title="Automatically top up all active users to their plan's monthly credit quota"
+              className="btn btn-secondary btn-sm flex items-center gap-1.5"
+            >
+              <span className={`material-symbols-outlined text-sm ${isRefillingBatch ? "animate-spin" : "text-amber-500"}`}>
+                {isRefillingBatch ? "refresh" : "autorenew"}
+              </span>
+              <span>{isRefillingBatch ? "Refilling..." : "Auto-Refill Monthly"}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowAddForm(!showAddForm);
+                setFormError(null);
+                setFormSuccess(null);
+              }}
+              className="btn btn-primary btn-sm flex items-center gap-1.5"
+            >
+              <span className="material-symbols-outlined text-sm">
+                {showAddForm ? "close" : "person_add"}
+              </span>
+              {showAddForm ? "Cancel Add" : "New User"}
+            </button>
+          </div>
         </div>
+
+        {refillNotification && (
+          <div className="mx-4 mt-4 p-3 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center justify-between gap-2 animate-fade-in">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-sm">check_circle</span>
+              <span>{refillNotification}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setRefillNotification(null)}
+              className="btn btn-ghost btn-icon btn-sm !h-5 !w-5"
+            >
+              <span className="material-symbols-outlined text-xs">close</span>
+            </button>
+          </div>
+        )}
 
         {/* Users Table */}
         <div className="table-wrap">
@@ -392,6 +538,7 @@ export function AdminUsersTab({ onNotifyError }: AdminUsersTabProps) {
                 <th>Registered Date</th>
                 <th>Role</th>
                 <th>Plan Tier</th>
+                <th>Credits</th>
                 <th>Status</th>
                 <th className="text-right">Actions</th>
               </tr>
@@ -451,6 +598,20 @@ export function AdminUsersTab({ onNotifyError }: AdminUsersTabProps) {
                         </span>
                       </td>
 
+                      {/* Credits */}
+                      <td>
+                        {user.unlimitedCredits ? (
+                          <span className="badge bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30 inline-flex items-center gap-1 font-bold">
+                            <span className="text-sm leading-none">∞</span> Unlimited
+                          </span>
+                        ) : (
+                          <div className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--color-on-surface)] tabular-nums">
+                            <span className="material-symbols-outlined text-amber-500 text-sm">toll</span>
+                            {(user.credits ?? 500).toLocaleString()}
+                          </div>
+                        )}
+                      </td>
+
                       {/* Status */}
                       <td>
                         <span
@@ -484,6 +645,16 @@ export function AdminUsersTab({ onNotifyError }: AdminUsersTabProps) {
                           </div>
                         ) : (
                           <div className="inline-flex items-center gap-1">
+                            {/* Manage Credits */}
+                            <button
+                              type="button"
+                              onClick={() => handleOpenManageCredits(user)}
+                              title="Manage AI credits or set unlimited"
+                              className="btn btn-ghost btn-icon btn-sm hover:text-amber-500"
+                            >
+                              <span className="material-symbols-outlined text-sm">toll</span>
+                            </button>
+
                             {/* Edit Plan & Features */}
                             <button
                               type="button"
@@ -552,7 +723,7 @@ export function AdminUsersTab({ onNotifyError }: AdminUsersTabProps) {
                 })
               ) : (
                 <tr>
-                  <td colSpan={6} className="py-10 text-center">
+                  <td colSpan={7} className="py-10 text-center">
                     <div className="flex flex-col items-center justify-center gap-2 text-[var(--color-on-surface-variant)]">
                       <span className="material-symbols-outlined text-3xl opacity-40">group</span>
                       <p className="text-xs font-semibold">No matching user records found.</p>
@@ -592,15 +763,44 @@ export function AdminUsersTab({ onNotifyError }: AdminUsersTabProps) {
                   onChange={(e) => handlePlanChange(e.target.value as UserPlan)}
                   className="select"
                 >
-                  <option value="Free">Free Plan (2 Projects, 2 Blogs/mo)</option>
-                  <option value="Basic">Basic Plan (Create Only)</option>
-                  <option value="Pro">Pro Plan (Create, Rewrite, Blog)</option>
-                  <option value="Enterprise">Enterprise Plan (All Modules Enabled)</option>
+                  <option value="Free">Free Plan (500 credits/mo, 2 Projects, 2 Blogs)</option>
+                  <option value="Basic">Basic Plan (2,000 credits/mo, Create Only)</option>
+                  <option value="Pro">Pro Plan (6,000 credits/mo, Create, Rewrite, Blog)</option>
+                  <option value="Enterprise">Enterprise Plan (25,000 credits/mo, All Modules)</option>
                   <option value="Custom">Custom Plan (Individual Overrides)</option>
                 </select>
                 <p className="hint">
-                  Changing plan tier automatically updates default module allowances below.
+                  Changing plan tier automatically updates default module allowances and recommended credits below.
                 </p>
+              </div>
+
+              {/* Credit Quota & Unlimited Option */}
+              <div className="space-y-2 p-3 rounded-lg border border-[var(--hairline)] bg-[var(--color-surface-container-low)]">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-[var(--color-on-surface)]">Plan Credit Allocation</span>
+                  <label className="flex items-center gap-1.5 text-xs text-purple-600 dark:text-purple-400 font-semibold cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={editPlanUnlimited}
+                      onChange={(e) => setEditPlanUnlimited(e.target.checked)}
+                      className="rounded border-[var(--hairline-strong)] text-purple-600 accent-purple-600"
+                    />
+                    <span>Unlimited Credits (∞)</span>
+                  </label>
+                </div>
+                {!editPlanUnlimited && (
+                  <div className="field !mt-1.5">
+                    <input
+                      type="number"
+                      min="0"
+                      value={editPlanCredits}
+                      onChange={(e) => setEditPlanCredits(Math.max(0, parseInt(e.target.value) || 0))}
+                      className="input !h-[var(--ctl-md)] font-mono text-xs"
+                      placeholder="Credits balance"
+                    />
+                    <p className="hint text-[10px]">Defaults to monthly allowance for {selectedPlan} ({(PLAN_DEFAULT_CREDITS[selectedPlan] ?? 500).toLocaleString()} credits).</p>
+                  </div>
+                )}
               </div>
 
               {/* Individual Feature Toggles */}
@@ -655,6 +855,166 @@ export function AdminUsersTab({ onNotifyError }: AdminUsersTabProps) {
                 >
                   <span className="material-symbols-outlined text-sm">check</span>
                   Save Access Settings
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dedicated Manage Credits Modal */}
+      {managingCreditsUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="relative w-full max-w-md panel bg-[var(--color-surface)] border border-[var(--hairline-strong)] shadow-2xl overflow-hidden rounded-[var(--radius-lg)]">
+            <div className="panel-head">
+              <span className="panel-title flex items-center gap-2">
+                <span className="material-symbols-outlined text-amber-500 text-base">toll</span>
+                Manage Credits: {managingCreditsUser.fullName}
+              </span>
+              <button
+                type="button"
+                onClick={() => setManagingCreditsUser(null)}
+                className="btn btn-ghost btn-icon btn-sm"
+              >
+                <span className="material-symbols-outlined text-base">close</span>
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              {/* Current Status banner */}
+              <div className="p-3 rounded-lg border border-[var(--hairline)] bg-[var(--color-surface-container-low)] flex items-center justify-between">
+                <div>
+                  <span className="text-[11px] font-medium text-[var(--color-on-surface-variant)] block">Current Balance</span>
+                  <span className="text-sm font-bold text-[var(--color-on-surface)]">
+                    {managingCreditsUser.unlimitedCredits ? "∞ Unlimited" : `${(managingCreditsUser.credits ?? 500).toLocaleString()} credits`}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[11px] font-medium text-[var(--color-on-surface-variant)] block">Plan Monthly Quota</span>
+                  <span className="text-xs font-semibold text-primary">
+                    {(PLAN_DEFAULT_CREDITS[managingCreditsUser.plan || "Basic"] ?? 500).toLocaleString()} / mo
+                  </span>
+                </div>
+              </div>
+
+              {/* Unlimited Toggle */}
+              <label className="flex items-start gap-3 p-3 rounded-lg border border-purple-500/30 bg-purple-500/5 hover:bg-purple-500/10 cursor-pointer transition-colors">
+                <input
+                  type="checkbox"
+                  checked={isUnlimitedInput}
+                  onChange={(e) => setIsUnlimitedInput(e.target.checked)}
+                  className="mt-0.5 rounded border-[var(--hairline-strong)] text-purple-600 accent-purple-600"
+                />
+                <div>
+                  <span className="text-xs font-bold text-purple-700 dark:text-purple-300 flex items-center gap-1.5">
+                    <span className="text-sm leading-none">∞</span> Unlimited Credits
+                  </span>
+                  <span className="text-[11px] text-[var(--color-on-surface-variant)] block mt-0.5">
+                    Bypasses all token deductions and monthly limits. Book generation and chapter drafting will never halt due to lack of credits.
+                  </span>
+                </div>
+              </label>
+
+              {/* Credit Amount Input (disabled if unlimited) */}
+              <div className={isUnlimitedInput ? "opacity-40 pointer-events-none space-y-3" : "space-y-3"}>
+                <div className="field">
+                  <label className="label">Credit Balance</label>
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-amber-500 pointer-events-none">
+                      toll
+                    </span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={creditInput}
+                      onChange={(e) => setCreditInput(Math.max(0, parseInt(e.target.value) || 0))}
+                      disabled={isUnlimitedInput}
+                      className="input !pl-8 font-mono tabular-nums font-semibold"
+                    />
+                  </div>
+                  <p className="hint">Set exact credit balance or use quick adjustments below.</p>
+                </div>
+
+                {/* Quick Increment Buttons */}
+                <div>
+                  <span className="text-[11px] font-semibold text-[var(--color-on-surface-variant)] block mb-1.5">
+                    Quick Adjustments
+                  </span>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleIncrementCredits(100)}
+                      className="btn btn-secondary btn-sm text-[11px] !py-1"
+                    >
+                      +100
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleIncrementCredits(500)}
+                      className="btn btn-secondary btn-sm text-[11px] !py-1"
+                    >
+                      +500
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleIncrementCredits(1000)}
+                      className="btn btn-secondary btn-sm text-[11px] !py-1"
+                    >
+                      +1,000
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleIncrementCredits(5000)}
+                      className="btn btn-secondary btn-sm text-[11px] !py-1"
+                    >
+                      +5,000
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleIncrementCredits(10000)}
+                      className="btn btn-secondary btn-sm text-[11px] !py-1"
+                    >
+                      +10,000
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleIncrementCredits(-500)}
+                      className="btn btn-secondary btn-sm text-[11px] !py-1 text-rose-500 hover:text-rose-600"
+                    >
+                      -500
+                    </button>
+                  </div>
+                  <div className="mt-2">
+                    <button
+                      type="button"
+                      onClick={() => setCreditInput(PLAN_DEFAULT_CREDITS[managingCreditsUser.plan || "Basic"] ?? 500)}
+                      className="btn btn-ghost btn-sm text-[11px] w-full text-[var(--color-on-surface-variant)] hover:text-primary"
+                    >
+                      Reset to Plan Default ({(PLAN_DEFAULT_CREDITS[managingCreditsUser.plan || "Basic"] ?? 500).toLocaleString()})
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2.5 justify-end pt-3 border-t border-[var(--hairline)]">
+                <button
+                  type="button"
+                  onClick={() => setManagingCreditsUser(null)}
+                  className="btn btn-secondary btn-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveCredits}
+                  disabled={isSavingCredits}
+                  className="btn btn-primary btn-sm flex items-center gap-1.5"
+                >
+                  <span className="material-symbols-outlined text-sm">
+                    {isSavingCredits ? "hourglass_empty" : "check"}
+                  </span>
+                  {isSavingCredits ? "Saving..." : "Save Credits"}
                 </button>
               </div>
             </div>

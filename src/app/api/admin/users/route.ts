@@ -12,7 +12,7 @@ import { NextResponse } from "next/server";
 import { ID } from "node-appwrite";
 import { adminUsers, requireAdmin } from "@/lib/appwrite/session";
 import { ADMIN_LABEL, PLAN_FEATURES, defaultPrefs, toUser } from "@/lib/auth/profile";
-import type { UserPlan } from "@/lib/store-types";
+import { PLAN_DEFAULT_CREDITS, type UserPlan } from "@/lib/store-types";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +46,8 @@ export async function POST(request: Request) {
       password?: string;
       role?: "user" | "admin";
       plan?: UserPlan;
+      credits?: number;
+      unlimitedCredits?: boolean;
     };
 
     if (!body.email || !body.password) {
@@ -61,6 +63,11 @@ export async function POST(request: Request) {
     }
 
     const plan = body.plan ?? "Basic";
+    const unlimitedCredits = Boolean(body.unlimitedCredits);
+    const credits = typeof body.credits === "number"
+      ? Math.max(0, Math.floor(body.credits))
+      : (unlimitedCredits ? 999999999 : (PLAN_DEFAULT_CREDITS[plan] ?? 500));
+
     const created = await adminUsers().create({
       userId: ID.unique(),
       email: body.email,
@@ -74,6 +81,8 @@ export async function POST(request: Request) {
         ...defaultPrefs(),
         plan,
         allowedFeatures: plan === "Custom" ? PLAN_FEATURES.Basic : PLAN_FEATURES[plan],
+        credits,
+        unlimitedCredits,
       },
     });
 

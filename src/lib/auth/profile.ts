@@ -65,6 +65,7 @@ export type AccountPrefs = {
   plan?: UserPlan;
   allowedFeatures?: Partial<UserFeatures>;
   credits?: number;
+  unlimitedCredits?: boolean;
 };
 
 /** The label that marks an administrator. */
@@ -111,6 +112,8 @@ export function readFeatures(value: unknown, plan: UserPlan): UserFeatures {
 export function toUser(account: AppwriteAccount): User {
   const prefs = (account.prefs ?? {}) as AccountPrefs;
   const plan = readPlan(prefs.plan);
+  const unlimitedCredits = Boolean(prefs.unlimitedCredits);
+  const credits = typeof prefs.credits === "number" ? prefs.credits : (unlimitedCredits ? 999999999 : 500);
 
   return {
     id: account.$id,
@@ -123,7 +126,8 @@ export function toUser(account: AppwriteAccount): User {
     registeredAt: account.$createdAt || new Date().toISOString(),
     plan,
     allowedFeatures: readFeatures(prefs.allowedFeatures, plan),
-    credits: typeof prefs.credits === "number" ? prefs.credits : 500,
+    credits,
+    unlimitedCredits,
   };
 }
 
@@ -132,5 +136,5 @@ export function toUser(account: AppwriteAccount): User {
  * user by virtue of carrying no admin label, and there is nothing to write.
  */
 export function defaultPrefs(): Required<AccountPrefs> {
-  return { plan: "Basic", allowedFeatures: PLAN_FEATURES.Basic, credits: 500 };
+  return { plan: "Basic", allowedFeatures: PLAN_FEATURES.Basic, credits: 500, unlimitedCredits: false };
 }

@@ -9,6 +9,7 @@ import { NextResponse } from "next/server";
 import { adminUsers, requireAdmin } from "@/lib/appwrite/session";
 import { ADMIN_LABEL, PLAN_FEATURES, readFeatures, toUser } from "@/lib/auth/profile";
 import type { AccountPrefs } from "@/lib/auth/profile";
+import { PLAN_DEFAULT_CREDITS } from "@/lib/store-types";
 import type { User, UserFeatures, UserPlan } from "@/lib/store-types";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +22,8 @@ type Patch = {
   status?: User["status"];
   plan?: UserPlan;
   allowedFeatures?: UserFeatures;
+  credits?: number;
+  unlimitedCredits?: boolean;
 };
 
 export async function PATCH(request: Request, { params }: Context) {
@@ -68,7 +71,12 @@ export async function PATCH(request: Request, { params }: Context) {
       });
     }
 
-    if (patch.plan !== undefined || patch.allowedFeatures) {
+    if (
+      patch.plan !== undefined ||
+      patch.allowedFeatures !== undefined ||
+      patch.credits !== undefined ||
+      patch.unlimitedCredits !== undefined
+    ) {
       const existing = (await users.getPrefs({ userId: id })) as AccountPrefs;
       const plan = patch.plan ?? existing.plan ?? "Basic";
 
@@ -80,7 +88,22 @@ export async function PATCH(request: Request, { params }: Context) {
           ? PLAN_FEATURES[patch.plan]
           : readFeatures(existing.allowedFeatures, plan));
 
-      await users.updatePrefs({ userId: id, prefs: { ...existing, plan, allowedFeatures } });
+      const unlimitedCredits =
+        patch.unlimitedCredits !== undefined
+          ? Boolean(patch.unlimitedCredits)
+          : Boolean(existing.unlimitedCredits);
+
+      const credits =
+        patch.credits !== undefined
+          ? Math.max(0, Math.floor(patch.credits))
+          : patch.plan && patch.plan !== existing.plan
+            ? PLAN_DEFAULT_CREDITS[plan]
+            : (typeof existing.credits === "number" ? existing.credits : PLAN_DEFAULT_CREDITS[plan]);
+
+      await users.updatePrefs({
+        userId: id,
+        prefs: { ...existing, plan, allowedFeatures, credits, unlimitedCredits },
+      });
     }
 
     return NextResponse.json({ user: toUser(await users.get({ userId: id })) });

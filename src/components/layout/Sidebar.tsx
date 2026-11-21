@@ -252,9 +252,20 @@ export default function Sidebar() {
                 {currentUser.fullName}
               </span>
               <span className="flex items-center gap-1 text-[10.5px] text-on-surface-variant truncate">
-                <span className="font-mono text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
-                  <CoinsIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                  <span>{userCredits.toLocaleString()} credits</span>
+                <span className={`font-mono font-semibold flex items-center gap-1 ${
+                  currentUser.unlimitedCredits
+                    ? "text-purple-600 dark:text-purple-400"
+                    : "text-amber-600 dark:text-amber-400"
+                }`}>
+                  <CoinsIcon className={`w-3.5 h-3.5 shrink-0 ${currentUser.unlimitedCredits ? "text-purple-500" : "text-amber-500"}`} />
+                  {currentUser.unlimitedCredits ? (
+                    <span className="font-bold flex items-center gap-0.5">
+                      <span className="text-xs">∞</span>
+                      <span>Unlimited</span>
+                    </span>
+                  ) : (
+                    <span>{userCredits.toLocaleString()} credits</span>
+                  )}
                 </span>
                 <span>•</span>
                 <span>{currentUser.role === "admin" ? "Admin" : currentUser.plan}</span>

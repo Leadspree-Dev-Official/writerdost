@@ -192,6 +192,7 @@ export type GenerationStatus = {
   pipelineTitle?: string;
   pipelineSubtitle?: string;
   sessionTokens?: number;
+  sessionCredits?: number;
 };
 
 export type ProjectDesignSettings = {
@@ -522,6 +523,15 @@ type AppStore = {
   logout: () => Promise<void>;
   loadUsers: () => Promise<void>;
   adminUpdateUser: (userId: string, updates: Partial<User>) => Promise<AuthResult>;
+  adminUpdateUserCredits: (
+    userId: string,
+    credits: number,
+    unlimitedCredits?: boolean,
+  ) => Promise<AuthResult>;
+  adminAutoRefillPlanCredits: (
+    userId?: string,
+    mode?: "reset" | "topup",
+  ) => Promise<{ success: boolean; count?: number; message?: string; error?: string }>;
   adminDeleteUser: (userId: string) => Promise<AuthResult>;
   adminAddUser: (
     user: Omit<User, "id" | "registeredAt"> & { password?: string },
@@ -546,6 +556,7 @@ type AppStore = {
     interval: "monthly" | "yearly",
     couponCode?: string,
     referralCode?: string,
+    founderPass?: "basic" | "pro",
   ) => Promise<{ success: boolean; error?: string }>;
   adminCreateCoupon: (coupon: Partial<Coupon>) => Promise<{ success: boolean; error?: string }>;
   adminUpdateCoupon: (id: string, updates: Partial<Coupon>) => Promise<{ success: boolean; error?: string }>;
@@ -590,7 +601,7 @@ const defaultRewrite: RewriteState = {
   humanize: true,
   avoidPlagiarism: true,
   preview: "",
-  length: 20000,
+  length: 90000,
   translateProjectId: "",
   targetLanguage: "Spanish",
 };
@@ -612,7 +623,7 @@ const defaultProfile: ProfileState = {
   website: "",
   bio: "",
   defaultTone: "Professional",
-  defaultLength: 25000,
+  defaultLength: 90000,
   language: "English (India)",
   autoPunctuation: true,
   autoSave: true,
@@ -693,6 +704,7 @@ const defaultGenerationStatus: GenerationStatus = {
   startTime: 0,
   isMinimized: false,
   sessionTokens: 0,
+  sessionCredits: 0,
 };
 
 const defaultUsage: UsageState = {
@@ -1156,6 +1168,10 @@ async function openWorkspace(userId: string | null): Promise<void> {
         });
       savedBlogs = existingProjectBlogs;
       saved.savedBlogs = savedBlogs;
+    }
+
+    if (saved.createDraft && (!saved.createDraft.length || saved.createDraft.length === 90000)) {
+      saved.createDraft = { ...saved.createDraft, length: 20000 };
     }
 
     // Defaults first, then whatever was saved: a workspace written by an older
@@ -2126,8 +2142,10 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         return { success: false, error: "Sign-in is unavailable: Appwrite is not configured." };
       }
 
+      const cleanEmail = email.trim().toLowerCase().replace(/[\u00D7\u2715\u2716]/g, "x");
+
       try {
-        await account().createEmailPasswordSession({ email, password });
+        await account().createEmailPasswordSession({ email: cleanEmail, password });
         // A token minted for whoever was signed in before must not be reused.
         clearAuthCache();
         const me = toUser(await account().get());
@@ -2156,9 +2174,11 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         return { success: false, error: "Sign-up is unavailable: Appwrite is not configured." };
       }
 
+      const cleanEmail = email.trim().toLowerCase().replace(/[\u00D7\u2715\u2716]/g, "x");
+
       try {
-        await account().create({ userId: "unique()", email, password, name: fullName });
-        await account().createEmailPasswordSession({ email, password });
+        await account().create({ userId: "unique()", email: cleanEmail, password, name: fullName });
+        await account().createEmailPasswordSession({ email: cleanEmail, password });
         clearAuthCache();
         // Plan and feature gates start at their defaults; an admin changes
         // them later through the Users API.
@@ -2238,9 +2258,60 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           users: state.users.map((user) => (user.id === userId ? result.user! : user)),
           currentUser:
             state.currentUser?.id === userId ? result.user! : state.currentUser,
+          userCredits:
+            state.currentUser?.id === userId ? (result.user!.credits ?? state.userCredits) : state.userCredits,
         }));
       }
       return result.error ? { success: false, error: result.error } : { success: true };
+    },
+
+    adminUpdateUserCredits: async (userId, credits, unlimitedCredits) => {
+      const updates: Partial<User> = {
+        credits: Math.max(0, Math.floor(credits)),
+      };
+      if (typeof unlimitedCredits === "boolean") {
+        updates.unlimitedCredits = unlimitedCredits;
+      }
+      const result = await backend.patchUser(userId, updates);
+      if (result.user) {
+        set((state) => ({
+          users: state.users.map((user) => (user.id === userId ? result.user! : user)),
+          currentUser:
+            state.currentUser?.id === userId ? result.user! : state.currentUser,
+          userCredits:
+            state.currentUser?.id === userId ? (result.user!.credits ?? state.userCredits) : state.userCredits,
+        }));
+      }
+      return result.error ? { success: false, error: result.error } : { success: true };
+    },
+
+    adminAutoRefillPlanCredits: async (userId, mode = "reset") => {
+      const result = await backend.refillCredits({ userId, mode });
+      if (result.success) {
+        if (result.user && userId) {
+          set((state) => ({
+            users: state.users.map((user) => (user.id === userId ? result.user! : user)),
+            currentUser:
+              state.currentUser?.id === userId ? result.user! : state.currentUser,
+            userCredits:
+              state.currentUser?.id === userId ? (result.user!.credits ?? state.userCredits) : state.userCredits,
+          }));
+        } else {
+          await get().loadUsers();
+          const currentId = get().currentUser?.id;
+          if (currentId) {
+            const updatedCurrent = get().users.find((u) => u.id === currentId);
+            if (updatedCurrent) {
+              set({
+                currentUser: updatedCurrent,
+                userCredits: updatedCurrent.credits ?? get().userCredits,
+              });
+            }
+          }
+        }
+        return { success: true, count: result.count, message: result.message };
+      }
+      return { success: false, error: result.error || "Failed to refill credits." };
     },
 
     adminDeleteUser: async (userId) => {
@@ -2337,13 +2408,14 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       }
     },
 
-    purchaseSubscription: async (plan, interval, couponCode, referralCode) => {
+    purchaseSubscription: async (plan, interval, couponCode, referralCode, founderPass) => {
       try {
         const result = await subApi.purchaseSubscriptionApi({
           plan,
           billingInterval: interval,
           couponCode,
           referralCode,
+          founderPass,
         });
 
         if (result.success) {
@@ -2450,8 +2522,27 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         };
       }),
     spendCredits: (amount) => {
-      const current = get().currentUser?.credits ?? get().userCredits ?? 0;
-      if (current < amount) return false;
+      const state = get();
+      const current = state.currentUser?.credits ?? state.userCredits ?? 0;
+      const plan = state.currentUser?.plan || "Free";
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      const alreadyOverdrafted = state.currentUser?.lastOverdraftMonth === currentMonth;
+
+      // Free plan users cannot overdraft
+      if (current < amount) {
+        // Allow overdraft once per month for paid plans (Basic, Pro, Enterprise, Custom)
+        if (plan !== "Free" && !alreadyOverdrafted) {
+          const next = Number((current - amount).toFixed(2));
+          set((state) => ({
+            userCredits: next,
+            currentUser: state.currentUser
+              ? { ...state.currentUser, credits: next, lastOverdraftMonth: currentMonth }
+              : null,
+          }));
+          return true;
+        }
+        return false;
+      }
       const next = Number((current - amount).toFixed(2));
       set((state) => ({
         userCredits: next,
@@ -2472,6 +2563,22 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       const engine = requestedEngine || get().preferredEngine || "bizai";
       const api = get().api;
       const hasByokConfigured = Boolean(api.apiKey || api.provider === "ollama");
+
+      // Unlimited Credits grant: bypass all token/quota deductions
+      if (get().currentUser?.unlimitedCredits) {
+        return {
+          allowed: true,
+          used: 0,
+          limit: -1,
+          plan: get().currentUser?.plan || "Enterprise",
+          isByok: false,
+          source: "plan_quota" as const,
+          costCredits: 0,
+          userCredits: 999999999,
+          remaining: 999999999,
+          unlimited: true,
+        };
+      }
 
       // BYOK route: 100% free of platform quotas and credits
       if (engine === "byok" && hasByokConfigured) {
@@ -2522,7 +2629,11 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
       // If monthly quota is exhausted, allow pay-as-you-go with credits
       // Users can start as long as they have a positive credit balance (min 5 credits)
-      if (availableCredits >= 5) {
+      // Paid plan users (Basic, Pro, Enterprise) can overdraft once per month
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      const alreadyOverdrafted = get().currentUser?.lastOverdraftMonth === currentMonth;
+      const canOverdraft = currentPlan !== "Free" && !alreadyOverdrafted;
+      if (availableCredits >= 5 || canOverdraft) {
         return {
           allowed: true,
           used: count,
@@ -2534,6 +2645,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           userCredits: availableCredits,
           remaining: availableCredits,
           unlimited: false,
+          canOverdraft,
         };
       }
 
@@ -2691,6 +2803,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           pipelineSubtitle: options?.subtitle,
           isMinimized: state.generationStatus.isMinimized,
           sessionTokens: 0,
+          sessionCredits: 0,
         },
       })),
     addGenerationLog: (log) => {
@@ -2956,7 +3069,9 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
     recordUsage: (tokens, provider = "openai", model = "gpt-4o-mini", breakdownOrByok) => {
       let allowed = true;
-      let remainingCredits = get().currentUser?.credits ?? get().userCredits ?? 500;
+      let remainingCredits = get().currentUser?.unlimitedCredits
+        ? 999999999
+        : (get().currentUser?.credits ?? get().userCredits ?? 500);
       let creditsDeducted = 0;
 
       const breakdown =
@@ -3061,10 +3176,20 @@ export const useAppStore = create<AppStore>()((set, get) => ({
               state.preferredEngine !== "bizai")
         );
 
-        // Auto-deduct credits ONLY for BizAI managed gateway (zero credits for BYOK)
+        // Auto-deduct credits ONLY for BizAI managed gateway (zero credits for BYOK or Unlimited)
         let updatedCredits = state.userCredits;
         let updatedCurrentUser = state.currentUser;
-        if (!effectiveIsByok && state.preferredEngine === "bizai" && tokens > 0) {
+        const isUnlimited = Boolean(state.currentUser?.unlimitedCredits);
+
+        if (isUnlimited) {
+          creditsDeducted = 0;
+          updatedCredits = 999999999;
+          remainingCredits = 999999999;
+          allowed = true;
+          if (updatedCurrentUser) {
+            updatedCurrentUser = { ...updatedCurrentUser, credits: 999999999, unlimitedCredits: true };
+          }
+        } else if (!effectiveIsByok && state.preferredEngine === "bizai" && tokens > 0) {
           creditsDeducted = Number((tokens * TOKEN_CREDIT_MULTIPLIER).toFixed(2));
           updatedCredits = Math.max(
             0,
@@ -3076,8 +3201,10 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           if (updatedCredits <= 0) {
             allowed = false;
           }
+          remainingCredits = updatedCredits;
+        } else {
+          remainingCredits = updatedCredits;
         }
-        remainingCredits = updatedCredits;
 
         // Update target model usage if matched
         let updatedByokModels = state.byokModels;
@@ -3120,6 +3247,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           generationStatus: {
             ...state.generationStatus,
             sessionTokens: (state.generationStatus.sessionTokens || 0) + tokens,
+            sessionCredits: (state.generationStatus.sessionCredits || 0) + creditsDeducted,
           },
         };
       });

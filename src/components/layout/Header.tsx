@@ -239,12 +239,25 @@ export default function Header() {
         <Link
           href="/pricing#credit-packs"
           prefetch={true}
-          title="AI Generation Credits (Click to view packs)"
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 transition-all mr-1"
+          title={currentUser?.unlimitedCredits ? "Unlimited AI Generation Credits" : "AI Generation Credits (Click to view packs)"}
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition-all mr-1 ${
+            currentUser?.unlimitedCredits
+              ? "bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 hover:bg-purple-500/20"
+              : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 hover:bg-amber-500/20"
+          }`}
         >
-          <CoinsIcon className="w-4 h-4 text-amber-500 shrink-0" />
-          <span className="font-mono tabular-nums">{userCredits.toLocaleString()}</span>
-          <span className="hidden sm:inline text-[11px] font-medium opacity-80">credits</span>
+          <CoinsIcon className={`w-4 h-4 shrink-0 ${currentUser?.unlimitedCredits ? "text-purple-500" : "text-amber-500"}`} />
+          {currentUser?.unlimitedCredits ? (
+            <span className="font-bold flex items-center gap-1">
+              <span className="text-sm leading-none">∞</span>
+              <span>Unlimited</span>
+            </span>
+          ) : (
+            <>
+              <span className="font-mono tabular-nums">{userCredits.toLocaleString()}</span>
+              <span className="hidden sm:inline text-[11px] font-medium opacity-80">credits</span>
+            </>
+          )}
         </Link>
 
         <button

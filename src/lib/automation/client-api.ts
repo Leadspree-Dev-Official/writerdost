@@ -183,3 +183,25 @@ export async function deleteUser(id: string): Promise<string | null> {
     return error instanceof Error ? error.message : "Could not delete the account.";
   }
 }
+
+/** Refills or resets credits for a single user or all active users. */
+export async function refillCredits(
+  payload?: { userId?: string; mode?: "reset" | "topup" }
+): Promise<{ success: boolean; count?: number; message?: string; user?: User; error?: string }> {
+  try {
+    const res = await call<{ success: boolean; count?: number; message?: string; user?: User }>(
+      "/api/admin/users/refill-credits",
+      {
+        method: "POST",
+        body: JSON.stringify(payload || {}),
+      }
+    );
+    return res;
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to refill credits.",
+    };
+  }
+}
+
