@@ -252,14 +252,14 @@ export default function Sidebar() {
                 {currentUser.fullName}
               </span>
               <span className="flex items-center gap-1 text-[10.5px] text-on-surface-variant truncate">
-                <span className={`font-mono font-semibold flex items-center gap-1 ${
+                <span className={`font-mono font-semibold flex items-center gap-2 ${
                   currentUser.unlimitedCredits
                     ? "text-purple-600 dark:text-purple-400"
                     : "text-amber-600 dark:text-amber-400"
                 }`}>
-                  <CoinsIcon className={`w-3.5 h-3.5 shrink-0 ${currentUser.unlimitedCredits ? "text-purple-500" : "text-amber-500"}`} />
+                  <CoinsIcon className={`w-3.5 h-3.5 shrink-0 mr-1.5 ${currentUser.unlimitedCredits ? "text-purple-500" : "text-amber-500"}`} />
                   {currentUser.unlimitedCredits ? (
-                    <span className="font-bold flex items-center gap-0.5">
+                    <span className="font-bold flex items-center gap-1">
                       <span className="text-xs">∞</span>
                       <span>Unlimited</span>
                     </span>

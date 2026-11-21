@@ -11,7 +11,7 @@ interface CoinsIconProps extends React.SVGProps<SVGSVGElement> {
 export function CoinsIcon({ className = "w-4 h-4 text-amber-500", ...props }: CoinsIconProps) {
   return (
     <svg
-      viewBox="0 0 24 24"
+      viewBox="0 0 25 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.8"

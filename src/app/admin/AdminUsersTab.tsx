@@ -601,12 +601,12 @@ export function AdminUsersTab({ onNotifyError }: AdminUsersTabProps) {
                       {/* Credits */}
                       <td>
                         {user.unlimitedCredits ? (
-                          <span className="badge bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30 inline-flex items-center gap-1 font-bold">
+                          <span className="badge bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30 inline-flex items-center gap-1.5 font-bold">
                             <span className="text-sm leading-none">∞</span> Unlimited
                           </span>
                         ) : (
-                          <div className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--color-on-surface)] tabular-nums">
-                            <span className="material-symbols-outlined text-amber-500 text-sm">toll</span>
+                          <div className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--color-on-surface)] tabular-nums">
+                            <span className="material-symbols-outlined text-amber-500 text-sm mr-1">toll</span>
                             {(user.credits ?? 500).toLocaleString()}
                           </div>
                         )}
