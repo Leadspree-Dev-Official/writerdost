@@ -64,8 +64,11 @@ export async function POST(request: Request) {
         model: String(inst.model || ""),
         apiKey: typeof inst.apiKey === "string" ? inst.apiKey : "",
         customEndpoint: typeof inst.customEndpoint === "string" ? inst.customEndpoint : undefined,
-        isFree: Boolean(inst.isFree),
+        isFree: typeof inst.isFree === "boolean" ? inst.isFree : false,
+        role: inst.role === "primary" ? "primary" : "standby",
+        standbyPriority: typeof inst.standbyPriority === "number" ? inst.standbyPriority : undefined,
         tier: inst.tier === "primary" ? "primary" : inst.tier === "fallback" ? "fallback" : "unassigned",
+        planTiers: Array.isArray(inst.planTiers) ? inst.planTiers : ["Free", "Basic", "Pro", "Enterprise"],
         fallbackTiers: Array.isArray(inst.fallbackTiers) ? inst.fallbackTiers.map(Number) : undefined,
         createdAt: typeof inst.createdAt === "number" ? inst.createdAt : Date.now(),
       }));

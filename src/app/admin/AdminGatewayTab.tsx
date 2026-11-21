@@ -105,12 +105,11 @@ const GATEWAY_PROVIDERS: ProviderDefinition[] = [
     id: "groq",
     keyId: "groq",
     name: "Groq Cloud",
-    description: "Ultra-fast LPU inference (Free Tier on console.groq.com)",
+    description: "Ultra-fast LPU inference (Free & Pay-as-you-go)",
     icon: "speed",
     placeholder: "gsk_...",
     colorClass: "bg-orange-500/10 text-orange-400 border-orange-500/20",
     colorHex: "#f97316",
-    isFree: true,
   },
   {
     id: "commandcode",
@@ -262,7 +261,9 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
           "",
         apiKey: provDef.keyId ? config.serverKeys?.[provDef.keyId] || "" : "",
         customEndpoint: config.customEndpoints?.[provId] || "",
-        isFree: Boolean(provDef.isFree || config.freeProviders?.[provId]),
+        isFree: typeof config.freeProviders?.[provId] === "boolean"
+          ? config.freeProviders[provId]
+          : Boolean(provDef.isFree),
         tier: isPrimary ? "primary" : "standby",
         role: isPrimary ? "primary" : "standby",
         planTiers: ["Free", "Basic", "Pro", "Enterprise"],
@@ -280,7 +281,7 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
         model: "openai/gpt-oss-120b",
         apiKey: config.serverKeys?.groq || "",
         customEndpoint: "",
-        isFree: true,
+        isFree: config.freeProviders?.groq ?? false,
         tier: "primary",
         role: "primary",
         planTiers: ["Free", "Basic", "Pro", "Enterprise"],
@@ -331,7 +332,9 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
       model: MODEL_PRESETS[provId]?.[0] || "",
       apiKey: provDef?.keyId ? gatewayConfig.serverKeys?.[provDef.keyId] || "" : "",
       customEndpoint: gatewayConfig.customEndpoints?.[provId] || "",
-      isFree: Boolean(provDef?.isFree || gatewayConfig.freeProviders?.[provId]),
+      isFree: typeof gatewayConfig.freeProviders?.[provId] === "boolean"
+        ? gatewayConfig.freeProviders[provId]
+        : Boolean(provDef?.isFree),
       tier: !hasPrimary ? "primary" : "standby",
       role: !hasPrimary ? "primary" : "standby",
       planTiers: ["Free", "Basic", "Pro", "Enterprise"],
@@ -447,15 +450,26 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
   };
 
   const handleUpdateInstance = (instId: string, updates: Partial<GatewayProviderInstance>) => {
+    const targetInst = instances.find((i) => i.id === instId);
     const nextInstances = instances.map((inst) => {
       if (inst.id === instId) {
         return { ...inst, ...updates };
       }
       return inst;
     });
+
+    let nextFreeProviders = gatewayConfig.freeProviders;
+    if (typeof updates.isFree === "boolean" && targetInst) {
+      nextFreeProviders = {
+        ...(gatewayConfig.freeProviders || {}),
+        [targetInst.provider]: updates.isFree,
+      };
+    }
+
     setGatewayConfig({
       ...gatewayConfig,
       instances: nextInstances,
+      ...(nextFreeProviders ? { freeProviders: nextFreeProviders } : {}),
     });
   };
 
@@ -1275,12 +1289,12 @@ export function AdminGatewayTab({ onNotifyError }: AdminGatewayTabProps) {
                   const selectedModel = inst.model;
                   const customEndpoint = inst.customEndpoint || "";
                   const rates = selectedModel ? getModelDefaultRates(inst.provider, selectedModel) : { inputRate: 0, outputRate: 0 };
-                  const isFreeProvider = Boolean(
-                    inst.isFree ||
-                    prov.isFree ||
-                    gatewayConfig.freeProviders?.[inst.provider] ||
-                    (rates.inputRate === 0 && rates.outputRate === 0)
-                  );
+                  const isFreeProvider = typeof inst.isFree === "boolean"
+                    ? inst.isFree
+                    : Boolean(
+                        prov.isFree ||
+                        gatewayConfig.freeProviders?.[inst.provider]
+                      );
 
                   const provMetric = analytics?.providers?.[inst.provider];
                   const provRequests = provMetric?.totalRequests || 0;

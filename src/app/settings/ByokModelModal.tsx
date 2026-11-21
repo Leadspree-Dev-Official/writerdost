@@ -186,12 +186,13 @@ function ByokModelForm({ initialData, onClose, onSave }: ByokModelFormProps) {
   const initialRates = initialData
     ? { inputRate: initialData.inputTokenRate, outputRate: initialData.outputTokenRate }
     : getModelDefaultRates(initialProvider, initialModel);
-  const initialIsFree = Boolean(
-    initialData?.isFree ||
-    initialProvider === "ollama" ||
-    initialProvider === "ollama_cloud" ||
-    (initialRates.inputRate === 0 && initialRates.outputRate === 0)
-  );
+  const initialIsFree = typeof initialData?.isFree === "boolean"
+    ? initialData.isFree
+    : Boolean(
+        initialProvider === "ollama" ||
+        initialProvider === "ollama_cloud" ||
+        (initialRates.inputRate === 0 && initialRates.outputRate === 0)
+      );
 
   const [provider, setProvider] = useState<ApiProvider>(initialProvider);
   const [name, setName] = useState(initialData?.name ?? "My OpenAI GPT-6.1 Sol");
